@@ -13,6 +13,7 @@ import receiptRoutes from './routes/receiptRoutes.js';
 import settleRoutes from './routes/settleRoutes.js';
 import statementRoutes from './routes/statementRoutes.js';
 import cronRoutes from './routes/cronRoutes.js';
+import { appConfig } from './config/appConfig.js';
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -36,7 +37,7 @@ app.get('/api/docs.json', (req, res) => {
 
 // Health check
 app.get('/api/health', (req, res) => {
-  const googleSheetSync = process.env.GOOGLE_SHEET_SYNC !== 'false' && process.env.STORAGE_MODE !== 'turso';
+  const googleSheetSync = appConfig.googleSheetSync && process.env.STORAGE_MODE !== 'turso';
   res.json({
     status: 'ok',
     storageMode: process.env.STORAGE_MODE || 'dual',

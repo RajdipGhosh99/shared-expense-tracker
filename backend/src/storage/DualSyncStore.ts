@@ -10,21 +10,20 @@ import {
 import { IDataStore } from './IDataStore.js';
 import { TursoStore } from './TursoStore.js';
 import { GoogleSheetsStore } from './GoogleSheetsStore.js';
+import { appConfig } from '../config/appConfig.js';
 
 export class DualSyncStore implements IDataStore {
-  private appLevelGoogleSheetSync: boolean = process.env.GOOGLE_SHEET_SYNC !== 'false';
-
   constructor(
     private turso: TursoStore,
     private sheets: GoogleSheetsStore
   ) {}
 
   public isAppGoogleSheetSyncEnabled(): boolean {
-    return this.appLevelGoogleSheetSync && process.env.STORAGE_MODE !== 'turso';
+    return appConfig.googleSheetSync && process.env.STORAGE_MODE !== 'turso';
   }
 
   public setAppGoogleSheetSync(enabled: boolean): void {
-    this.appLevelGoogleSheetSync = enabled;
+    appConfig.googleSheetSync = enabled;
   }
 
   async init(): Promise<void> {
