@@ -56,6 +56,36 @@ router.post('/login', async (req: Request, res: Response) => {
   });
 });
 
+router.post('/google', async (req: Request, res: Response) => {
+  const { email, name, avatar, upiId } = req.body;
+
+  if (!email) {
+    return res.status(400).json({ error: 'Google email is required.' });
+  }
+
+  const cleanEmail = email.toLowerCase().trim();
+  const userName = name?.trim() || cleanEmail.split('@')[0].charAt(0).toUpperCase() + cleanEmail.split('@')[0].slice(1);
+  const secret = process.env.JWT_SECRET || 'dev_jwt_secret_key_84920491';
+
+  const user = {
+    email: cleanEmail,
+    name: userName,
+    avatar: avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${cleanEmail}`,
+    upiId: upiId || '',
+  };
+
+  const token = jwt.sign(
+    user,
+    secret,
+    { expiresIn: '30d' }
+  );
+
+  return res.json({
+    token,
+    user,
+  });
+});
+
 router.get('/me', authMiddleware, (req: AuthRequest, res: Response) => {
   return res.json({ user: req.user });
 });

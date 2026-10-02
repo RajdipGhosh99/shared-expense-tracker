@@ -45,4 +45,17 @@ test.describe('Authentication & Session Management', () => {
     await page.click('button:has-text("Back to Sign In")');
     await expect(page).toHaveURL(/\/auth/);
   });
+
+  test('User can sign in with prominent Continue with Google button', async ({ page }) => {
+    await page.goto('/auth');
+    await expect(page.locator('button:has-text("Continue with Google")')).toBeVisible();
+    await page.click('button:has-text("Continue with Google")');
+
+    // Google modal appears
+    await expect(page.locator('text=Sign in with Google')).toBeVisible();
+    await page.click('button:has-text("Rahul Sharma")');
+
+    // Successfully navigates to onboarding or dashboard
+    await expect(page).toHaveURL(/\/(onboarding|dashboard)/);
+  });
 });

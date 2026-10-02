@@ -70,6 +70,27 @@ describe('Backend API End-to-End Integration Suite', () => {
     amitToken = d2.token;
   });
 
+  test('Auth: Google sign-in generates valid 30-day JWT token', async () => {
+    const res = await fetch(`${baseUrl}/api/auth/google`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: 'priya.google@gmail.com',
+        name: 'Priya Patel',
+      }),
+    });
+    assert.equal(res.status, 200);
+    const data = await res.json();
+    assert.ok(data.token);
+    assert.equal(data.user.email, 'priya.google@gmail.com');
+    assert.equal(data.user.name, 'Priya Patel');
+
+    const decoded = jwt.decode(data.token) as any;
+    assert.ok(decoded.exp);
+    assert.ok(decoded.iat);
+    assert.equal(decoded.exp - decoded.iat, 30 * 24 * 60 * 60);
+  });
+
   test('Group: Rahul creates group and gets 6-character invite code', async () => {
     const res = await fetch(`${baseUrl}/api/groups`, {
       method: 'POST',

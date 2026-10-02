@@ -17,7 +17,7 @@ import {
 
 export interface AuthResponse {
   token: string;
-  user: { email: string; name: string; upiId?: string };
+  user: { email: string; name: string; upiId?: string; avatar?: string };
 }
 
 @Injectable({
@@ -27,7 +27,7 @@ export class ApiService {
   private baseUrl = '/api';
 
   // Reactive State Signals
-  currentUser = signal<{ email: string; name: string; upiId?: string } | null>(null);
+  currentUser = signal<{ email: string; name: string; upiId?: string; avatar?: string } | null>(null);
   token = signal<string | null>(null);
   activeGroup = signal<Group | null>(null);
   activeFlat = this.activeGroup; // Backward compatibility alias
@@ -66,6 +66,12 @@ export class ApiService {
 
   login(data: { email: string; password?: string }): Observable<AuthResponse> {
     return this.http.post<AuthResponse>(`${this.baseUrl}/auth/login`, data).pipe(
+      tap((res) => this.setSession(res))
+    );
+  }
+
+  loginWithGoogle(data: { email: string; name?: string; avatar?: string; upiId?: string }): Observable<AuthResponse> {
+    return this.http.post<AuthResponse>(`${this.baseUrl}/auth/google`, data).pipe(
       tap((res) => this.setSession(res))
     );
   }
