@@ -85,17 +85,6 @@ import { AddExpenseModalComponent } from '../expenses/add-expense-modal.componen
               {{ isAway() ? 'Away (Excluded)' : 'At Flat (Active)' }}
             </button>
           </div>
-
-          <!-- Google Sheet Live Sync Toggle Bar -->
-          <div class="pt-2 border-t border-slate-700/60 flex items-center justify-between text-xs">
-            <div class="flex items-center space-x-2 text-slate-300">
-              <span>📊</span>
-              <span class="font-medium text-[11px]">Google Sheets Mirror</span>
-            </div>
-            <button (click)="toggleSheetSync()" class="px-2.5 py-1 rounded-lg font-bold text-[11px] transition-all active:scale-95" [class.bg-emerald-500]="isSheetSyncEnabled()" [class.text-white]="isSheetSyncEnabled()" [class.bg-slate-700]="!isSheetSyncEnabled()" [class.text-slate-300]="!isSheetSyncEnabled()">
-              {{ isSheetSyncEnabled() ? 'Live Sync (ON)' : 'Disabled (OFF)' }}
-            </button>
-          </div>
         </div>
 
         <!-- Suggested Settlements (Min-Cash-Flow) -->
@@ -237,11 +226,6 @@ export class DashboardComponent {
     return member?.isAway || false;
   });
 
-  isSheetSyncEnabled = computed(() => {
-    const flat = this.api.activeFlat();
-    return flat?.googleSheetSync !== false;
-  });
-
   constructor(public api: ApiService, public router: Router) {}
 
   copyCode() {
@@ -261,15 +245,6 @@ export class DashboardComponent {
 
   toggleVacation() {
     this.api.toggleAway(!this.isAway()).subscribe();
-  }
-
-  toggleSheetSync() {
-    this.api.toggleGoogleSheetSync(!this.isSheetSyncEnabled()).subscribe({
-      next: (res) => {
-        const state = res.googleSheetSync ? 'Enabled' : 'Disabled';
-        alert(`Google Sheets live mirror is now ${state} for this flat!`);
-      }
-    });
   }
 
   markSettled(tx: any) {

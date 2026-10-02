@@ -12,17 +12,29 @@ import { TursoStore } from './TursoStore.js';
 import { GoogleSheetsStore } from './GoogleSheetsStore.js';
 
 export class DualSyncStore implements IDataStore {
+  private appLevelGoogleSheetSync: boolean = process.env.GOOGLE_SHEET_SYNC !== 'false';
+
   constructor(
     private turso: TursoStore,
     private sheets: GoogleSheetsStore
   ) {}
 
+  public isAppGoogleSheetSyncEnabled(): boolean {
+    return this.appLevelGoogleSheetSync && process.env.STORAGE_MODE !== 'turso';
+  }
+
+  public setAppGoogleSheetSync(enabled: boolean): void {
+    this.appLevelGoogleSheetSync = enabled;
+  }
+
   async init(): Promise<void> {
     await this.turso.init();
-    try {
-      await this.sheets.init();
-    } catch (err) {
-      console.warn('[DualSyncStore] Google Sheets init failed (continuing with Turso):', err);
+    if (this.isAppGoogleSheetSyncEnabled()) {
+      try {
+        await this.sheets.init();
+      } catch (err) {
+        console.warn('[DualSyncStore] Google Sheets init failed (continuing with Turso):', err);
+      }
     }
   }
 
@@ -50,10 +62,12 @@ export class DualSyncStore implements IDataStore {
   // --- Flats (Backward Compatibility) ---
   async createFlat(flat: Flat): Promise<Flat> {
     const saved = await this.turso.createFlat(flat);
-    // Background mirror to Google Sheets
-    this.sheets.createFlat(flat).catch((err) => {
-      console.warn('[DualSyncStore] Failed to mirror flat to Google Sheets:', err);
-    });
+    if (this.isAppGoogleSheetSyncEnabled()) {
+      // Background mirror to Google Sheets
+      this.sheets.createFlat(flat).catch((err) => {
+        console.warn('[DualSyncStore] Failed to mirror flat to Google Sheets:', err);
+      });
+    }
     return saved;
   }
 
@@ -76,11 +90,13 @@ export class DualSyncStore implements IDataStore {
   // --- Members ---
   async addMember(member: FlatMember): Promise<FlatMember> {
     const saved = await this.turso.addMember(member);
-    const flat = await this.turso.getFlatById(member.flatId);
-    if (flat?.googleSheetSync !== false) {
-      this.sheets.addMember(member).catch((err) => {
-        console.warn('[DualSyncStore] Failed to mirror member to Google Sheets:', err);
-      });
+    if (this.isAppGoogleSheetSyncEnabled()) {
+      const flat = await this.turso.getFlatById(member.flatId);
+      if (flat?.googleSheetSync !== false) {
+        this.sheets.addMember(member).catch((err) => {
+          console.warn('[DualSyncStore] Failed to mirror member to Google Sheets:', err);
+        });
+      }
     }
     return saved;
   }
@@ -107,7 +123,12 @@ export class DualSyncStore implements IDataStore {
     // 1. Primary write to Turso (Fast ACID edge commit)
     const saved = await this.turso.createExpense(expense);
 
-    // 2. Check if Google Sheet Sync is enabled for this flat
+    // 2. Check if App-level or Flat-level Google Sheet Sync is enabled
+    if (!this.isAppGoogleSheetSyncEnabled()) {
+      await this.turso.updateExpense(saved.id, { sheetSyncStatus: 'SYNCED' });
+      return saved;
+    }
+
     const flat = await this.turso.getFlatById(expense.flatId);
     if (flat && flat.googleSheetSync === false) {
       // Sync disabled for this flat!
@@ -138,7 +159,9 @@ export class DualSyncStore implements IDataStore {
 
   async updateExpense(id: string, updates: Partial<Expense>): Promise<Expense | null> {
     const updated = await this.turso.updateExpense(id, updates);
-    this.sheets.updateExpense(id, updates).catch(() => {});
+    if (this.isAppGoogleSheetSyncEnabled()) {
+      this.sheets.updateExpense(id, updates).catch(() => {});
+    }
     return updated;
   }
 
@@ -152,16 +175,20 @@ export class DualSyncStore implements IDataStore {
 
   async deleteExpense(id: string): Promise<boolean> {
     const deleted = await this.turso.deleteExpense(id);
-    this.sheets.deleteExpense(id).catch(() => {});
+    if (this.isAppGoogleSheetSyncEnabled()) {
+      this.sheets.deleteExpense(id).catch(() => {});
+    }
     return deleted;
   }
 
   // --- Settlements ---
   async createSettlement(settlement: Settlement): Promise<Settlement> {
     const saved = await this.turso.createSettlement(settlement);
-    this.sheets.createSettlement(settlement).catch((err) => {
-      console.warn('[DualSyncStore] Failed to mirror settlement to Google Sheets:', err);
-    });
+    if (this.isAppGoogleSheetSyncEnabled()) {
+      this.sheets.createSettlement(settlement).catch((err) => {
+        console.warn('[DualSyncStore] Failed to mirror settlement to Google Sheets:', err);
+      });
+    }
     return saved;
   }
 
@@ -172,9 +199,11 @@ export class DualSyncStore implements IDataStore {
   // --- Statements ---
   async saveMonthlyStatement(statement: MonthlyStatement): Promise<void> {
     await this.turso.saveMonthlyStatement(statement);
-    this.sheets.saveMonthlyStatement(statement).catch((err) => {
-      console.warn('[DualSyncStore] Failed to mirror monthly statement to Google Sheets:', err);
-    });
+    if (this.isAppGoogleSheetSyncEnabled()) {
+      this.sheets.saveMonthlyStatement(statement).catch((err) => {
+        console.warn('[DualSyncStore] Failed to mirror monthly statement to Google Sheets:', err);
+      });
+    }
   }
 
   async getMonthlyStatements(flatId: string): Promise<MonthlyStatement[]> {

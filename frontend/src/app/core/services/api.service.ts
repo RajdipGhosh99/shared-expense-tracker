@@ -151,18 +151,6 @@ export class ApiService {
     );
   }
 
-  toggleGoogleSheetSync(googleSheetSync: boolean): Observable<any> {
-    const flat = this.activeFlat();
-    if (!flat) throw new Error('No active flat');
-    return this.http.patch(`${this.baseUrl}/flats/${flat.id}/sync-settings`, { googleSheetSync }).pipe(
-      tap(() => {
-        const updated = { ...flat, googleSheetSync };
-        this.activeFlat.set(updated);
-        localStorage.setItem('flat_active', JSON.stringify(updated));
-      })
-    );
-  }
-
   // --- Expenses ---
   addExpense(data: {
     title: string;
