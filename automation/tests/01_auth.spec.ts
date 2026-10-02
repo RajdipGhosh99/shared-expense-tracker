@@ -21,9 +21,9 @@ test.describe('Authentication & Session Management', () => {
     const email = generateTestEmail('amit');
     await registerUser(page, 'Amit Patel', email, 'Pass1234!');
 
-    // Create a quick flat to get to dashboard
-    await page.fill('input[name="flatName"]', 'Skyline Tower 102');
-    await page.click('button:has-text("Create Flat & Get Invite Code")');
+    // Create a quick group to get to dashboard
+    await page.fill('input[name="groupName"]', 'Skyline Tower 102');
+    await page.click('button:has-text("Create Group & Get Invite Code")');
     await expect(page).toHaveURL(/\/dashboard/);
 
     // Logout

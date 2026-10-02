@@ -68,7 +68,7 @@ import { MonthlyStatement } from '@shared-expense-tracker/shared';
             <span class="text-xs font-bold text-indigo-300 uppercase tracking-widest">{{ statement()?.periodLabel }}</span>
             <div class="flex justify-between items-end">
               <div>
-                <p class="text-xs text-slate-400">Total Flat Spending</p>
+                <p class="text-xs text-slate-400">Total Group Spending</p>
                 <p class="text-3xl font-black">₹{{ statement()?.totalSpendDisplay?.toLocaleString('en-IN') }}</p>
               </div>
               <div class="text-right text-xs text-slate-300">
@@ -78,14 +78,14 @@ import { MonthlyStatement } from '@shared-expense-tracker/shared';
             </div>
           </div>
 
-          <!-- Roommate Balance Ledger -->
+          <!-- Group Balance Ledger -->
           <div class="bg-white p-5 rounded-3xl border border-slate-200 shadow-sm space-y-4">
-            <h3 class="font-bold text-slate-800 text-sm">Roommate Balance Ledger</h3>
+            <h3 class="font-bold text-slate-800 text-sm">Group Balance Ledger</h3>
             <div class="overflow-x-auto">
               <table class="w-full text-left text-xs">
                 <thead>
                   <tr class="border-b text-slate-400 uppercase font-bold">
-                    <th class="pb-2">Flatmate</th>
+                    <th class="pb-2">Group Member</th>
                     <th class="pb-2 text-right">Paid</th>
                     <th class="pb-2 text-right">Share</th>
                     <th class="pb-2 text-right">Net Balance</th>

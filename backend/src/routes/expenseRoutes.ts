@@ -14,7 +14,8 @@ const router = Router();
 // Add or Overwrite Expense
 router.post('/', authMiddleware, async (req: AuthRequest, res: Response) => {
   const {
-    flatId,
+    groupId: reqGroupId,
+    flatId: reqFlatId,
     title,
     amount,
     category,
@@ -25,11 +26,12 @@ router.post('/', authMiddleware, async (req: AuthRequest, res: Response) => {
     overwriteTargetId,
   } = req.body;
 
+  const groupId = reqGroupId || reqFlatId;
   const user = req.user!;
   const db = getStorage();
 
-  if (!flatId || !title || !amount) {
-    return res.status(400).json({ error: 'Flat ID, title, and amount are required.' });
+  if (!groupId || !title || !amount) {
+    return res.status(400).json({ error: 'Group ID, title, and amount are required.' });
   }
 
   const amountDisplay = parseFloat(amount);
@@ -38,7 +40,8 @@ router.post('/', authMiddleware, async (req: AuthRequest, res: Response) => {
   // 1. Deduplication Validation
   const validator = new DuplicateValidator(db);
   const validation = await validator.validate({
-    flatId,
+    groupId,
+    flatId: groupId,
     payerEmail: user.email,
     title: title.trim(),
     amountMinorUnits,
@@ -54,7 +57,7 @@ router.post('/', authMiddleware, async (req: AuthRequest, res: Response) => {
   }
 
   // 2. Calculate Splits
-  const members = await db.getMembers(flatId);
+  const members = await db.getMembers(groupId);
   const memberEmails = members.map((m) => m.userEmail);
   const absentEmails = members.filter((m) => m.isAway).map((m) => m.userEmail);
 
@@ -110,7 +113,8 @@ router.post('/', authMiddleware, async (req: AuthRequest, res: Response) => {
   const expenseId = `exp_${Date.now()}`;
   const newExpense: Expense = {
     id: expenseId,
-    flatId,
+    groupId,
+    flatId: groupId,
     payerEmail: user.email,
     title: title.trim(),
     totalAmountMinorUnits: amountMinorUnits,
@@ -129,14 +133,14 @@ router.post('/', authMiddleware, async (req: AuthRequest, res: Response) => {
   return res.status(201).json({ status: 'CREATED', expense: created });
 });
 
-// List Expenses for Flat
+// List Expenses for Group
 router.get('/', authMiddleware, async (req: AuthRequest, res: Response) => {
-  const flatId = req.query.flatId as string;
-  if (!flatId) return res.status(400).json({ error: 'flatId query param is required.' });
+  const groupId = (req.query.groupId || req.query.flatId) as string;
+  if (!groupId) return res.status(400).json({ error: 'groupId query param is required.' });
 
   const db = getStorage();
-  const expenses = await db.getExpenses(flatId);
-  return res.json({ expenses });
+  const expenses = await db.getExpenses(groupId);
+  return res.json({ groupId, flatId: groupId, expenses });
 });
 
 // Delete Expense

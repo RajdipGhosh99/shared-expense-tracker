@@ -8,10 +8,10 @@ const router = Router();
 
 // On-Demand Statement
 router.get('/', authMiddleware, async (req: AuthRequest, res: Response) => {
-  const flatId = req.query.flatId as string;
+  const groupId = (req.query.groupId || req.query.flatId) as string;
   const period = (req.query.period as string) || 'current'; // 'current' | 'last' | 'custom'
 
-  if (!flatId) return res.status(400).json({ error: 'flatId query param is required.' });
+  if (!groupId) return res.status(400).json({ error: 'groupId query param is required.' });
 
   const now = new Date();
   let startDate = '';
@@ -40,7 +40,7 @@ router.get('/', authMiddleware, async (req: AuthRequest, res: Response) => {
 
   const db = getStorage();
   const statement = await generateStatement(
-    { flatId, startDate, endDate, monthLabel: label },
+    { flatId: groupId, startDate, endDate, monthLabel: label },
     db
   );
 
@@ -51,11 +51,11 @@ router.get('/', authMiddleware, async (req: AuthRequest, res: Response) => {
 
 // List Archived Statements
 router.get('/history', authMiddleware, async (req: AuthRequest, res: Response) => {
-  const flatId = req.query.flatId as string;
-  if (!flatId) return res.status(400).json({ error: 'flatId is required.' });
+  const groupId = (req.query.groupId || req.query.flatId) as string;
+  if (!groupId) return res.status(400).json({ error: 'groupId is required.' });
 
   const db = getStorage();
-  const statements = await db.getMonthlyStatements(flatId);
+  const statements = await db.getMonthlyStatements(groupId);
   return res.json({ statements });
 });
 

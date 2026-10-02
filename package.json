@@ -2,7 +2,7 @@
   "name": "shared-expense-tracker",
   "version": "1.0.0",
   "private": true,
-  "description": "Flatmate & Roommate Expense Tracker with Angular 21, Node.js, Turso libSQL, and Google Sheets",
+  "description": "Group & Roommate Expense Tracker with Angular 21, Node.js, Turso libSQL, and Google Sheets",
   "workspaces": [
     "shared",
     "backend",

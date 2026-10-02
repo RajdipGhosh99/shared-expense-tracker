@@ -3,7 +3,7 @@ import { inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { ApiService } from './core/services/api.service.js';
 import { AuthComponent } from './features/auth/auth.component.js';
-import { FlatOnboardingComponent } from './features/flat/flat-onboarding.component.js';
+import { GroupOnboardingComponent } from './features/group/group-onboarding.component.js';
 import { DashboardComponent } from './features/dashboard/dashboard.component.js';
 import { IncomingScreenshotComponent } from './features/screenshot/incoming-screenshot.component.js';
 import { StatementsComponent } from './features/statements/statements.component.js';
@@ -19,7 +19,7 @@ const authGuard = () => {
 
 export const routes: Routes = [
   { path: 'auth', component: AuthComponent },
-  { path: 'onboarding', component: FlatOnboardingComponent, canActivate: [authGuard] },
+  { path: 'onboarding', component: GroupOnboardingComponent, canActivate: [authGuard] },
   { path: 'dashboard', component: DashboardComponent, canActivate: [authGuard] },
   { path: 'screenshot-review', component: IncomingScreenshotComponent, canActivate: [authGuard] },
   { path: 'statements', component: StatementsComponent, canActivate: [authGuard] },

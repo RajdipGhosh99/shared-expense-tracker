@@ -7,7 +7,7 @@ dotenv.config();
 import { getStorage } from './storage/index.js';
 import { swaggerSpec } from './docs/swaggerSpec.js';
 import authRoutes from './routes/authRoutes.js';
-import flatRoutes from './routes/flatRoutes.js';
+import groupRoutes from './routes/groupRoutes.js';
 import expenseRoutes from './routes/expenseRoutes.js';
 import receiptRoutes from './routes/receiptRoutes.js';
 import settleRoutes from './routes/settleRoutes.js';
@@ -48,8 +48,8 @@ app.get('/api/health', (req, res) => {
 
 // API Routes
 app.use('/api/auth', authRoutes);
-app.use('/api/groups', flatRoutes);
-app.use('/api/flats', flatRoutes);
+app.use('/api/groups', groupRoutes);
+app.use('/api/flats', groupRoutes);
 app.use('/api/expenses', expenseRoutes);
 app.use('/api/receipts', receiptRoutes);
 app.use('/api/settlements', settleRoutes);

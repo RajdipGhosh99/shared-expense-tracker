@@ -26,7 +26,7 @@ self.addEventListener('fetch', (event) => {
 
 function openShareDB() {
   return new Promise((resolve, reject) => {
-    const request = indexedDB.open('flatmate_share_cache', 1);
+    const request = indexedDB.open('group_share_cache', 1);
     request.onupgradeneeded = () => {
       request.result.createObjectStore('shares');
     };

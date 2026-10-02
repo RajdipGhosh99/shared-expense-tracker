@@ -23,7 +23,7 @@ import { DuplicateConflictResponse, ExpenseCategory, SplitType } from '@shared-e
 
         <!-- Header -->
         <div class="flex justify-between items-center pb-2">
-          <h3 class="text-lg font-black text-slate-900">Add Flat Expense</h3>
+          <h3 class="text-lg font-black text-slate-900">Add Group Expense</h3>
           <button (click)="close.emit()" class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 font-bold active:scale-90 transition-transform">✕</button>
         </div>
 
@@ -112,7 +112,7 @@ import { DuplicateConflictResponse, ExpenseCategory, SplitType } from '@shared-e
 
           <!-- Split Preview -->
           <div *ngIf="amount && amount > 0 && splitType === 'EQUAL'" class="p-3 bg-indigo-50 rounded-xl border border-indigo-100 text-xs text-indigo-900 flex items-center justify-between">
-            <span class="font-semibold">Each Flatmate Pays:</span>
+            <span class="font-semibold">Each Group Member Pays:</span>
             <span class="font-black text-indigo-700 text-sm">₹{{ (amount / (api.members().length || 1)).toFixed(2) }}</span>
           </div>
 

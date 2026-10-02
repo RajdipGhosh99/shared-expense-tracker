@@ -26,11 +26,11 @@ export interface IDataStore {
   updateFlatSync(flatId: string, googleSheetSync: boolean): Promise<boolean>;
 
   // Members
-  addMember(member: FlatMember): Promise<FlatMember>;
-  getMembers(flatId: string): Promise<FlatMember[]>;
-  getMember(flatId: string, userEmail: string): Promise<FlatMember | null>;
+  addMember(member: GroupMember): Promise<GroupMember>;
+  getMembers(groupId: string): Promise<GroupMember[]>;
+  getMember(groupId: string, userEmail: string): Promise<GroupMember | null>;
   updateMemberAway(
-    flatId: string,
+    groupId: string,
     userEmail: string,
     isAway: boolean,
     awayUntil?: string
@@ -42,15 +42,15 @@ export interface IDataStore {
     id: string,
     updates: Partial<Expense>
   ): Promise<Expense | null>;
-  getExpenses(flatId: string): Promise<Expense[]>;
+  getExpenses(groupId: string): Promise<Expense[]>;
   getExpenseById(id: string): Promise<Expense | null>;
   deleteExpense(id: string): Promise<boolean>;
 
   // Settlements
   createSettlement(settlement: Settlement): Promise<Settlement>;
-  getSettlements(flatId: string): Promise<Settlement[]>;
+  getSettlements(groupId: string): Promise<Settlement[]>;
 
   // Monthly Statements
   saveMonthlyStatement(statement: MonthlyStatement): Promise<void>;
-  getMonthlyStatements(flatId: string): Promise<MonthlyStatement[]>;
+  getMonthlyStatements(groupId: string): Promise<MonthlyStatement[]>;
 }

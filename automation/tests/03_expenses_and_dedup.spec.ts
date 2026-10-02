@@ -7,13 +7,13 @@ test.describe('Expenses, Splits & Deduplication Protection', () => {
     await registerUser(page, 'Payer One', email);
 
     // Create group
-    await page.fill('input[name="flatName"]', 'CyberCity Flat 2B');
-    await page.click('button:has-text("Create Flat & Get Invite Code")');
+    await page.fill('input[name="groupName"]', 'CyberCity Group 2B');
+    await page.click('button:has-text("Create Group & Get Invite Code")');
     await expect(page).toHaveURL(/\/dashboard/);
 
     // Open Add Expense Modal via center + button
     await page.click('button:has-text("＋")');
-    await expect(page.locator('h3:has-text("Add Flat Expense")')).toBeVisible();
+    await expect(page.locator('h3:has-text("Add Group Expense")')).toBeVisible();
 
     // Fill expense details
     await page.fill('input[name="amount"]', '840.00');
@@ -36,8 +36,8 @@ test.describe('Expenses, Splits & Deduplication Protection', () => {
     await registerUser(page, 'Dedup User', email);
 
     // Create group
-    await page.fill('input[name="flatName"]', 'Orchid Residency');
-    await page.click('button:has-text("Create Flat & Get Invite Code")');
+    await page.fill('input[name="groupName"]', 'Orchid Residency');
+    await page.click('button:has-text("Create Group & Get Invite Code")');
     await expect(page).toHaveURL(/\/dashboard/);
 
     const utr = `UTR${Date.now()}`;

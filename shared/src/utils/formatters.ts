@@ -29,29 +29,30 @@ export function generateUPIDeepLink(params: {
     pn: params.receiverName,
     am: amount,
     cu: 'INR',
-    tn: params.note || 'Flatmate Settlement',
+    tn: params.note || 'Group Settlement',
   });
   return `upi://pay?${query.toString()}`;
 }
 
 /**
- * Generates a clean, emoji-formatted WhatsApp digest message for the flat group.
- */
+  * Generates a clean, emoji-formatted WhatsApp digest message for the group.
+  */
 export function formatWhatsAppMonthlyDigest(
   statement: MonthlyStatement,
   appUrl?: string
 ): string {
+  const groupTitle = statement.groupName || statement.flatName || 'Group';
   const lines: string[] = [];
-  lines.push(`📊 *${statement.flatName} — Monthly Statement*`);
+  lines.push(`📊 *${groupTitle} — Monthly Statement*`);
   lines.push(`📅 *Period:* ${statement.periodLabel}`);
-  lines.push(`💰 *Total Flat Spend:* ₹${statement.totalSpendDisplay.toLocaleString('en-IN')}`);
+  lines.push(`💰 *Total Group Spend:* ₹${statement.totalSpendDisplay.toLocaleString('en-IN')}`);
   lines.push('');
   lines.push(`🏷️ *Top Expense Categories:*`);
   statement.categoryBreakdown.slice(0, 4).forEach((c) => {
     lines.push(`  • ${c.category}: ₹${c.amountDisplay.toLocaleString('en-IN')} (${c.percentage}%)`);
   });
   lines.push('');
-  lines.push(`👥 *Flatmate Net Balances:*`);
+  lines.push(`👥 *Group Member Net Balances:*`);
   statement.memberSummaries.forEach((m) => {
     const sign = m.netBalanceDisplay >= 0 ? '+₹' : '-₹';
     const absVal = Math.abs(m.netBalanceDisplay).toLocaleString('en-IN');

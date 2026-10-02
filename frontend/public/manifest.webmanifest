@@ -1,7 +1,7 @@
 {
   "name": "Shared Expense Tracker",
-  "short_name": "Flatmates",
-  "description": "Smart flatmate & roommate expense tracker with GPay receipt sharing and Min-Cash-Flow settlements",
+  "short_name": "Groups",
+  "description": "Smart group & roommate expense tracker with GPay receipt sharing and Min-Cash-Flow settlements",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0f172a",

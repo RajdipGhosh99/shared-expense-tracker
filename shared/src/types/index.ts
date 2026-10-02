@@ -14,8 +14,8 @@ export interface User {
 
 export interface GroupMember {
   id: string;
-  flatId: string;
-  groupId?: string; // Standard alias
+  groupId: string;
+  flatId?: string; // Backwards-compatible alias
   userEmail: string;
   name: string;
   upiId?: string;
@@ -28,7 +28,7 @@ export interface GroupMember {
 export type FlatMember = GroupMember;
 
 // ==========================================
-// Group / Flat Models
+// Group Models
 // ==========================================
 export interface Group {
   id: string;
@@ -66,8 +66,8 @@ export interface ExpenseSplit {
 
 export interface Expense {
   id: string;
-  flatId: string;
-  groupId?: string; // Standard alias
+  groupId: string;
+  flatId?: string; // Backwards-compatible alias
   payerEmail: string;
   title: string;
   totalAmountMinorUnits: number; // Stored in paise/cents
@@ -118,8 +118,8 @@ export interface DuplicateConflictResponse {
 // ==========================================
 export interface Settlement {
   id: string;
-  flatId: string;
-  groupId?: string; // Standard alias
+  groupId: string;
+  flatId?: string; // Backwards-compatible alias
   payerEmail: string;
   receiverEmail: string;
   amountMinorUnits: number;
@@ -139,8 +139,8 @@ export interface SimplifiedDebtTransaction {
 }
 
 export interface GroupBalanceSheet {
-  flatId: string;
-  groupId?: string;
+  groupId: string;
+  flatId?: string; // Backwards-compatible alias
   netBalances: Record<string, number>; // { [userEmail]: netMinorUnits } (+ve = receives, -ve = owes)
   simplifiedDebts: SimplifiedDebtTransaction[];
 }
@@ -165,10 +165,10 @@ export interface StatementMemberSummary {
 }
 
 export interface MonthlyStatement {
-  flatId: string;
-  groupId?: string;
-  flatName: string;
-  groupName?: string;
+  groupId: string;
+  groupName: string;
+  flatId?: string; // Backwards-compatible alias
+  flatName?: string;
   periodLabel: string;
   startDate: string;
   endDate: string;

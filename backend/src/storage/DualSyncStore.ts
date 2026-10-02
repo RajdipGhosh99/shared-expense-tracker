@@ -88,11 +88,12 @@ export class DualSyncStore implements IDataStore {
   }
 
   // --- Members ---
-  async addMember(member: FlatMember): Promise<FlatMember> {
+  async addMember(member: GroupMember): Promise<GroupMember> {
     const saved = await this.turso.addMember(member);
+    const groupId = member.groupId || member.flatId!;
     if (this.isAppGoogleSheetSyncEnabled()) {
-      const flat = await this.turso.getFlatById(member.flatId);
-      if (flat?.googleSheetSync !== false) {
+      const group = await this.turso.getGroupById(groupId);
+      if (group?.googleSheetSync !== false) {
         this.sheets.addMember(member).catch((err) => {
           console.warn('[DualSyncStore] Failed to mirror member to Google Sheets:', err);
         });
@@ -101,37 +102,38 @@ export class DualSyncStore implements IDataStore {
     return saved;
   }
 
-  async getMembers(flatId: string): Promise<FlatMember[]> {
-    return this.turso.getMembers(flatId);
+  async getMembers(groupId: string): Promise<GroupMember[]> {
+    return this.turso.getMembers(groupId);
   }
 
-  async getMember(flatId: string, userEmail: string): Promise<FlatMember | null> {
-    return this.turso.getMember(flatId, userEmail);
+  async getMember(groupId: string, userEmail: string): Promise<GroupMember | null> {
+    return this.turso.getMember(groupId, userEmail);
   }
 
   async updateMemberAway(
-    flatId: string,
+    groupId: string,
     userEmail: string,
     isAway: boolean,
     awayUntil?: string
   ): Promise<boolean> {
-    return this.turso.updateMemberAway(flatId, userEmail, isAway, awayUntil);
+    return this.turso.updateMemberAway(groupId, userEmail, isAway, awayUntil);
   }
 
   // --- Expenses ---
   async createExpense(expense: Expense): Promise<Expense> {
     // 1. Primary write to Turso (Fast ACID edge commit)
     const saved = await this.turso.createExpense(expense);
+    const groupId = expense.groupId || expense.flatId!;
 
-    // 2. Check if App-level or Flat-level Google Sheet Sync is enabled
+    // 2. Check if App-level or Group-level Google Sheet Sync is enabled
     if (!this.isAppGoogleSheetSyncEnabled()) {
       await this.turso.updateExpense(saved.id, { sheetSyncStatus: 'SYNCED' });
       return saved;
     }
 
-    const flat = await this.turso.getFlatById(expense.flatId);
-    if (flat && flat.googleSheetSync === false) {
-      // Sync disabled for this flat!
+    const group = await this.turso.getGroupById(groupId);
+    if (group && group.googleSheetSync === false) {
+      // Sync disabled for this group!
       await this.turso.updateExpense(saved.id, { sheetSyncStatus: 'SYNCED' });
       return saved;
     }
@@ -165,8 +167,8 @@ export class DualSyncStore implements IDataStore {
     return updated;
   }
 
-  async getExpenses(flatId: string): Promise<Expense[]> {
-    return this.turso.getExpenses(flatId);
+  async getExpenses(groupId: string): Promise<Expense[]> {
+    return this.turso.getExpenses(groupId);
   }
 
   async getExpenseById(id: string): Promise<Expense | null> {
@@ -192,8 +194,8 @@ export class DualSyncStore implements IDataStore {
     return saved;
   }
 
-  async getSettlements(flatId: string): Promise<Settlement[]> {
-    return this.turso.getSettlements(flatId);
+  async getSettlements(groupId: string): Promise<Settlement[]> {
+    return this.turso.getSettlements(groupId);
   }
 
   // --- Statements ---
@@ -206,7 +208,7 @@ export class DualSyncStore implements IDataStore {
     }
   }
 
-  async getMonthlyStatements(flatId: string): Promise<MonthlyStatement[]> {
-    return this.turso.getMonthlyStatements(flatId);
+  async getMonthlyStatements(groupId: string): Promise<MonthlyStatement[]> {
+    return this.turso.getMonthlyStatements(groupId);
   }
 }

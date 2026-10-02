@@ -6,11 +6,11 @@ test.describe('Vacation Mode, Settlements & Month-End Statements', () => {
     const email = generateTestEmail('vacationer');
     await registerUser(page, 'Rohan Mehra', email);
 
-    await page.fill('input[name="flatName"]', 'Prestige Silver Crest');
-    await page.click('button:has-text("Create Flat & Get Invite Code")');
+    await page.fill('input[name="groupName"]', 'Prestige Silver Crest');
+    await page.click('button:has-text("Create Group & Get Invite Code")');
     await expect(page).toHaveURL(/\/dashboard/);
 
-    const vacationBtn = page.locator('button:has-text("At Flat (Active)")');
+    const vacationBtn = page.locator('button:has-text("At Group (Active)")');
     await expect(vacationBtn).toBeVisible();
 
     // Toggle away
@@ -19,7 +19,7 @@ test.describe('Vacation Mode, Settlements & Month-End Statements', () => {
 
     // Toggle back
     await page.click('button:has-text("Away (Excluded)")');
-    await expect(page.locator('button:has-text("At Flat (Active)")')).toBeVisible();
+    await expect(page.locator('button:has-text("At Group (Active)")')).toBeVisible();
   });
 
   test('Multi-member expense produces suggested settlement with UPI link', async ({ browser }) => {
@@ -29,8 +29,8 @@ test.describe('Vacation Mode, Settlements & Month-End Statements', () => {
     const email1 = generateTestEmail('creditor');
     await registerUser(page1, 'Creditor User', email1, 'Pass123!', 'creditor@upi');
 
-    await page1.fill('input[name="flatName"]', 'Sobha Dream Acres');
-    await page1.click('button:has-text("Create Flat & Get Invite Code")');
+    await page1.fill('input[name="groupName"]', 'Sobha Dream Acres');
+    await page1.click('button:has-text("Create Group & Get Invite Code")');
     await expect(page1).toHaveURL(/\/dashboard/);
 
     const inviteCode = (await page1.locator('span.font-mono').innerText()).trim();
@@ -43,7 +43,7 @@ test.describe('Vacation Mode, Settlements & Month-End Statements', () => {
 
     await page2.click('button:has-text("Join with Code")');
     await page2.fill('input[name="inviteCode"]', inviteCode);
-    await page2.click('button:has-text("Join Flat")');
+    await page2.click('button:has-text("Join Group")');
     await expect(page2).toHaveURL(/\/dashboard/);
 
 
@@ -78,8 +78,8 @@ test.describe('Vacation Mode, Settlements & Month-End Statements', () => {
     const email = generateTestEmail('reporter');
     await registerUser(page, 'Report User', email);
 
-    await page.fill('input[name="flatName"]', 'Godrej Woods 504');
-    await page.click('button:has-text("Create Flat & Get Invite Code")');
+    await page.fill('input[name="groupName"]', 'Godrej Woods 504');
+    await page.click('button:has-text("Create Group & Get Invite Code")');
     await expect(page).toHaveURL(/\/dashboard/);
 
     // Log an expense
@@ -96,7 +96,7 @@ test.describe('Vacation Mode, Settlements & Month-End Statements', () => {
 
     // Verify statement contents
     await expect(page.locator('h1')).toContainText('Monthly Statements');
-    await expect(page.locator('text=Total Flat Spending')).toBeVisible();
+    await expect(page.locator('text=Total Group Spending')).toBeVisible();
     await expect(page.locator('text=₹600').first()).toBeVisible();
 
     // Verify WhatsApp share button has valid link

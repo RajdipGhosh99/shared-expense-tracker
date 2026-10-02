@@ -200,7 +200,8 @@ export class TursoStore implements IDataStore {
   }
 
   // --- Members ---
-  async addMember(member: FlatMember): Promise<FlatMember> {
+  async addMember(member: GroupMember): Promise<GroupMember> {
+    const groupId = member.groupId || member.flatId!;
     await this.client.execute({
       sql: `INSERT INTO flat_members (id, flat_id, user_email, name, upi_id, role, is_away, away_until, joined_at)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -208,7 +209,7 @@ export class TursoStore implements IDataStore {
             name = excluded.name, upi_id = excluded.upi_id`,
       args: [
         member.id,
-        member.flatId,
+        groupId,
         member.userEmail,
         member.name,
         member.upiId || null,
@@ -218,16 +219,17 @@ export class TursoStore implements IDataStore {
         member.joinedAt,
       ],
     });
-    return member;
+    return { ...member, groupId, flatId: groupId };
   }
 
-  async getMembers(flatId: string): Promise<FlatMember[]> {
+  async getMembers(groupId: string): Promise<GroupMember[]> {
     const res = await this.client.execute({
       sql: `SELECT * FROM flat_members WHERE flat_id = ? ORDER BY joined_at ASC`,
-      args: [flatId],
+      args: [groupId],
     });
     return res.rows.map((r) => ({
       id: String(r.id),
+      groupId: String(r.flat_id),
       flatId: String(r.flat_id),
       userEmail: String(r.user_email),
       name: String(r.name),
@@ -239,15 +241,16 @@ export class TursoStore implements IDataStore {
     }));
   }
 
-  async getMember(flatId: string, userEmail: string): Promise<FlatMember | null> {
+  async getMember(groupId: string, userEmail: string): Promise<GroupMember | null> {
     const res = await this.client.execute({
       sql: `SELECT * FROM flat_members WHERE flat_id = ? AND user_email = ?`,
-      args: [flatId, userEmail],
+      args: [groupId, userEmail],
     });
     if (res.rows.length === 0) return null;
     const r = res.rows[0];
     return {
       id: String(r.id),
+      groupId: String(r.flat_id),
       flatId: String(r.flat_id),
       userEmail: String(r.user_email),
       name: String(r.name),
@@ -260,20 +263,21 @@ export class TursoStore implements IDataStore {
   }
 
   async updateMemberAway(
-    flatId: string,
+    groupId: string,
     userEmail: string,
     isAway: boolean,
     awayUntil?: string
   ): Promise<boolean> {
     const res = await this.client.execute({
       sql: `UPDATE flat_members SET is_away = ?, away_until = ? WHERE flat_id = ? AND user_email = ?`,
-      args: [isAway ? 1 : 0, awayUntil || null, flatId, userEmail],
+      args: [isAway ? 1 : 0, awayUntil || null, groupId, userEmail],
     });
     return res.rowsAffected > 0;
   }
 
   // --- Expenses ---
   async createExpense(expense: Expense): Promise<Expense> {
+    const groupId = expense.groupId || expense.flatId!;
     await this.client.execute({
       sql: `INSERT INTO expenses (
         id, flat_id, payer_email, title, amount_minor_units, amount_display,
@@ -283,7 +287,7 @@ export class TursoStore implements IDataStore {
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       args: [
         expense.id,
-        expense.flatId,
+        groupId,
         expense.payerEmail,
         expense.title,
         expense.totalAmountMinorUnits,
@@ -303,7 +307,7 @@ export class TursoStore implements IDataStore {
         expense.updatedAt,
       ],
     });
-    return expense;
+    return { ...expense, groupId, flatId: groupId };
   }
 
   async updateExpense(id: string, updates: Partial<Expense>): Promise<Expense | null> {
@@ -342,10 +346,10 @@ export class TursoStore implements IDataStore {
     return merged;
   }
 
-  async getExpenses(flatId: string): Promise<Expense[]> {
+  async getExpenses(groupId: string): Promise<Expense[]> {
     const res = await this.client.execute({
       sql: `SELECT * FROM expenses WHERE flat_id = ? ORDER BY created_at DESC`,
-      args: [flatId],
+      args: [groupId],
     });
     return res.rows.map((r) => this.mapExpenseRow(r));
   }
@@ -369,12 +373,13 @@ export class TursoStore implements IDataStore {
 
   // --- Settlements ---
   async createSettlement(settlement: Settlement): Promise<Settlement> {
+    const groupId = settlement.groupId || settlement.flatId!;
     await this.client.execute({
       sql: `INSERT INTO settlements (id, flat_id, payer_email, receiver_email, amount_minor_units, amount_display, notes, settled_at)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
       args: [
         settlement.id,
-        settlement.flatId,
+        groupId,
         settlement.payerEmail,
         settlement.receiverEmail,
         settlement.amountMinorUnits,
@@ -383,16 +388,17 @@ export class TursoStore implements IDataStore {
         settlement.settledAt,
       ],
     });
-    return settlement;
+    return { ...settlement, groupId, flatId: groupId };
   }
 
-  async getSettlements(flatId: string): Promise<Settlement[]> {
+  async getSettlements(groupId: string): Promise<Settlement[]> {
     const res = await this.client.execute({
       sql: `SELECT * FROM settlements WHERE flat_id = ? ORDER BY settled_at DESC`,
-      args: [flatId],
+      args: [groupId],
     });
     return res.rows.map((r) => ({
       id: String(r.id),
+      groupId: String(r.flat_id),
       flatId: String(r.flat_id),
       payerEmail: String(r.payer_email),
       receiverEmail: String(r.receiver_email),
@@ -405,14 +411,15 @@ export class TursoStore implements IDataStore {
 
   // --- Statements ---
   async saveMonthlyStatement(statement: MonthlyStatement): Promise<void> {
-    const id = `stmt_${statement.flatId}_${statement.startDate.slice(0, 7)}`;
+    const groupId = statement.groupId || statement.flatId!;
+    const id = `stmt_${groupId}_${statement.startDate.slice(0, 7)}`;
     await this.client.execute({
       sql: `INSERT INTO monthly_statements (id, flat_id, month_label, start_date, end_date, total_spend, data_json, created_at)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(id) DO UPDATE SET data_json = excluded.data_json`,
       args: [
         id,
-        statement.flatId,
+        groupId,
         statement.periodLabel,
         statement.startDate,
         statement.endDate,
@@ -423,18 +430,20 @@ export class TursoStore implements IDataStore {
     });
   }
 
-  async getMonthlyStatements(flatId: string): Promise<MonthlyStatement[]> {
+  async getMonthlyStatements(groupId: string): Promise<MonthlyStatement[]> {
     const res = await this.client.execute({
       sql: `SELECT * FROM monthly_statements WHERE flat_id = ? ORDER BY start_date DESC`,
-      args: [flatId],
+      args: [groupId],
     });
     return res.rows.map((r) => JSON.parse(String(r.data_json)));
   }
 
   private mapExpenseRow(r: any): Expense {
+    const groupId = String(r.flat_id);
     return {
       id: String(r.id),
-      flatId: String(r.flat_id),
+      groupId,
+      flatId: groupId,
       payerEmail: String(r.payer_email),
       title: String(r.title),
       totalAmountMinorUnits: Number(r.amount_minor_units),

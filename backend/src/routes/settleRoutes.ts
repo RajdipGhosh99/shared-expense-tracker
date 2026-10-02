@@ -11,13 +11,13 @@ const router = Router();
 
 // Calculate Balances & Simplified Debts (Min-Cash-Flow)
 router.get('/balances', authMiddleware, async (req: AuthRequest, res: Response) => {
-  const flatId = req.query.flatId as string;
-  if (!flatId) return res.status(400).json({ error: 'flatId query param is required.' });
+  const groupId = (req.query.groupId || req.query.flatId) as string;
+  if (!groupId) return res.status(400).json({ error: 'groupId query param is required.' });
 
   const db = getStorage();
-  const members = await db.getMembers(flatId);
-  const expenses = await db.getExpenses(flatId);
-  const settlements = await db.getSettlements(flatId);
+  const members = await db.getMembers(groupId);
+  const expenses = await db.getExpenses(groupId);
+  const settlements = await db.getSettlements(groupId);
 
   const memberLookups = members.map((m) => ({
     email: m.userEmail,
@@ -37,7 +37,7 @@ router.get('/balances', authMiddleware, async (req: AuthRequest, res: Response) 
   }));
 
   const balanceSheet = simplifyDebts(
-    flatId,
+    groupId,
     memberLookups,
     expenseRecords,
     settlementRecords
@@ -51,14 +51,15 @@ router.get('/balances', authMiddleware, async (req: AuthRequest, res: Response) 
         receiverUPI: tx.receiverUPI,
         receiverName: tx.receiverName || tx.toUserEmail,
         amountMinorUnits: tx.amountMinorUnits,
-        note: 'Flat Settlement',
+        note: 'Group Settlement',
       });
     }
     return { ...tx, upiLink };
   });
 
   return res.json({
-    flatId,
+    groupId,
+    flatId: groupId,
     netBalances: balanceSheet.netBalances,
     simplifiedDebts: transactionsWithUPI,
   });
@@ -66,11 +67,12 @@ router.get('/balances', authMiddleware, async (req: AuthRequest, res: Response) 
 
 // Record Settlement
 router.post('/', authMiddleware, async (req: AuthRequest, res: Response) => {
-  const { flatId, receiverEmail, amount, notes } = req.body;
+  const { groupId: reqGroupId, flatId: reqFlatId, receiverEmail, amount, notes } = req.body;
+  const groupId = reqGroupId || reqFlatId;
   const user = req.user!;
 
-  if (!flatId || !receiverEmail || !amount) {
-    return res.status(400).json({ error: 'flatId, receiverEmail, and amount are required.' });
+  if (!groupId || !receiverEmail || !amount) {
+    return res.status(400).json({ error: 'groupId, receiverEmail, and amount are required.' });
   }
 
   const amountDisplay = parseFloat(amount);
@@ -78,7 +80,8 @@ router.post('/', authMiddleware, async (req: AuthRequest, res: Response) => {
 
   const settlement: Settlement = {
     id: `set_${Date.now()}`,
-    flatId,
+    groupId,
+    flatId: groupId,
     payerEmail: user.email,
     receiverEmail,
     amountMinorUnits,

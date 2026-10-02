@@ -69,7 +69,7 @@ import { ExtractedReceiptResult, ExpenseCategory } from '@shared-expense-tracker
           </div>
 
           <div class="p-2.5 bg-indigo-950/40 rounded-xl border border-indigo-900/40 text-xs text-indigo-300">
-            Split equally with all active flatmates.
+            Split equally with all active group members.
           </div>
 
           <div class="flex space-x-3 pt-1">
@@ -177,7 +177,7 @@ export class IncomingScreenshotComponent implements OnInit {
 
   private readFromIndexedDB(): Promise<Blob | null> {
     return new Promise((resolve) => {
-      const request = indexedDB.open('flatmate_share_cache', 1);
+      const request = indexedDB.open('group_share_cache', 1);
       request.onsuccess = () => {
         const db = request.result;
         if (!db.objectStoreNames.contains('shares')) return resolve(null);

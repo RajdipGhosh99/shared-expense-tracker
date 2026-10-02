@@ -89,6 +89,8 @@ export async function generateStatement(
     `${startDate} to ${endDate}`;
 
   return {
+    groupId: flatId,
+    groupName: flatName,
     flatId,
     flatName,
     periodLabel: label,

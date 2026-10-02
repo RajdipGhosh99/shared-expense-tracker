@@ -5,7 +5,8 @@ import {
 import { IDataStore } from '../storage/IDataStore.js';
 
 export interface ValidationCandidate {
-  flatId: string;
+  groupId?: string;
+  flatId?: string;
   payerEmail: string;
   title: string;
   amountMinorUnits: number;
@@ -50,7 +51,8 @@ export class DuplicateValidator {
       }
     }
 
-    const existingExpenses = await this.db.getExpenses(candidate.flatId);
+    const groupId = candidate.groupId || candidate.flatId || '';
+    const existingExpenses = await this.db.getExpenses(groupId);
 
     // 1. EXACT_UTR Check (100% Deterministic match on 12-digit UPI UTR)
     if (candidate.utrNumber && candidate.utrNumber.trim().length > 0) {

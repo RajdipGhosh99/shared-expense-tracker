@@ -29,29 +29,30 @@ export class ApiService {
   // Reactive State Signals
   currentUser = signal<{ email: string; name: string; upiId?: string } | null>(null);
   token = signal<string | null>(null);
-  activeFlat = signal<Flat | null>(null);
-  activeGroup = this.activeFlat;
-  members = signal<FlatMember[]>([]);
+  activeGroup = signal<Group | null>(null);
+  activeFlat = this.activeGroup; // Backward compatibility alias
+  members = signal<GroupMember[]>([]);
   expenses = signal<Expense[]>([]);
-  balanceSheet = signal<FlatBalanceSheet | null>(null);
+  balanceSheet = signal<GroupBalanceSheet | null>(null);
 
   constructor(private http: HttpClient) {
     this.restoreSession();
   }
 
   private restoreSession() {
-    const savedToken = localStorage.getItem('flat_jwt');
-    const savedUser = localStorage.getItem('flat_user');
-    const savedFlat = localStorage.getItem('flat_active');
+    const savedToken = localStorage.getItem('group_jwt') || localStorage.getItem('flat_jwt');
+    const savedUser = localStorage.getItem('group_user') || localStorage.getItem('flat_user');
+    const savedGroup = localStorage.getItem('group_active') || localStorage.getItem('flat_active');
 
     if (savedToken && savedUser) {
       this.token.set(savedToken);
       this.currentUser.set(JSON.parse(savedUser));
     }
-    if (savedFlat) {
-      this.activeFlat.set(JSON.parse(savedFlat));
+    if (savedGroup) {
+      const parsed = JSON.parse(savedGroup);
+      this.activeGroup.set(parsed);
       if (savedToken) {
-        this.refreshFlatData(JSON.parse(savedFlat).id);
+        this.refreshGroupData(parsed.id);
       }
     }
   }
@@ -73,20 +74,22 @@ export class ApiService {
     localStorage.clear();
     this.token.set(null);
     this.currentUser.set(null);
-    this.activeFlat.set(null);
+    this.activeGroup.set(null);
     this.members.set([]);
     this.expenses.set([]);
     this.balanceSheet.set(null);
   }
 
   private setSession(res: AuthResponse) {
+    localStorage.setItem('group_jwt', res.token);
+    localStorage.setItem('group_user', JSON.stringify(res.user));
     localStorage.setItem('flat_jwt', res.token);
     localStorage.setItem('flat_user', JSON.stringify(res.user));
     this.token.set(res.token);
     this.currentUser.set(res.user);
   }
 
-  // --- Groups (Primary API: getGroupById / createGroup) ---
+  // --- Groups (Primary API) ---
   getGroupById(groupId: string): Observable<{ group: Group; flat: Group; members: GroupMember[] }> {
     return this.http.get<{ group: Group; flat: Group; members: GroupMember[] }>(`${this.baseUrl}/groups/${groupId}`);
   }
@@ -120,34 +123,39 @@ export class ApiService {
   }
 
   setActiveGroup(group: Group) {
-    this.setActiveFlat(group);
+    localStorage.setItem('group_active', JSON.stringify(group));
+    localStorage.setItem('flat_active', JSON.stringify(group));
+    this.activeGroup.set(group);
+    this.refreshGroupData(group.id);
   }
 
   setActiveFlat(flat: Flat) {
-    localStorage.setItem('flat_active', JSON.stringify(flat));
-    this.activeFlat.set(flat);
-    this.refreshFlatData(flat.id);
+    this.setActiveGroup(flat);
   }
 
-  refreshFlatData(flatId: string) {
-    this.http.get<{ members: FlatMember[] }>(`${this.baseUrl}/flats/${flatId}/members`).subscribe({
+  refreshGroupData(groupId: string) {
+    this.http.get<{ members: GroupMember[] }>(`${this.baseUrl}/groups/${groupId}/members`).subscribe({
       next: (res) => this.members.set(res.members),
     });
 
-    this.http.get<{ expenses: Expense[] }>(`${this.baseUrl}/expenses?flatId=${flatId}`).subscribe({
+    this.http.get<{ expenses: Expense[] }>(`${this.baseUrl}/expenses?groupId=${groupId}`).subscribe({
       next: (res) => this.expenses.set(res.expenses),
     });
 
-    this.http.get<FlatBalanceSheet>(`${this.baseUrl}/settlements/balances?flatId=${flatId}`).subscribe({
+    this.http.get<GroupBalanceSheet>(`${this.baseUrl}/settlements/balances?groupId=${groupId}`).subscribe({
       next: (res) => this.balanceSheet.set(res),
     });
   }
 
+  refreshFlatData(flatId: string) {
+    this.refreshGroupData(flatId);
+  }
+
   toggleAway(isAway: boolean, awayUntil?: string): Observable<any> {
-    const flat = this.activeFlat();
-    if (!flat) throw new Error('No active flat');
-    return this.http.patch(`${this.baseUrl}/flats/${flat.id}/members/away`, { isAway, awayUntil }).pipe(
-      tap(() => this.refreshFlatData(flat.id))
+    const group = this.activeGroup();
+    if (!group) throw new Error('No active group');
+    return this.http.patch(`${this.baseUrl}/groups/${group.id}/members/away`, { isAway, awayUntil }).pipe(
+      tap(() => this.refreshGroupData(group.id))
     );
   }
 
@@ -162,22 +170,23 @@ export class ApiService {
     allowOverwrite?: boolean;
     overwriteTargetId?: string;
   }): Observable<{ status: string; expense: Expense }> {
-    const flat = this.activeFlat();
-    if (!flat) throw new Error('No active flat');
+    const group = this.activeGroup();
+    if (!group) throw new Error('No active group');
 
     return this.http.post<{ status: string; expense: Expense }>(`${this.baseUrl}/expenses`, {
       ...data,
-      flatId: flat.id,
+      groupId: group.id,
+      flatId: group.id,
     }).pipe(
-      tap(() => this.refreshFlatData(flat.id))
+      tap(() => this.refreshGroupData(group.id))
     );
   }
 
   deleteExpense(id: string): Observable<any> {
-    const flat = this.activeFlat();
+    const group = this.activeGroup();
     return this.http.delete(`${this.baseUrl}/expenses/${id}`).pipe(
       tap(() => {
-        if (flat) this.refreshFlatData(flat.id);
+        if (group) this.refreshGroupData(group.id);
       })
     );
   }
@@ -191,16 +200,17 @@ export class ApiService {
 
   // --- Settlements ---
   recordSettlement(receiverEmail: string, amount: number, notes?: string): Observable<any> {
-    const flat = this.activeFlat();
-    if (!flat) throw new Error('No active flat');
+    const group = this.activeGroup();
+    if (!group) throw new Error('No active group');
 
     return this.http.post(`${this.baseUrl}/settlements`, {
-      flatId: flat.id,
+      groupId: group.id,
+      flatId: group.id,
       receiverEmail,
       amount,
       notes,
     }).pipe(
-      tap(() => this.refreshFlatData(flat.id))
+      tap(() => this.refreshGroupData(group.id))
     );
   }
 
@@ -209,10 +219,10 @@ export class ApiService {
     statement: MonthlyStatement;
     whatsappLink: string;
   }> {
-    const flat = this.activeFlat();
-    if (!flat) throw new Error('No active flat');
+    const group = this.activeGroup();
+    if (!group) throw new Error('No active group');
 
-    let url = `${this.baseUrl}/statements?flatId=${flat.id}&period=${period}`;
+    let url = `${this.baseUrl}/statements?groupId=${group.id}&period=${period}`;
     if (startDate) url += `&startDate=${startDate}`;
     if (endDate) url += `&endDate=${endDate}`;
 

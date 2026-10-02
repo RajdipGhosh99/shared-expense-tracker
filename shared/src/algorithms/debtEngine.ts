@@ -1,4 +1,5 @@
 import {
+  GroupBalanceSheet,
   FlatBalanceSheet,
   SimplifiedDebtTransaction,
 } from '../types/index.js';
@@ -21,15 +22,15 @@ export interface MemberLookup {
 }
 
 /**
- * Greedy Min-Cash-Flow Algorithm for Flatmate Debt Simplification.
+ * Greedy Min-Cash-Flow Algorithm for Group Debt Simplification.
  * Minimizes the number of peer-to-peer transfers from O(N^2) to at most N - 1.
  */
 export function simplifyDebts(
-  flatId: string,
+  groupId: string,
   members: MemberLookup[],
   expenses: ExpenseRecord[],
   settlements: SettlementRecord[]
-): FlatBalanceSheet {
+): GroupBalanceSheet {
   const netBalances: Record<string, number> = {};
 
   // 1. Initialize all member balances to 0 paise
@@ -110,7 +111,8 @@ export function simplifyDebts(
   }
 
   return {
-    flatId,
+    groupId,
+    flatId: groupId,
     netBalances,
     simplifiedDebts,
   };

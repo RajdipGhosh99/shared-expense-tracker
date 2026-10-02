@@ -14,7 +14,7 @@ router.post('/month-end-statement', async (req: Request, res: Response) => {
   }
 
   const db = getStorage();
-  const flats = await db.getAllFlats();
+  const groups = await db.getAllGroups();
 
   const now = new Date();
   const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
@@ -31,25 +31,32 @@ router.post('/month-end-statement', async (req: Request, res: Response) => {
 
   const results: any[] = [];
 
-  for (const flat of flats) {
+  for (const group of groups) {
     try {
       const statement = await generateStatement(
-        { flatId: flat.id, startDate, endDate, monthLabel },
+        { flatId: group.id, startDate, endDate, monthLabel },
         db
       );
 
       // Save immutable snapshot to Turso & Google Sheet
       await db.saveMonthlyStatement(statement);
-      results.push({ flatId: flat.id, flatName: flat.name, status: 'ARCHIVED' });
+      results.push({
+        groupId: group.id,
+        flatId: group.id,
+        groupName: group.name,
+        flatName: group.name,
+        status: 'ARCHIVED',
+      });
     } catch (err: any) {
-      console.error(`[Cron] Failed to archive statement for flat ${flat.id}:`, err);
-      results.push({ flatId: flat.id, status: 'ERROR', message: err.message });
+      console.error(`[Cron] Failed to archive statement for group ${group.id}:`, err);
+      results.push({ groupId: group.id, flatId: group.id, status: 'ERROR', message: err.message });
     }
   }
 
   return res.json({
     success: true,
     month: monthLabel,
+    groupsProcessed: results.length,
     flatsProcessed: results.length,
     results,
   });

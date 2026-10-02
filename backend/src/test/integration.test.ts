@@ -10,7 +10,7 @@ describe('Backend API End-to-End Integration Suite', () => {
   let baseUrl: string;
   let rahulToken: string;
   let amitToken: string;
-  let flatId: string;
+  let groupId: string;
   let inviteCode: string;
   let firstExpenseId: string;
 
@@ -37,7 +37,7 @@ describe('Backend API End-to-End Integration Suite', () => {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        email: 'rahul@flat.com',
+        email: 'rahul@group.com',
         password: 'password123',
         name: 'Rahul Sharma',
         upiId: 'rahul@okicici',
@@ -52,7 +52,7 @@ describe('Backend API End-to-End Integration Suite', () => {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        email: 'amit@flat.com',
+        email: 'amit@group.com',
         password: 'password123',
         name: 'Amit Patel',
         upiId: 'amit@oksbi',
@@ -63,8 +63,8 @@ describe('Backend API End-to-End Integration Suite', () => {
     amitToken = d2.token;
   });
 
-  test('Flat: Rahul creates flat and gets 6-character invite code', async () => {
-    const res = await fetch(`${baseUrl}/api/flats`, {
+  test('Group: Rahul creates group and gets 6-character invite code', async () => {
+    const res = await fetch(`${baseUrl}/api/groups`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -75,14 +75,14 @@ describe('Backend API End-to-End Integration Suite', () => {
 
     assert.equal(res.status, 201);
     const data = await res.json();
-    assert.ok(data.flat.id);
-    assert.ok(data.flat.inviteCode);
-    flatId = data.flat.id;
-    inviteCode = data.flat.inviteCode;
+    assert.ok(data.group.id);
+    assert.ok(data.group.inviteCode);
+    groupId = data.group.id;
+    inviteCode = data.group.inviteCode;
   });
 
-  test('Flat: Amit joins flat via invite code', async () => {
-    const res = await fetch(`${baseUrl}/api/flats/join`, {
+  test('Group: Amit joins group via invite code', async () => {
+    const res = await fetch(`${baseUrl}/api/groups/join`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -93,7 +93,7 @@ describe('Backend API End-to-End Integration Suite', () => {
 
     assert.equal(res.status, 200);
     const data = await res.json();
-    assert.equal(data.flat.id, flatId);
+    assert.equal(data.group.id, groupId);
   });
 
   test('Expenses: Rahul logs Blinkit grocery bill (₹840.00) with UPI UTR', async () => {
@@ -104,7 +104,7 @@ describe('Backend API End-to-End Integration Suite', () => {
         Authorization: `Bearer ${rahulToken}`,
       },
       body: JSON.stringify({
-        flatId,
+        groupId,
         title: 'Blinkit Groceries',
         amount: 840.0,
         category: 'Groceries',
@@ -129,7 +129,7 @@ describe('Backend API End-to-End Integration Suite', () => {
         Authorization: `Bearer ${amitToken}`,
       },
       body: JSON.stringify({
-        flatId,
+        groupId,
         title: 'Blinkit Groceries Repeat',
         amount: 840.0,
         category: 'Groceries',
@@ -143,7 +143,7 @@ describe('Backend API End-to-End Integration Suite', () => {
     assert.equal(conflict.status, 'DUPLICATE_DETECTED');
     assert.equal(conflict.duplicateType, 'EXACT_UTR');
     assert.equal(conflict.existingRecord.id, firstExpenseId);
-    assert.equal(conflict.existingRecord.payerEmail, 'rahul@flat.com');
+    assert.equal(conflict.existingRecord.payerEmail, 'rahul@group.com');
   });
 
   test('Overwrite: User confirms overwrite in-place with overwrittenFlag = YES', async () => {
@@ -154,7 +154,7 @@ describe('Backend API End-to-End Integration Suite', () => {
         Authorization: `Bearer ${rahulToken}`,
       },
       body: JSON.stringify({
-        flatId,
+        groupId,
         title: 'Blinkit Groceries (Revised)',
         amount: 900.0, // Corrected amount
         category: 'Groceries',
@@ -174,25 +174,25 @@ describe('Backend API End-to-End Integration Suite', () => {
   });
 
   test('Settlements: Computes simplified debts and attaches dynamic UPI deep link', async () => {
-    const res = await fetch(`${baseUrl}/api/settlements/balances?flatId=${flatId}`, {
+    const res = await fetch(`${baseUrl}/api/settlements/balances?groupId=${groupId}`, {
       headers: { Authorization: `Bearer ${rahulToken}` },
     });
 
     assert.equal(res.status, 200);
     const data = await res.json();
     // Rahul paid 900, split 2 ways = 450 each. Amit owes Rahul 450.
-    assert.equal(data.netBalances['rahul@flat.com'], 45000);
-    assert.equal(data.netBalances['amit@flat.com'], -45000);
+    assert.equal(data.netBalances['rahul@group.com'], 45000);
+    assert.equal(data.netBalances['amit@group.com'], -45000);
     assert.equal(data.simplifiedDebts.length, 1);
-    assert.equal(data.simplifiedDebts[0].fromUserEmail, 'amit@flat.com');
-    assert.equal(data.simplifiedDebts[0].toUserEmail, 'rahul@flat.com');
+    assert.equal(data.simplifiedDebts[0].fromUserEmail, 'amit@group.com');
+    assert.equal(data.simplifiedDebts[0].toUserEmail, 'rahul@group.com');
     assert.equal(data.simplifiedDebts[0].amountDisplay, 450.0);
     assert.ok(data.simplifiedDebts[0].upiLink.startsWith('upi://pay'));
   });
 
   test('Statements: Generates current month statement with category breakdown & WhatsApp link', async () => {
     const res = await fetch(
-      `${baseUrl}/api/statements?flatId=${flatId}&period=current`,
+      `${baseUrl}/api/statements?groupId=${groupId}&period=current`,
       { headers: { Authorization: `Bearer ${rahulToken}` } }
     );
 
@@ -223,11 +223,11 @@ describe('Backend API End-to-End Integration Suite', () => {
     assert.equal(res.status, 200);
     const data = await res.json();
     assert.equal(data.success, true);
-    assert.ok(data.flatsProcessed >= 1);
+    assert.ok((data.groupsProcessed ?? data.flatsProcessed) >= 1);
   });
 
-  test('Flat: Toggles googleSheetSync flag (true -> false -> true)', async () => {
-    const res = await fetch(`${baseUrl}/api/flats/${flatId}/sync-settings`, {
+  test('Group: Toggles googleSheetSync flag (true -> false -> true)', async () => {
+    const res = await fetch(`${baseUrl}/api/groups/${groupId}/sync-settings`, {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
@@ -240,20 +240,20 @@ describe('Backend API End-to-End Integration Suite', () => {
     const data = await res.json();
     assert.equal(data.googleSheetSync, false);
 
-    const fRes = await fetch(`${baseUrl}/api/flats/${flatId}`, {
+    const fRes = await fetch(`${baseUrl}/api/groups/${groupId}`, {
       headers: { Authorization: `Bearer ${rahulToken}` },
     });
     const fData = await fRes.json();
-    assert.equal(fData.flat.googleSheetSync, false);
+    assert.equal(fData.group.googleSheetSync, false);
   });
 
   test('Group: getGroupById returns group details via /api/groups/:id', async () => {
-    const res = await fetch(`${baseUrl}/api/groups/${flatId}`, {
+    const res = await fetch(`${baseUrl}/api/groups/${groupId}`, {
       headers: { Authorization: `Bearer ${rahulToken}` },
     });
     assert.equal(res.status, 200);
     const data = await res.json();
-    assert.equal(data.group.id, flatId);
+    assert.equal(data.group.id, groupId);
     assert.equal(data.group.name, 'Palm Springs 402');
     assert.ok(Array.isArray(data.members));
     assert.equal(data.members.length, 2);

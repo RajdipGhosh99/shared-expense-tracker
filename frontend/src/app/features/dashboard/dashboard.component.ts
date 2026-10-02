@@ -16,16 +16,16 @@ import { AddExpenseModalComponent } from '../expenses/add-expense-modal.componen
       <header class="bg-white/95 backdrop-blur-md border-b border-slate-200/80 sticky top-0 z-30 px-4 py-3 pt-safe">
         <div class="flex items-center justify-between">
           
-          <!-- Flat Brand & Invite Code Chip -->
+          <!-- Group Brand & Invite Code Chip -->
           <div class="flex items-center space-x-2.5">
             <div class="w-9 h-9 rounded-2xl bg-gradient-to-tr from-indigo-600 to-indigo-500 text-white flex items-center justify-center font-black shadow-md shadow-indigo-600/30 text-base">
               🏠
             </div>
             <div>
-              <h1 class="text-sm font-black leading-tight text-slate-900 truncate max-w-[170px]">{{ api.activeFlat()?.name || 'My Flat' }}</h1>
+              <h1 class="text-sm font-black leading-tight text-slate-900 truncate max-w-[170px]">{{ api.activeGroup()?.name || 'My Group' }}</h1>
               <div class="flex items-center space-x-1 text-[11px] text-slate-500">
                 <span>Code:</span>
-                <span class="font-mono font-bold text-indigo-600 bg-indigo-50 px-1 py-0.2 rounded">{{ api.activeFlat()?.inviteCode }}</span>
+                <span class="font-mono font-bold text-indigo-600 bg-indigo-50 px-1 py-0.2 rounded">{{ api.activeGroup()?.inviteCode }}</span>
                 <button (click)="copyCode()" class="text-slate-400 hover:text-indigo-600 active:scale-90 transition-transform">📋</button>
               </div>
             </div>
@@ -82,7 +82,7 @@ import { AddExpenseModalComponent } from '../expenses/add-expense-modal.componen
               <span class="font-medium text-[11px]">Vacation Mode</span>
             </div>
             <button (click)="toggleVacation()" class="px-2.5 py-1 rounded-lg font-bold text-[11px] transition-all active:scale-95" [class.bg-emerald-500]="isAway()" [class.text-white]="isAway()" [class.bg-slate-700]="!isAway()" [class.text-slate-300]="!isAway()">
-              {{ isAway() ? 'Away (Excluded)' : 'At Flat (Active)' }}
+              {{ isAway() ? 'Away (Excluded)' : 'At Group (Active)' }}
             </button>
           </div>
         </div>
@@ -119,7 +119,7 @@ import { AddExpenseModalComponent } from '../expenses/add-expense-modal.componen
           </div>
         </div>
 
-        <!-- Recent Flat Expenses Feed -->
+        <!-- Recent Group Expenses Feed -->
         <div class="bg-white p-4 rounded-3xl border border-slate-200/80 shadow-xs space-y-3">
           <div class="flex justify-between items-center">
             <h3 class="font-bold text-slate-900 text-xs">Recent Expenses</h3>
@@ -184,7 +184,7 @@ import { AddExpenseModalComponent } from '../expenses/add-expense-modal.componen
           <span class="text-[10px] font-bold">Reports</span>
         </button>
 
-        <!-- WhatsApp Flat Share Tab -->
+        <!-- WhatsApp Group Share Tab -->
         <button (click)="shareInvite()" class="flex flex-col items-center justify-center text-emerald-600 hover:text-emerald-700 active:scale-90 transition-transform">
           <span class="text-lg">💬</span>
           <span class="text-[10px] font-bold">Invite</span>
@@ -229,17 +229,17 @@ export class DashboardComponent {
   constructor(public api: ApiService, public router: Router) {}
 
   copyCode() {
-    const code = this.api.activeFlat()?.inviteCode;
+    const code = this.api.activeGroup()?.inviteCode;
     if (code) {
       navigator.clipboard.writeText(code);
-      alert(`Copied flat invite code: ${code}`);
+      alert(`Copied group invite code: ${code}`);
     }
   }
 
   shareInvite() {
-    const flat = this.api.activeFlat();
-    if (!flat) return;
-    const msg = `Hey! Join our flat "${flat.name}" on Flatmate Tracker to easily split bills:\nInvite Code: *${flat.inviteCode}*`;
+    const group = this.api.activeGroup();
+    if (!group) return;
+    const msg = `Hey! Join our group "${group.name}" on Group Expense Tracker to easily split bills:\nInvite Code: *${group.inviteCode}*`;
     window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`, '_blank');
   }
 

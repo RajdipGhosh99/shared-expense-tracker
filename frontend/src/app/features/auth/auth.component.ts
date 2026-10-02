@@ -19,7 +19,7 @@ import { ApiService } from '../../core/services/api.service.js';
             </svg>
           </div>
           <h1 class="text-2xl font-black tracking-tight">Shared Expense Tracker</h1>
-          <p class="text-sm text-slate-400">Frictionless flatmate expense splitting & UPI settlements</p>
+          <p class="text-sm text-slate-400">Frictionless group expense splitting & UPI settlements</p>
         </div>
 
         <!-- Mode Toggle -->
@@ -45,7 +45,7 @@ import { ApiService } from '../../core/services/api.service.js';
 
           <div class="space-y-1">
             <label class="text-xs font-semibold text-slate-300">Email Address</label>
-            <input type="email" [(ngModel)]="email" name="email" required placeholder="rahul@flat.com" class="w-full px-4 py-2.5 rounded-xl bg-slate-900/60 border border-slate-700 text-sm focus:outline-none focus:border-indigo-500" />
+            <input type="email" [(ngModel)]="email" name="email" required placeholder="rahul@group.com" class="w-full px-4 py-2.5 rounded-xl bg-slate-900/60 border border-slate-700 text-sm focus:outline-none focus:border-indigo-500" />
           </div>
 
           <div class="space-y-1">
@@ -68,11 +68,11 @@ import { ApiService } from '../../core/services/api.service.js';
         <div class="pt-2 border-t border-slate-700/50 space-y-2">
           <p class="text-xs text-center text-slate-500 uppercase tracking-wider font-semibold">Or Try Instant Demo Profile</p>
           <div class="grid grid-cols-2 gap-2">
-            <button (click)="quickLogin('rahul@flat.com', 'Rahul (Flatmate 1)')" class="py-2 px-3 bg-slate-900/40 hover:bg-slate-700/40 border border-slate-700 rounded-xl text-xs font-medium text-slate-300 transition-all text-center">
+            <button (click)="quickLogin('rahul@group.com', 'Rahul (Member 1)')" class="py-2 px-3 bg-slate-900/40 hover:bg-slate-700/40 border border-slate-700 rounded-xl text-xs font-medium text-slate-300 transition-all text-center">
               👤 Rahul (Admin)
             </button>
-            <button (click)="quickLogin('amit@flat.com', 'Amit (Flatmate 2)')" class="py-2 px-3 bg-slate-900/40 hover:bg-slate-700/40 border border-slate-700 rounded-xl text-xs font-medium text-slate-300 transition-all text-center">
-              👤 Amit (Roommate)
+            <button (click)="quickLogin('amit@group.com', 'Amit (Member 2)')" class="py-2 px-3 bg-slate-900/40 hover:bg-slate-700/40 border border-slate-700 rounded-xl text-xs font-medium text-slate-300 transition-all text-center">
+              👤 Amit (Member)
             </button>
           </div>
         </div>
@@ -104,7 +104,7 @@ export class AuthComponent {
     obs.subscribe({
       next: () => {
         this.loading.set(false);
-        if (this.api.activeFlat()) {
+        if (this.api.activeGroup()) {
           this.router.navigate(['/dashboard']);
         } else {
           this.router.navigate(['/onboarding']);
@@ -120,7 +120,7 @@ export class AuthComponent {
   quickLogin(email: string, name: string) {
     this.api.login({ email }).subscribe({
       next: () => {
-        if (this.api.activeFlat()) {
+        if (this.api.activeGroup()) {
           this.router.navigate(['/dashboard']);
         } else {
           this.router.navigate(['/onboarding']);

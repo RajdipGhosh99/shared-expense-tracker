@@ -37,7 +37,7 @@ export function calculateSplits(request: SplitRequest): SplitResult {
     };
   }
 
-  // Filter out flatmates on vacation
+  // Filter out group members on vacation
   const activeMembers = memberEmails.filter(
     (email) => !absentMemberEmails.includes(email)
   );
