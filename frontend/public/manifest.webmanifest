@@ -1,0 +1,32 @@
+{
+  "name": "Shared Expense Tracker",
+  "short_name": "Flatmates",
+  "description": "Smart flatmate & roommate expense tracker with GPay receipt sharing and Min-Cash-Flow settlements",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#6366f1",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    }
+  ],
+  "share_target": {
+    "action": "/share-target",
+    "method": "POST",
+    "enctype": "multipart/form-data",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url",
+      "files": [
+        {
+          "name": "receipt",
+          "accept": ["image/*"]
+        }
+      ]
+    }
+  }
+}

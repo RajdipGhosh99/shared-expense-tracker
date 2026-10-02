@@ -1,0 +1,19 @@
+name: Month-End Statement Generator
+
+on:
+  schedule:
+    # Runs at 02:00 UTC (07:30 AM IST) on the 1st day of every month
+    - cron: '0 2 1 * *'
+  workflow_dispatch: # Allows manual trigger from GitHub Actions tab for testing
+
+jobs:
+  trigger-statement:
+    name: Trigger Month-End Statements
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call Vercel Cron API Endpoint
+        run: |
+          echo "Triggering month-end statement generation..."
+          curl -f -X POST "${{ secrets.APP_URL }}/api/cron/month-end-statement" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            -H "Content-Type: application/json"
