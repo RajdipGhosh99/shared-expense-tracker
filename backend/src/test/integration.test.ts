@@ -219,10 +219,9 @@ describe('Backend API End-to-End Integration Suite', () => {
   });
 
   test('Statements: Generates current month statement with category breakdown & WhatsApp link', async () => {
-    const res = await fetch(
-      `${baseUrl}/api/statements?groupId=${groupId}&period=current`,
-      { headers: { Authorization: `Bearer ${rahulToken}` } }
-    );
+    const res = await fetch(`${baseUrl}/api/statements?groupId=${groupId}&period=current`, {
+      headers: { Authorization: `Bearer ${rahulToken}` },
+    });
 
     assert.equal(res.status, 200);
     const data = await res.json();

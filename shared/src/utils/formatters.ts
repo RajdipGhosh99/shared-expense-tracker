@@ -35,12 +35,9 @@ export function generateUPIDeepLink(params: {
 }
 
 /**
-  * Generates a clean, emoji-formatted WhatsApp digest message for the group.
-  */
-export function formatWhatsAppMonthlyDigest(
-  statement: MonthlyStatement,
-  appUrl?: string
-): string {
+ * Generates a clean, emoji-formatted WhatsApp digest message for the group.
+ */
+export function formatWhatsAppMonthlyDigest(statement: MonthlyStatement, appUrl?: string): string {
   const groupTitle = statement.groupName || statement.flatName || 'Group';
   const lines: string[] = [];
   lines.push(`📊 *${groupTitle} — Monthly Statement*`);

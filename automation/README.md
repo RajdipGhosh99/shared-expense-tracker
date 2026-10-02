@@ -50,11 +50,11 @@ npm run test:mobile
 
 ## 🎯 Test Coverage
 
-| Test Suite | Coverage & Scenarios |
-|---|---|
-| **01_auth.spec.ts** | Route guards (`/auth` redirect), full user registration with UPI IDs, secure login/logout lifecycle. |
-| **02_group.spec.ts** | Group onboarding, 6-character uppercase invite code generation, multi-user invite code joining. |
-| **03_expenses_and_dedup.spec.ts** | Integer minor units expense addition, Equal split calculation, Net Standing updates, Duplicate UTR 409 conflict detection with `#EXP-...` and in-place overwrite resolution. |
+| Test Suite                                | Coverage & Scenarios                                                                                                                                                              |
+| ----------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **01_auth.spec.ts**                       | Route guards (`/auth` redirect), full user registration with UPI IDs, secure login/logout lifecycle.                                                                              |
+| **02_group.spec.ts**                      | Group onboarding, 6-character uppercase invite code generation, multi-user invite code joining.                                                                                   |
+| **03_expenses_and_dedup.spec.ts**         | Integer minor units expense addition, Equal split calculation, Net Standing updates, Duplicate UTR 409 conflict detection with `#EXP-...` and in-place overwrite resolution.      |
 | **04_settlements_and_statements.spec.ts** | Vacation mode toggle, Min-Cash-Flow greedy debt settlement with dynamic `upi://pay` deep link generation, Month-end statement reports, and 1-tap WhatsApp digest link formatting. |
 
 ---
@@ -62,5 +62,6 @@ npm run test:mobile
 ## 📱 Mobile-First Verification
 
 Playwright is configured to run tests using:
+
 - **`mobile-chrome`**: Emulating Google Pixel 7 (393x851 viewport, touch-enabled, mobile user-agent).
 - **`desktop-chrome`**: Mobile dimensions (430x932 iPhone 14/15 Pro Max) to test responsiveness and safe-area notch layout.

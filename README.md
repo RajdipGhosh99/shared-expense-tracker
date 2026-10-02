@@ -42,28 +42,34 @@ A high-performance monorepo application designed specifically for flatmates and 
 ## 🚀 Quick Start
 
 ### 1. Prerequisites
+
 - Node.js `v18+` or `v20+` (Tested on `v26.8.1`)
 - npm `v10+`
 
 ### 2. Installation
+
 ```bash
 cd /Users/rajdip/Desktop/projects/shared-expense-tracker
 npm install
 ```
 
 ### 3. Run Development Server
+
 ```bash
 npm run dev
 ```
+
 - **Frontend (Angular 21 PWA)**: `http://localhost:4200`
 - **Backend API**: `http://localhost:3000`
 - **Interactive Swagger Docs**: `http://localhost:3000/api/docs`
 - **Swagger JSON Spec**: `http://localhost:3000/api/docs.json`
 
 ### 4. Run Automated Test Suite
+
 ```bash
 npm test
 ```
+
 Runs the shared mathematical test suite (penny-rounding, vacation mode, debt simplification) and the full backend integration test suite.
 
 ---

@@ -1,11 +1,7 @@
 import { Router, Response } from 'express';
 import { getStorage } from '../storage/index.js';
 import { authMiddleware, AuthRequest } from '../middleware/authMiddleware.js';
-import {
-  Settlement,
-  simplifyDebts,
-  generateUPIDeepLink,
-} from '@shared-expense-tracker/shared';
+import { Settlement, simplifyDebts, generateUPIDeepLink } from '@shared-expense-tracker/shared';
 
 const router = Router();
 
@@ -36,12 +32,7 @@ router.get('/balances', authMiddleware, async (req: AuthRequest, res: Response) 
     amountMinorUnits: s.amountMinorUnits,
   }));
 
-  const balanceSheet = simplifyDebts(
-    groupId,
-    memberLookups,
-    expenseRecords,
-    settlementRecords
-  );
+  const balanceSheet = simplifyDebts(groupId, memberLookups, expenseRecords, settlementRecords);
 
   // Attach dynamic UPI deep links to each simplified transaction
   const transactionsWithUPI = balanceSheet.simplifiedDebts.map((tx) => {

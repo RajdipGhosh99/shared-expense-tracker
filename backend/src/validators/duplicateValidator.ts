@@ -1,7 +1,4 @@
-import {
-  Expense,
-  DuplicateConflictResponse,
-} from '@shared-expense-tracker/shared';
+import { Expense, DuplicateConflictResponse } from '@shared-expense-tracker/shared';
 import { IDataStore } from '../storage/IDataStore.js';
 
 export interface ValidationCandidate {
@@ -57,9 +54,7 @@ export class DuplicateValidator {
     // 1. EXACT_UTR Check (100% Deterministic match on 12-digit UPI UTR)
     if (candidate.utrNumber && candidate.utrNumber.trim().length > 0) {
       const cleanUTR = candidate.utrNumber.trim();
-      const utrMatch = existingExpenses.find(
-        (e) => e.utrNumber && e.utrNumber.trim() === cleanUTR
-      );
+      const utrMatch = existingExpenses.find((e) => e.utrNumber && e.utrNumber.trim() === cleanUTR);
 
       if (utrMatch) {
         if (candidate.allowOverwrite) {
@@ -105,10 +100,8 @@ export class DuplicateValidator {
     for (const exp of existingExpenses) {
       const expTime = new Date(exp.createdAt).getTime();
       const isRecent = expTime >= thirtyMinsAgo;
-      const samePayer =
-        exp.payerEmail.toLowerCase() === candidate.payerEmail.toLowerCase();
-      const sameAmount =
-        exp.totalAmountMinorUnits === candidate.amountMinorUnits;
+      const samePayer = exp.payerEmail.toLowerCase() === candidate.payerEmail.toLowerCase();
+      const sameAmount = exp.totalAmountMinorUnits === candidate.amountMinorUnits;
 
       // Clean title comparison
       const t1 = exp.title.toLowerCase().replace(/[^a-z0-9]/g, '');

@@ -33,15 +33,12 @@ export interface IDataStore {
     groupId: string,
     userEmail: string,
     isAway: boolean,
-    awayUntil?: string
+    awayUntil?: string,
   ): Promise<boolean>;
 
   // Expenses
   createExpense(expense: Expense): Promise<Expense>;
-  updateExpense(
-    id: string,
-    updates: Partial<Expense>
-  ): Promise<Expense | null>;
+  updateExpense(id: string, updates: Partial<Expense>): Promise<Expense | null>;
   getExpenses(groupId: string): Promise<Expense[]>;
   getExpenseById(id: string): Promise<Expense | null>;
   deleteExpense(id: string): Promise<boolean>;

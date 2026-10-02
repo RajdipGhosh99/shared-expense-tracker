@@ -8,13 +8,13 @@ import { IDataStore } from '../storage/IDataStore.js';
 export interface GenerateStatementParams {
   flatId: string;
   startDate: string; // YYYY-MM-DD
-  endDate: string;   // YYYY-MM-DD
+  endDate: string; // YYYY-MM-DD
   monthLabel?: string;
 }
 
 export async function generateStatement(
   params: GenerateStatementParams,
-  db: IDataStore
+  db: IDataStore,
 ): Promise<MonthlyStatement> {
   const { flatId, startDate, endDate } = params;
 
@@ -48,27 +48,23 @@ export async function generateStatement(
 
   for (const exp of periodExpenses) {
     totalSpendMinorUnits += exp.totalAmountMinorUnits;
-    categoryMap[exp.category] =
-      (categoryMap[exp.category] || 0) + exp.totalAmountMinorUnits;
+    categoryMap[exp.category] = (categoryMap[exp.category] || 0) + exp.totalAmountMinorUnits;
 
-    paidMap[exp.payerEmail] =
-      (paidMap[exp.payerEmail] || 0) + exp.totalAmountMinorUnits;
+    paidMap[exp.payerEmail] = (paidMap[exp.payerEmail] || 0) + exp.totalAmountMinorUnits;
 
     for (const [email, owedMinor] of Object.entries(exp.splits)) {
       shareMap[email] = (shareMap[email] || 0) + owedMinor;
     }
   }
 
-  const categoryBreakdown: StatementCategorySummary[] = Object.entries(
-    categoryMap
-  ).map(([category, amountMinor]) => ({
-    category,
-    amountDisplay: Math.round((amountMinor / 100) * 100) / 100,
-    percentage:
-      totalSpendMinorUnits > 0
-        ? Math.round((amountMinor / totalSpendMinorUnits) * 1000) / 10
-        : 0,
-  }));
+  const categoryBreakdown: StatementCategorySummary[] = Object.entries(categoryMap).map(
+    ([category, amountMinor]) => ({
+      category,
+      amountDisplay: Math.round((amountMinor / 100) * 100) / 100,
+      percentage:
+        totalSpendMinorUnits > 0 ? Math.round((amountMinor / totalSpendMinorUnits) * 1000) / 10 : 0,
+    }),
+  );
 
   const memberSummaries: StatementMemberSummary[] = members.map((m) => {
     const totalPaid = (paidMap[m.userEmail] || 0) / 100;
@@ -84,9 +80,7 @@ export async function generateStatement(
     };
   });
 
-  const label =
-    params.monthLabel ||
-    `${startDate} to ${endDate}`;
+  const label = params.monthLabel || `${startDate} to ${endDate}`;
 
   return {
     groupId: flatId,

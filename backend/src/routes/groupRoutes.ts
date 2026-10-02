@@ -17,7 +17,9 @@ router.post('/', authMiddleware, async (req: AuthRequest, res: Response) => {
   const db = getStorage();
   const groupId = `group_${Date.now()}`;
   // Generate random 6-character uppercase invite code (e.g. GRP4X)
-  const inviteCode = (name.replace(/[^A-Za-z]/g, '').slice(0, 3) + Math.random().toString(36).slice(2, 5)).toUpperCase();
+  const inviteCode = (
+    name.replace(/[^A-Za-z]/g, '').slice(0, 3) + Math.random().toString(36).slice(2, 5)
+  ).toUpperCase();
 
   const group: Group = {
     id: groupId,
@@ -104,12 +106,7 @@ router.patch('/:id/members/away', authMiddleware, async (req: AuthRequest, res: 
   const db = getStorage();
   const id = req.params.id as string;
 
-  const updated = await db.updateMemberAway(
-    id,
-    user.email,
-    Boolean(isAway),
-    awayUntil
-  );
+  const updated = await db.updateMemberAway(id, user.email, Boolean(isAway), awayUntil);
 
   return res.json({ success: updated, isAway: Boolean(isAway) });
 });

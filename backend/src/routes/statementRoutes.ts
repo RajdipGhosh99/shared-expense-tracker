@@ -41,7 +41,7 @@ router.get('/', authMiddleware, async (req: AuthRequest, res: Response) => {
   const db = getStorage();
   const statement = await generateStatement(
     { flatId: groupId, startDate, endDate, monthLabel: label },
-    db
+    db,
   );
 
   const whatsappLink = formatWhatsAppMonthlyDigest(statement);

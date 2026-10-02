@@ -23,11 +23,16 @@ app.use(express.json());
 
 // Initialize Storage (Turso tables & Google Sheets tabs)
 const storage = getStorage();
-storage.init().then(() => {
-  console.log(`[Storage] Initialized successfully in mode: ${process.env.STORAGE_MODE || 'dual'}`);
-}).catch((err) => {
-  console.error('[Storage] Init warning:', err);
-});
+storage
+  .init()
+  .then(() => {
+    console.log(
+      `[Storage] Initialized successfully in mode: ${process.env.STORAGE_MODE || 'dual'}`,
+    );
+  })
+  .catch((err) => {
+    console.error('[Storage] Init warning:', err);
+  });
 
 // Swagger Interactive API Documentation
 app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));

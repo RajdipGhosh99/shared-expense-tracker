@@ -31,7 +31,9 @@ test.describe('Expenses, Splits & Deduplication Protection', () => {
     await expect(page.locator('text=You get back')).toBeVisible();
   });
 
-  test('Submitting duplicate payment UTR triggers conflict modal and allows overwrite', async ({ page }) => {
+  test('Submitting duplicate payment UTR triggers conflict modal and allows overwrite', async ({
+    page,
+  }) => {
     const email = generateTestEmail('dedup');
     await registerUser(page, 'Dedup User', email);
 

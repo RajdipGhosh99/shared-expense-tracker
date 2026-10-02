@@ -22,12 +22,7 @@ export interface SplitResult {
  * to guarantee 0.00% floating point drift and exact sum balance.
  */
 export function calculateSplits(request: SplitRequest): SplitResult {
-  const {
-    totalAmountMinorUnits,
-    splitType,
-    memberEmails,
-    absentMemberEmails = [],
-  } = request;
+  const { totalAmountMinorUnits, splitType, memberEmails, absentMemberEmails = [] } = request;
 
   if (totalAmountMinorUnits <= 0) {
     return {
@@ -38,9 +33,7 @@ export function calculateSplits(request: SplitRequest): SplitResult {
   }
 
   // Filter out group members on vacation
-  const activeMembers = memberEmails.filter(
-    (email) => !absentMemberEmails.includes(email)
-  );
+  const activeMembers = memberEmails.filter((email) => !absentMemberEmails.includes(email));
 
   if (activeMembers.length === 0) {
     return {

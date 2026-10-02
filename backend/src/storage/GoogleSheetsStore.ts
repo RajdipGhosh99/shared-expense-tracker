@@ -94,30 +94,12 @@ export class GoogleSheetsStore implements IDataStore {
         ],
       ],
       'Settlements!A1:G1': [
-        [
-          'ID',
-          'Flat ID',
-          'Payer Email',
-          'Receiver Email',
-          'Amount (₹)',
-          'Notes',
-          'Settled At',
-        ],
+        ['ID', 'Flat ID', 'Payer Email', 'Receiver Email', 'Amount (₹)', 'Notes', 'Settled At'],
       ],
       'Flat_Members!A1:G1': [
-        [
-          'ID',
-          'Flat ID',
-          'User Email',
-          'Name',
-          'UPI ID',
-          'Role',
-          'Joined At',
-        ],
+        ['ID', 'Flat ID', 'User Email', 'Name', 'UPI ID', 'Role', 'Joined At'],
       ],
-      'Flats!A1:E1': [
-        ['ID', 'Name', 'Invite Code', 'Currency', 'Created At'],
-      ],
+      'Flats!A1:E1': [['ID', 'Name', 'Invite Code', 'Currency', 'Created At']],
     };
 
     for (const [range, values] of Object.entries(headers)) {
@@ -253,7 +235,7 @@ export class GoogleSheetsStore implements IDataStore {
     flatId: string,
     userEmail: string,
     isAway: boolean,
-    awayUntil?: string
+    awayUntil?: string,
   ): Promise<boolean> {
     return true; // Maintained primarily in Turso
   }

@@ -1,12 +1,9 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import {
-  ExtractedReceiptResult,
-  ExpenseCategory,
-} from '@shared-expense-tracker/shared';
+import { ExtractedReceiptResult, ExpenseCategory } from '@shared-expense-tracker/shared';
 
 export async function extractReceiptFromImage(
   imageBuffer: Buffer,
-  mimeType: string = 'image/png'
+  mimeType: string = 'image/png',
 ): Promise<ExtractedReceiptResult> {
   const apiKey = process.env.GEMINI_API_KEY;
 
@@ -35,7 +32,10 @@ Return ONLY valid JSON.`;
       ]);
 
       const text = result.response.text();
-      const cleanJson = text.replace(/```json/g, '').replace(/```/g, '').trim();
+      const cleanJson = text
+        .replace(/```json/g, '')
+        .replace(/```/g, '')
+        .trim();
       const parsed = JSON.parse(cleanJson);
 
       const amountDisplay = parseFloat(parsed.amount) || 0;
@@ -51,7 +51,10 @@ Return ONLY valid JSON.`;
         extractedAt: new Date().toISOString(),
       };
     } catch (err) {
-      console.warn('[ReceiptExtractor] Gemini Vision call failed, falling back to mock parser:', err);
+      console.warn(
+        '[ReceiptExtractor] Gemini Vision call failed, falling back to mock parser:',
+        err,
+      );
     }
   }
 

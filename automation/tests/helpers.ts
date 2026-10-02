@@ -9,7 +9,7 @@ export async function registerUser(
   name: string,
   email: string,
   password: string = 'Password@123',
-  upiId?: string
+  upiId?: string,
 ) {
   await page.goto('/auth');
   await page.click('button:has-text("Sign Up")');
@@ -24,11 +24,7 @@ export async function registerUser(
   await expect(page).toHaveURL(/\/(onboarding|dashboard)/);
 }
 
-export async function loginUser(
-  page: Page,
-  email: string,
-  password: string = 'Password@123'
-) {
+export async function loginUser(page: Page, email: string, password: string = 'Password@123') {
   await page.goto('/auth');
   await page.click('button:has-text("Log In")');
   await page.fill('input[name="email"]', email);

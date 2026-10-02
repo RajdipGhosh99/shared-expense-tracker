@@ -19,7 +19,7 @@ self.addEventListener('fetch', (event) => {
 
         // Redirect to screenshot review screen
         return Response.redirect('/screenshot-review', 303);
-      })()
+      })(),
     );
   }
 });

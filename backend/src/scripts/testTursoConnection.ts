@@ -99,7 +99,7 @@ async function main() {
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
       );`,
     ],
-    'write'
+    'write',
   );
 
   // Safe alters for existing tables
@@ -127,15 +127,17 @@ async function main() {
       `CREATE INDEX IF NOT EXISTS idx_settlements_group ON settlements(group_id);`,
       `CREATE INDEX IF NOT EXISTS idx_settlements_flat ON settlements(flat_id);`,
     ],
-    'write'
+    'write',
   );
 
   console.log('✅ All tables and indexes provisioned successfully on Turso Cloud!');
 
   // Verify tables
-  const tables = await client.execute("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name;");
+  const tables = await client.execute(
+    "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name;",
+  );
   console.log('📋 Active tables in Turso Cloud:');
-  tables.rows.forEach(r => console.log(`   - ${r.name}`));
+  tables.rows.forEach((r) => console.log(`   - ${r.name}`));
 }
 
 main().catch((err) => {

@@ -21,15 +21,12 @@ router.post(
     }
 
     try {
-      const result = await extractReceiptFromImage(
-        req.file.buffer,
-        req.file.mimetype
-      );
+      const result = await extractReceiptFromImage(req.file.buffer, req.file.mimetype);
       return res.json(result);
     } catch (err: any) {
       return res.status(500).json({ error: 'Failed to process screenshot: ' + err.message });
     }
-  }
+  },
 );
 
 export default router;

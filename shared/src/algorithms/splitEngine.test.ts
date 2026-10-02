@@ -102,7 +102,7 @@ describe('DebtEngine (Min-Cash-Flow Simplification)', () => {
     const result = simplifyDebts('group-1', members, expenses, []);
 
     assert.equal(result.netBalances['rahul@group.com'], 4000); // Gets 4000
-    assert.equal(result.netBalances['amit@group.com'], -2000);  // Owes 2000
+    assert.equal(result.netBalances['amit@group.com'], -2000); // Owes 2000
     assert.equal(result.netBalances['priya@group.com'], -2000); // Owes 2000
     assert.equal(result.simplifiedDebts.length, 2);
   });

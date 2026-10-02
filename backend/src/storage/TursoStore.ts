@@ -101,7 +101,7 @@ export class TursoStore implements IDataStore {
           created_at DATETIME DEFAULT CURRENT_TIMESTAMP
         );`,
       ],
-      'write'
+      'write',
     );
 
     // Safe auto-migration from legacy flats/flat_members to groups/group_members
@@ -130,14 +130,18 @@ export class TursoStore implements IDataStore {
       await this.client.execute('ALTER TABLE settlements ADD COLUMN group_id TEXT;');
     } catch {}
     try {
-      await this.client.execute('UPDATE settlements SET group_id = flat_id WHERE group_id IS NULL;');
+      await this.client.execute(
+        'UPDATE settlements SET group_id = flat_id WHERE group_id IS NULL;',
+      );
     } catch {}
 
     try {
       await this.client.execute('ALTER TABLE monthly_statements ADD COLUMN group_id TEXT;');
     } catch {}
     try {
-      await this.client.execute('UPDATE monthly_statements SET group_id = flat_id WHERE group_id IS NULL;');
+      await this.client.execute(
+        'UPDATE monthly_statements SET group_id = flat_id WHERE group_id IS NULL;',
+      );
     } catch {}
 
     // Indexes
@@ -150,16 +154,20 @@ export class TursoStore implements IDataStore {
           `CREATE INDEX IF NOT EXISTS idx_settlements_group ON settlements(group_id);`,
           `CREATE INDEX IF NOT EXISTS idx_settlements_flat ON settlements(flat_id);`,
         ],
-        'write'
+        'write',
       );
     } catch {}
 
     // Backward-compatible views if legacy queries run
     try {
-      await this.client.execute(`CREATE VIEW IF NOT EXISTS flats AS SELECT id, name, invite_code, currency, google_sheet_sync, created_at FROM groups;`);
+      await this.client.execute(
+        `CREATE VIEW IF NOT EXISTS flats AS SELECT id, name, invite_code, currency, google_sheet_sync, created_at FROM groups;`,
+      );
     } catch {}
     try {
-      await this.client.execute(`CREATE VIEW IF NOT EXISTS flat_members AS SELECT id, group_id AS flat_id, user_email, name, upi_id, role, is_away, away_until, joined_at FROM group_members;`);
+      await this.client.execute(
+        `CREATE VIEW IF NOT EXISTS flat_members AS SELECT id, group_id AS flat_id, user_email, name, upi_id, role, is_away, away_until, joined_at FROM group_members;`,
+      );
     } catch {}
   }
 
@@ -315,7 +323,7 @@ export class TursoStore implements IDataStore {
     groupId: string,
     userEmail: string,
     isAway: boolean,
-    awayUntil?: string
+    awayUntil?: string,
   ): Promise<boolean> {
     const res = await this.client.execute({
       sql: `UPDATE group_members SET is_away = ?, away_until = ? WHERE group_id = ? AND user_email = ?`,

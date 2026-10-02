@@ -15,7 +15,7 @@ import { appConfig } from '../config/appConfig.js';
 export class DualSyncStore implements IDataStore {
   constructor(
     private turso: TursoStore,
-    private sheets: GoogleSheetsStore
+    private sheets: GoogleSheetsStore,
   ) {}
 
   public isAppGoogleSheetSyncEnabled(): boolean {
@@ -113,7 +113,7 @@ export class DualSyncStore implements IDataStore {
     groupId: string,
     userEmail: string,
     isAway: boolean,
-    awayUntil?: string
+    awayUntil?: string,
   ): Promise<boolean> {
     return this.turso.updateMemberAway(groupId, userEmail, isAway, awayUntil);
   }
@@ -151,7 +151,10 @@ export class DualSyncStore implements IDataStore {
         }
       })
       .catch((err) => {
-        console.warn(`[DualSyncStore] Google Sheet sync deferred for expense ${saved.id}:`, err.message);
+        console.warn(
+          `[DualSyncStore] Google Sheet sync deferred for expense ${saved.id}:`,
+          err.message,
+        );
         this.turso.updateExpense(saved.id, { sheetSyncStatus: 'PENDING' });
       });
 

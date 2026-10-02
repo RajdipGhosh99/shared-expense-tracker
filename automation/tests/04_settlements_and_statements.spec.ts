@@ -46,7 +46,6 @@ test.describe('Vacation Mode, Settlements & Month-End Statements', () => {
     await page2.click('button:has-text("Join Group")');
     await expect(page2).toHaveURL(/\/dashboard/);
 
-
     // Member 1 logs ₹1000 bill split equally
     await page1.click('button:has-text("＋")');
     await page1.fill('input[name="amount"]', '1000.00');

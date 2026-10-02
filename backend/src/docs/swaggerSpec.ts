@@ -244,9 +244,7 @@ export const swaggerSpec = {
         summary: 'Get Group by ID (getGroupById)',
         tags: ['Groups'],
         security: [{ bearerAuth: [] }],
-        parameters: [
-          { name: 'id', in: 'path', required: true, schema: { type: 'string' } },
-        ],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
         responses: {
           200: { description: 'Group details and members' },
           404: { description: 'Group not found' },
@@ -258,9 +256,7 @@ export const swaggerSpec = {
         summary: 'Get Group Members',
         tags: ['Groups'],
         security: [{ bearerAuth: [] }],
-        parameters: [
-          { name: 'id', in: 'path', required: true, schema: { type: 'string' } },
-        ],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
         responses: {
           200: { description: 'List of group members' },
         },
@@ -295,9 +291,7 @@ export const swaggerSpec = {
         summary: 'Toggle Vacation / Away Mode',
         tags: ['Groups'],
         security: [{ bearerAuth: [] }],
-        parameters: [
-          { name: 'id', in: 'path', required: true, schema: { type: 'string' } },
-        ],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
         requestBody: {
           required: true,
           content: {
@@ -322,9 +316,7 @@ export const swaggerSpec = {
         summary: 'Toggle Group-Level Google Sheet Sync (bool)',
         tags: ['Groups'],
         security: [{ bearerAuth: [] }],
-        parameters: [
-          { name: 'id', in: 'path', required: true, schema: { type: 'string' } },
-        ],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
         requestBody: {
           required: true,
           content: {
@@ -398,9 +390,7 @@ export const swaggerSpec = {
         summary: 'Toggle Vacation / Away Mode',
         tags: ['Flats'],
         security: [{ bearerAuth: [] }],
-        parameters: [
-          { name: 'id', in: 'path', required: true, schema: { type: 'string' } },
-        ],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
         requestBody: {
           required: true,
           content: {
@@ -425,9 +415,7 @@ export const swaggerSpec = {
         summary: 'Toggle Flat-Level Google Sheet Sync (bool)',
         tags: ['Flats'],
         security: [{ bearerAuth: [] }],
-        parameters: [
-          { name: 'id', in: 'path', required: true, schema: { type: 'string' } },
-        ],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
         requestBody: {
           required: true,
           content: {
@@ -490,9 +478,7 @@ export const swaggerSpec = {
         summary: 'List Expenses for Flat',
         tags: ['Expenses'],
         security: [{ bearerAuth: [] }],
-        parameters: [
-          { name: 'flatId', in: 'query', required: true, schema: { type: 'string' } },
-        ],
+        parameters: [{ name: 'flatId', in: 'query', required: true, schema: { type: 'string' } }],
         responses: {
           200: { description: 'List of flat expenses' },
         },
@@ -532,9 +518,7 @@ export const swaggerSpec = {
         summary: 'Calculate Net Balances & Min-Cash-Flow Simplified Debts',
         tags: ['Settlements'],
         security: [{ bearerAuth: [] }],
-        parameters: [
-          { name: 'flatId', in: 'query', required: true, schema: { type: 'string' } },
-        ],
+        parameters: [{ name: 'flatId', in: 'query', required: true, schema: { type: 'string' } }],
         responses: {
           200: {
             description:

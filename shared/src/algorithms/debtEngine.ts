@@ -1,8 +1,4 @@
-import {
-  GroupBalanceSheet,
-  FlatBalanceSheet,
-  SimplifiedDebtTransaction,
-} from '../types/index.js';
+import { GroupBalanceSheet, FlatBalanceSheet, SimplifiedDebtTransaction } from '../types/index.js';
 
 export interface ExpenseRecord {
   payerEmail: string;
@@ -29,7 +25,7 @@ export function simplifyDebts(
   groupId: string,
   members: MemberLookup[],
   expenses: ExpenseRecord[],
-  settlements: SettlementRecord[]
+  settlements: SettlementRecord[],
 ): GroupBalanceSheet {
   const netBalances: Record<string, number> = {};
 
@@ -42,24 +38,20 @@ export function simplifyDebts(
       if (consumerEmail === exp.payerEmail) continue;
 
       // Payer is credited (+owed)
-      netBalances[exp.payerEmail] =
-        (netBalances[exp.payerEmail] || 0) + owedMinorUnits;
+      netBalances[exp.payerEmail] = (netBalances[exp.payerEmail] || 0) + owedMinorUnits;
 
       // Consumer is debited (-owed)
-      netBalances[consumerEmail] =
-        (netBalances[consumerEmail] || 0) - owedMinorUnits;
+      netBalances[consumerEmail] = (netBalances[consumerEmail] || 0) - owedMinorUnits;
     }
   }
 
   // 3. Accumulate Past Settlements
   for (const set of settlements) {
     // Payer sent money -> their debt decreases (+amount)
-    netBalances[set.payerEmail] =
-      (netBalances[set.payerEmail] || 0) + set.amountMinorUnits;
+    netBalances[set.payerEmail] = (netBalances[set.payerEmail] || 0) + set.amountMinorUnits;
 
     // Receiver received money -> their credit decreases (-amount)
-    netBalances[set.receiverEmail] =
-      (netBalances[set.receiverEmail] || 0) - set.amountMinorUnits;
+    netBalances[set.receiverEmail] = (netBalances[set.receiverEmail] || 0) - set.amountMinorUnits;
   }
 
   // 4. Group into Debtors (negative balance) and Creditors (positive balance)

@@ -18,7 +18,9 @@ async function main() {
     privateKey,
   });
 
-  console.log('🛠️ Initializing and provisioning tabs (Flats, Flat_Members, Expenses, Settlements, Monthly_Archives)...');
+  console.log(
+    '🛠️ Initializing and provisioning tabs (Flats, Flat_Members, Expenses, Settlements, Monthly_Archives)...',
+  );
   await store.init();
   console.log('✅ Tabs and headers successfully initialized on your Google Sheet!');
 

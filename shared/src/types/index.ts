@@ -60,7 +60,7 @@ export type ExpenseCategory =
 export interface ExpenseSplit {
   userEmail: string;
   amountMinorUnits: number; // In paise/cents (e.g., 3333 for ₹33.33)
-  amountDisplay: number;    // In standard currency unit (e.g., 33.33)
+  amountDisplay: number; // In standard currency unit (e.g., 33.33)
   percentage?: number;
 }
 
@@ -71,7 +71,7 @@ export interface Expense {
   payerEmail: string;
   title: string;
   totalAmountMinorUnits: number; // Stored in paise/cents
-  totalAmountDisplay: number;    // Stored in standard unit (e.g., 100.00)
+  totalAmountDisplay: number; // Stored in standard unit (e.g., 100.00)
   category: ExpenseCategory;
   splitType: SplitType;
   splits: Record<string, number>; // { [userEmail]: amountMinorUnits }
@@ -130,7 +130,7 @@ export interface Settlement {
 
 export interface SimplifiedDebtTransaction {
   fromUserEmail: string; // Debtor (must pay)
-  toUserEmail: string;   // Creditor (gets money)
+  toUserEmail: string; // Creditor (gets money)
   amountMinorUnits: number;
   amountDisplay: number;
   receiverUPI?: string;

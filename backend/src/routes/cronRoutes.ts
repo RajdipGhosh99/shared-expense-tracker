@@ -35,7 +35,7 @@ router.post('/month-end-statement', async (req: Request, res: Response) => {
     try {
       const statement = await generateStatement(
         { flatId: group.id, startDate, endDate, monthLabel },
-        db
+        db,
       );
 
       // Save immutable snapshot to Turso & Google Sheet

@@ -18,11 +18,9 @@ router.post('/register', async (req: Request, res: Response) => {
   const secret = process.env.JWT_SECRET || 'dev_jwt_secret_key_84920491';
 
   // Generate JWT token
-  const token = jwt.sign(
-    { email: cleanEmail, name, upiId: upiId || '' },
-    secret,
-    { expiresIn: '30d' }
-  );
+  const token = jwt.sign({ email: cleanEmail, name, upiId: upiId || '' }, secret, {
+    expiresIn: '30d',
+  });
 
   return res.status(201).json({
     token,
@@ -44,11 +42,7 @@ router.post('/login', async (req: Request, res: Response) => {
   const name = cleanEmail.split('@')[0];
   const capitalized = name.charAt(0).toUpperCase() + name.slice(1);
 
-  const token = jwt.sign(
-    { email: cleanEmail, name: capitalized },
-    secret,
-    { expiresIn: '30d' }
-  );
+  const token = jwt.sign({ email: cleanEmail, name: capitalized }, secret, { expiresIn: '30d' });
 
   return res.json({
     token,
@@ -64,7 +58,9 @@ router.post('/google', async (req: Request, res: Response) => {
   }
 
   const cleanEmail = email.toLowerCase().trim();
-  const userName = name?.trim() || cleanEmail.split('@')[0].charAt(0).toUpperCase() + cleanEmail.split('@')[0].slice(1);
+  const userName =
+    name?.trim() ||
+    cleanEmail.split('@')[0].charAt(0).toUpperCase() + cleanEmail.split('@')[0].slice(1);
   const secret = process.env.JWT_SECRET || 'dev_jwt_secret_key_84920491';
 
   const user = {
@@ -74,11 +70,7 @@ router.post('/google', async (req: Request, res: Response) => {
     upiId: upiId || '',
   };
 
-  const token = jwt.sign(
-    user,
-    secret,
-    { expiresIn: '30d' }
-  );
+  const token = jwt.sign(user, secret, { expiresIn: '30d' });
 
   return res.json({
     token,

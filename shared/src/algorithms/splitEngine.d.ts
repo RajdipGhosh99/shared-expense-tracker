@@ -1,18 +1,18 @@
 import { SplitType } from '../types/index.js';
 export interface SplitRequest {
-    totalAmountMinorUnits: number;
-    splitType: SplitType;
-    payerEmail: string;
-    memberEmails: string[];
-    absentMemberEmails?: string[];
-    exactAmountsMinorUnits?: Record<string, number>;
-    percentages?: Record<string, number>;
-    shares?: Record<string, number>;
+  totalAmountMinorUnits: number;
+  splitType: SplitType;
+  payerEmail: string;
+  memberEmails: string[];
+  absentMemberEmails?: string[];
+  exactAmountsMinorUnits?: Record<string, number>;
+  percentages?: Record<string, number>;
+  shares?: Record<string, number>;
 }
 export interface SplitResult {
-    splits: Record<string, number>;
-    isValid: boolean;
-    errorMessage?: string;
+  splits: Record<string, number>;
+  isValid: boolean;
+  errorMessage?: string;
 }
 /**
  * Calculates exact split allocations using integer minor units (paise/cents)

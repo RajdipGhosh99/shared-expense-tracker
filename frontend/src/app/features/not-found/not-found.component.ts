@@ -8,7 +8,9 @@ import { ApiService } from '../../core/services/api.service.js';
   standalone: true,
   imports: [CommonModule, RouterModule],
   template: `
-    <div class="min-h-screen bg-slate-950 text-slate-100 flex flex-col justify-between items-center p-6 selection:bg-indigo-500 selection:text-white">
+    <div
+      class="min-h-screen bg-slate-950 text-slate-100 flex flex-col justify-between items-center p-6 selection:bg-indigo-500 selection:text-white"
+    >
       <!-- Top Brand Header -->
       <div class="w-full max-w-md pt-4 flex items-center justify-center space-x-2 text-slate-400">
         <span class="text-xl">🏠</span>
@@ -19,7 +21,9 @@ import { ApiService } from '../../core/services/api.service.js';
       <main class="w-full max-w-md my-auto text-center space-y-6">
         <div class="relative mx-auto w-32 h-32 flex items-center justify-center">
           <div class="absolute inset-0 bg-indigo-500/20 rounded-full blur-2xl animate-pulse"></div>
-          <div class="relative w-28 h-28 rounded-3xl bg-slate-900 border border-slate-800 shadow-2xl flex flex-col items-center justify-center space-y-1">
+          <div
+            class="relative w-28 h-28 rounded-3xl bg-slate-900 border border-slate-800 shadow-2xl flex flex-col items-center justify-center space-y-1"
+          >
             <span class="text-4xl">🔍</span>
             <span class="text-xs font-black tracking-widest text-indigo-400 uppercase">404</span>
           </div>
@@ -55,10 +59,13 @@ import { ApiService } from '../../core/services/api.service.js';
         Frictionless group expense splitting & UPI settlements
       </footer>
     </div>
-  `
+  `,
 })
 export class NotFoundComponent {
-  constructor(public api: ApiService, public router: Router) {}
+  constructor(
+    public api: ApiService,
+    public router: Router,
+  ) {}
 
   navigateHome() {
     if (this.api.token()) {
