@@ -1,6 +1,8 @@
 import dotenv from 'dotenv';
 import path from 'path';
-dotenv.config({ path: path.resolve('backend/.env') });
+import fs from 'fs';
+const envPath = fs.existsSync('.env') ? '.env' : path.resolve('backend/.env');
+dotenv.config({ path: envPath });
 
 import { createClient } from '@libsql/client';
 
@@ -32,16 +34,17 @@ async function main() {
         upi_id TEXT,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
       );`,
-      `CREATE TABLE IF NOT EXISTS flats (
+      `CREATE TABLE IF NOT EXISTS groups (
         id TEXT PRIMARY KEY,
         name TEXT NOT NULL,
         invite_code TEXT UNIQUE NOT NULL,
         currency TEXT DEFAULT 'INR',
+        google_sheet_sync INTEGER DEFAULT 1,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
       );`,
-      `CREATE TABLE IF NOT EXISTS flat_members (
+      `CREATE TABLE IF NOT EXISTS group_members (
         id TEXT PRIMARY KEY,
-        flat_id TEXT NOT NULL REFERENCES flats(id),
+        group_id TEXT NOT NULL REFERENCES groups(id),
         user_email TEXT NOT NULL,
         name TEXT NOT NULL,
         upi_id TEXT,
@@ -49,11 +52,12 @@ async function main() {
         is_away INTEGER DEFAULT 0,
         away_until TEXT,
         joined_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        UNIQUE(flat_id, user_email)
+        UNIQUE(group_id, user_email)
       );`,
       `CREATE TABLE IF NOT EXISTS expenses (
         id TEXT PRIMARY KEY,
-        flat_id TEXT NOT NULL REFERENCES flats(id),
+        group_id TEXT REFERENCES groups(id),
+        flat_id TEXT,
         payer_email TEXT NOT NULL,
         title TEXT NOT NULL,
         amount_minor_units INTEGER NOT NULL,
@@ -74,7 +78,8 @@ async function main() {
       );`,
       `CREATE TABLE IF NOT EXISTS settlements (
         id TEXT PRIMARY KEY,
-        flat_id TEXT NOT NULL REFERENCES flats(id),
+        group_id TEXT REFERENCES groups(id),
+        flat_id TEXT,
         payer_email TEXT NOT NULL,
         receiver_email TEXT NOT NULL,
         amount_minor_units INTEGER NOT NULL,
@@ -84,7 +89,8 @@ async function main() {
       );`,
       `CREATE TABLE IF NOT EXISTS monthly_statements (
         id TEXT PRIMARY KEY,
-        flat_id TEXT NOT NULL REFERENCES flats(id),
+        group_id TEXT REFERENCES groups(id),
+        flat_id TEXT,
         month_label TEXT NOT NULL,
         start_date TEXT NOT NULL,
         end_date TEXT NOT NULL,
@@ -92,8 +98,33 @@ async function main() {
         data_json TEXT NOT NULL,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
       );`,
+    ],
+    'write'
+  );
+
+  // Safe alters for existing tables
+  for (const alterSql of [
+    'ALTER TABLE expenses ADD COLUMN group_id TEXT;',
+    'ALTER TABLE settlements ADD COLUMN group_id TEXT;',
+    'ALTER TABLE monthly_statements ADD COLUMN group_id TEXT;',
+    'UPDATE expenses SET group_id = flat_id WHERE group_id IS NULL;',
+    'UPDATE settlements SET group_id = flat_id WHERE group_id IS NULL;',
+    'UPDATE monthly_statements SET group_id = flat_id WHERE group_id IS NULL;',
+    'INSERT OR IGNORE INTO groups (id, name, invite_code, currency, google_sheet_sync, created_at) SELECT id, name, invite_code, currency, google_sheet_sync, created_at FROM flats;',
+    'INSERT OR IGNORE INTO group_members (id, group_id, user_email, name, upi_id, role, is_away, away_until, joined_at) SELECT id, flat_id, user_email, name, upi_id, role, is_away, away_until, joined_at FROM flat_members;',
+  ]) {
+    try {
+      await client.execute(alterSql);
+    } catch {}
+  }
+
+  // Create indexes
+  await client.batch(
+    [
+      `CREATE INDEX IF NOT EXISTS idx_expenses_group ON expenses(group_id);`,
       `CREATE INDEX IF NOT EXISTS idx_expenses_flat ON expenses(flat_id);`,
-      `CREATE INDEX IF NOT EXISTS idx_expenses_utr ON expenses(flat_id, utr_number);`,
+      `CREATE INDEX IF NOT EXISTS idx_expenses_utr ON expenses(group_id, utr_number);`,
+      `CREATE INDEX IF NOT EXISTS idx_settlements_group ON settlements(group_id);`,
       `CREATE INDEX IF NOT EXISTS idx_settlements_flat ON settlements(flat_id);`,
     ],
     'write'

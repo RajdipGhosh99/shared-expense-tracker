@@ -32,7 +32,7 @@ export class TursoStore implements IDataStore {
           created_at DATETIME DEFAULT CURRENT_TIMESTAMP
         );`,
 
-        `CREATE TABLE IF NOT EXISTS flats (
+        `CREATE TABLE IF NOT EXISTS groups (
           id TEXT PRIMARY KEY,
           name TEXT NOT NULL,
           invite_code TEXT UNIQUE NOT NULL,
@@ -41,9 +41,9 @@ export class TursoStore implements IDataStore {
           created_at DATETIME DEFAULT CURRENT_TIMESTAMP
         );`,
 
-        `CREATE TABLE IF NOT EXISTS flat_members (
+        `CREATE TABLE IF NOT EXISTS group_members (
           id TEXT PRIMARY KEY,
-          flat_id TEXT NOT NULL REFERENCES flats(id),
+          group_id TEXT NOT NULL REFERENCES groups(id),
           user_email TEXT NOT NULL,
           name TEXT NOT NULL,
           upi_id TEXT,
@@ -51,12 +51,13 @@ export class TursoStore implements IDataStore {
           is_away INTEGER DEFAULT 0,
           away_until TEXT,
           joined_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-          UNIQUE(flat_id, user_email)
+          UNIQUE(group_id, user_email)
         );`,
 
         `CREATE TABLE IF NOT EXISTS expenses (
           id TEXT PRIMARY KEY,
-          flat_id TEXT NOT NULL REFERENCES flats(id),
+          group_id TEXT REFERENCES groups(id),
+          flat_id TEXT,
           payer_email TEXT NOT NULL,
           title TEXT NOT NULL,
           amount_minor_units INTEGER NOT NULL,
@@ -78,7 +79,8 @@ export class TursoStore implements IDataStore {
 
         `CREATE TABLE IF NOT EXISTS settlements (
           id TEXT PRIMARY KEY,
-          flat_id TEXT NOT NULL REFERENCES flats(id),
+          group_id TEXT REFERENCES groups(id),
+          flat_id TEXT,
           payer_email TEXT NOT NULL,
           receiver_email TEXT NOT NULL,
           amount_minor_units INTEGER NOT NULL,
@@ -89,7 +91,8 @@ export class TursoStore implements IDataStore {
 
         `CREATE TABLE IF NOT EXISTS monthly_statements (
           id TEXT PRIMARY KEY,
-          flat_id TEXT NOT NULL REFERENCES flats(id),
+          group_id TEXT REFERENCES groups(id),
+          flat_id TEXT,
           month_label TEXT NOT NULL,
           start_date TEXT NOT NULL,
           end_date TEXT NOT NULL,
@@ -97,58 +100,88 @@ export class TursoStore implements IDataStore {
           data_json TEXT NOT NULL,
           created_at DATETIME DEFAULT CURRENT_TIMESTAMP
         );`,
-
-        `CREATE INDEX IF NOT EXISTS idx_expenses_flat ON expenses(flat_id);`,
-        `CREATE INDEX IF NOT EXISTS idx_expenses_utr ON expenses(flat_id, utr_number);`,
-        `CREATE INDEX IF NOT EXISTS idx_settlements_flat ON settlements(flat_id);`,
       ],
       'write'
     );
 
-    // Safe migration for existing flats table
+    // Safe auto-migration from legacy flats/flat_members to groups/group_members
     try {
-      await this.client.execute('ALTER TABLE flats ADD COLUMN google_sheet_sync INTEGER DEFAULT 1;');
-    } catch {
-      // Column already exists
-    }
+      await this.client.execute(`
+        INSERT OR IGNORE INTO groups (id, name, invite_code, currency, google_sheet_sync, created_at)
+        SELECT id, name, invite_code, currency, google_sheet_sync, created_at FROM flats;
+      `);
+    } catch {}
+
+    try {
+      await this.client.execute(`
+        INSERT OR IGNORE INTO group_members (id, group_id, user_email, name, upi_id, role, is_away, away_until, joined_at)
+        SELECT id, flat_id, user_email, name, upi_id, role, is_away, away_until, joined_at FROM flat_members;
+      `);
+    } catch {}
+
+    try {
+      await this.client.execute('ALTER TABLE expenses ADD COLUMN group_id TEXT;');
+    } catch {}
+    try {
+      await this.client.execute('UPDATE expenses SET group_id = flat_id WHERE group_id IS NULL;');
+    } catch {}
+
+    try {
+      await this.client.execute('ALTER TABLE settlements ADD COLUMN group_id TEXT;');
+    } catch {}
+    try {
+      await this.client.execute('UPDATE settlements SET group_id = flat_id WHERE group_id IS NULL;');
+    } catch {}
+
+    try {
+      await this.client.execute('ALTER TABLE monthly_statements ADD COLUMN group_id TEXT;');
+    } catch {}
+    try {
+      await this.client.execute('UPDATE monthly_statements SET group_id = flat_id WHERE group_id IS NULL;');
+    } catch {}
+
+    // Indexes
+    try {
+      await this.client.batch(
+        [
+          `CREATE INDEX IF NOT EXISTS idx_expenses_group ON expenses(group_id);`,
+          `CREATE INDEX IF NOT EXISTS idx_expenses_flat ON expenses(flat_id);`,
+          `CREATE INDEX IF NOT EXISTS idx_expenses_utr ON expenses(group_id, utr_number);`,
+          `CREATE INDEX IF NOT EXISTS idx_settlements_group ON settlements(group_id);`,
+          `CREATE INDEX IF NOT EXISTS idx_settlements_flat ON settlements(flat_id);`,
+        ],
+        'write'
+      );
+    } catch {}
+
+    // Backward-compatible views if legacy queries run
+    try {
+      await this.client.execute(`CREATE VIEW IF NOT EXISTS flats AS SELECT id, name, invite_code, currency, google_sheet_sync, created_at FROM groups;`);
+    } catch {}
+    try {
+      await this.client.execute(`CREATE VIEW IF NOT EXISTS flat_members AS SELECT id, group_id AS flat_id, user_email, name, upi_id, role, is_away, away_until, joined_at FROM group_members;`);
+    } catch {}
   }
 
   // --- Groups (Primary) ---
   async createGroup(group: Group): Promise<Group> {
-    return this.createFlat(group);
+    const syncVal = group.googleSheetSync === false ? 0 : 1;
+    await this.client.execute({
+      sql: `INSERT INTO groups (id, name, invite_code, currency, google_sheet_sync, created_at)
+            VALUES (?, ?, ?, ?, ?, ?)`,
+      args: [group.id, group.name, group.inviteCode, group.currency, syncVal, group.createdAt],
+    });
+    return { ...group, googleSheetSync: syncVal === 1 };
+  }
+
+  async createFlat(flat: Flat): Promise<Flat> {
+    return this.createGroup(flat);
   }
 
   async getGroupById(groupId: string): Promise<Group | null> {
-    return this.getFlatById(groupId);
-  }
-
-  async getGroupByInviteCode(code: string): Promise<Group | null> {
-    return this.getFlatByInviteCode(code);
-  }
-
-  async getAllGroups(): Promise<Group[]> {
-    return this.getAllFlats();
-  }
-
-  async updateGroupSync(groupId: string, googleSheetSync: boolean): Promise<boolean> {
-    return this.updateFlatSync(groupId, googleSheetSync);
-  }
-
-  // --- Flats (Backward Compatibility) ---
-  async createFlat(flat: Flat): Promise<Flat> {
-    const syncVal = flat.googleSheetSync === false ? 0 : 1;
-    await this.client.execute({
-      sql: `INSERT INTO flats (id, name, invite_code, currency, google_sheet_sync, created_at)
-            VALUES (?, ?, ?, ?, ?, ?)`,
-      args: [flat.id, flat.name, flat.inviteCode, flat.currency, syncVal, flat.createdAt],
-    });
-    return { ...flat, googleSheetSync: syncVal === 1 };
-  }
-
-  async getFlatById(flatId: string): Promise<Flat | null> {
     const res = await this.client.execute({
-      sql: `SELECT * FROM flats WHERE id = ?`,
-      args: [flatId],
+      sql: `SELECT * FROM groups WHERE id = ?`,
+      args: [groupId],
     });
     if (res.rows.length === 0) return null;
     const r = res.rows[0];
@@ -162,9 +195,13 @@ export class TursoStore implements IDataStore {
     };
   }
 
-  async getFlatByInviteCode(code: string): Promise<Flat | null> {
+  async getFlatById(flatId: string): Promise<Flat | null> {
+    return this.getGroupById(flatId);
+  }
+
+  async getGroupByInviteCode(code: string): Promise<Group | null> {
     const res = await this.client.execute({
-      sql: `SELECT * FROM flats WHERE UPPER(invite_code) = UPPER(?)`,
+      sql: `SELECT * FROM groups WHERE UPPER(invite_code) = UPPER(?)`,
       args: [code.trim()],
     });
     if (res.rows.length === 0) return null;
@@ -179,8 +216,12 @@ export class TursoStore implements IDataStore {
     };
   }
 
-  async getAllFlats(): Promise<Flat[]> {
-    const res = await this.client.execute(`SELECT * FROM flats`);
+  async getFlatByInviteCode(code: string): Promise<Flat | null> {
+    return this.getGroupByInviteCode(code);
+  }
+
+  async getAllGroups(): Promise<Group[]> {
+    const res = await this.client.execute(`SELECT * FROM groups`);
     return res.rows.map((r) => ({
       id: String(r.id),
       name: String(r.name),
@@ -191,21 +232,29 @@ export class TursoStore implements IDataStore {
     }));
   }
 
-  async updateFlatSync(flatId: string, googleSheetSync: boolean): Promise<boolean> {
+  async getAllFlats(): Promise<Flat[]> {
+    return this.getAllGroups();
+  }
+
+  async updateGroupSync(groupId: string, googleSheetSync: boolean): Promise<boolean> {
     const res = await this.client.execute({
-      sql: `UPDATE flats SET google_sheet_sync = ? WHERE id = ?`,
-      args: [googleSheetSync ? 1 : 0, flatId],
+      sql: `UPDATE groups SET google_sheet_sync = ? WHERE id = ?`,
+      args: [googleSheetSync ? 1 : 0, groupId],
     });
     return res.rowsAffected > 0;
+  }
+
+  async updateFlatSync(flatId: string, googleSheetSync: boolean): Promise<boolean> {
+    return this.updateGroupSync(flatId, googleSheetSync);
   }
 
   // --- Members ---
   async addMember(member: GroupMember): Promise<GroupMember> {
     const groupId = member.groupId || member.flatId!;
     await this.client.execute({
-      sql: `INSERT INTO flat_members (id, flat_id, user_email, name, upi_id, role, is_away, away_until, joined_at)
+      sql: `INSERT INTO group_members (id, group_id, user_email, name, upi_id, role, is_away, away_until, joined_at)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ON CONFLICT(flat_id, user_email) DO UPDATE SET
+            ON CONFLICT(group_id, user_email) DO UPDATE SET
             name = excluded.name, upi_id = excluded.upi_id`,
       args: [
         member.id,
@@ -224,13 +273,13 @@ export class TursoStore implements IDataStore {
 
   async getMembers(groupId: string): Promise<GroupMember[]> {
     const res = await this.client.execute({
-      sql: `SELECT * FROM flat_members WHERE flat_id = ? ORDER BY joined_at ASC`,
+      sql: `SELECT * FROM group_members WHERE group_id = ? ORDER BY joined_at ASC`,
       args: [groupId],
     });
     return res.rows.map((r) => ({
       id: String(r.id),
-      groupId: String(r.flat_id),
-      flatId: String(r.flat_id),
+      groupId: String(r.group_id),
+      flatId: String(r.group_id),
       userEmail: String(r.user_email),
       name: String(r.name),
       upiId: r.upi_id ? String(r.upi_id) : undefined,
@@ -243,15 +292,15 @@ export class TursoStore implements IDataStore {
 
   async getMember(groupId: string, userEmail: string): Promise<GroupMember | null> {
     const res = await this.client.execute({
-      sql: `SELECT * FROM flat_members WHERE flat_id = ? AND user_email = ?`,
+      sql: `SELECT * FROM group_members WHERE group_id = ? AND user_email = ?`,
       args: [groupId, userEmail],
     });
     if (res.rows.length === 0) return null;
     const r = res.rows[0];
     return {
       id: String(r.id),
-      groupId: String(r.flat_id),
-      flatId: String(r.flat_id),
+      groupId: String(r.group_id),
+      flatId: String(r.group_id),
       userEmail: String(r.user_email),
       name: String(r.name),
       upiId: r.upi_id ? String(r.upi_id) : undefined,
@@ -269,7 +318,7 @@ export class TursoStore implements IDataStore {
     awayUntil?: string
   ): Promise<boolean> {
     const res = await this.client.execute({
-      sql: `UPDATE flat_members SET is_away = ?, away_until = ? WHERE flat_id = ? AND user_email = ?`,
+      sql: `UPDATE group_members SET is_away = ?, away_until = ? WHERE group_id = ? AND user_email = ?`,
       args: [isAway ? 1 : 0, awayUntil || null, groupId, userEmail],
     });
     return res.rowsAffected > 0;
@@ -280,13 +329,14 @@ export class TursoStore implements IDataStore {
     const groupId = expense.groupId || expense.flatId!;
     await this.client.execute({
       sql: `INSERT INTO expenses (
-        id, flat_id, payer_email, title, amount_minor_units, amount_display,
+        id, group_id, flat_id, payer_email, title, amount_minor_units, amount_display,
         category, split_type, splits_json, utr_number, overwritten_flag,
         original_expense_id, duplicate_of_id, sheet_row_index, sheet_row_link,
         history_log, sheet_sync_status, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       args: [
         expense.id,
+        groupId,
         groupId,
         expense.payerEmail,
         expense.title,
@@ -348,8 +398,8 @@ export class TursoStore implements IDataStore {
 
   async getExpenses(groupId: string): Promise<Expense[]> {
     const res = await this.client.execute({
-      sql: `SELECT * FROM expenses WHERE flat_id = ? ORDER BY created_at DESC`,
-      args: [groupId],
+      sql: `SELECT * FROM expenses WHERE (group_id = ? OR flat_id = ?) ORDER BY created_at DESC`,
+      args: [groupId, groupId],
     });
     return res.rows.map((r) => this.mapExpenseRow(r));
   }
@@ -375,10 +425,11 @@ export class TursoStore implements IDataStore {
   async createSettlement(settlement: Settlement): Promise<Settlement> {
     const groupId = settlement.groupId || settlement.flatId!;
     await this.client.execute({
-      sql: `INSERT INTO settlements (id, flat_id, payer_email, receiver_email, amount_minor_units, amount_display, notes, settled_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      sql: `INSERT INTO settlements (id, group_id, flat_id, payer_email, receiver_email, amount_minor_units, amount_display, notes, settled_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       args: [
         settlement.id,
+        groupId,
         groupId,
         settlement.payerEmail,
         settlement.receiverEmail,
@@ -393,13 +444,13 @@ export class TursoStore implements IDataStore {
 
   async getSettlements(groupId: string): Promise<Settlement[]> {
     const res = await this.client.execute({
-      sql: `SELECT * FROM settlements WHERE flat_id = ? ORDER BY settled_at DESC`,
-      args: [groupId],
+      sql: `SELECT * FROM settlements WHERE (group_id = ? OR flat_id = ?) ORDER BY settled_at DESC`,
+      args: [groupId, groupId],
     });
     return res.rows.map((r) => ({
       id: String(r.id),
-      groupId: String(r.flat_id),
-      flatId: String(r.flat_id),
+      groupId: String(r.group_id || r.flat_id),
+      flatId: String(r.group_id || r.flat_id),
       payerEmail: String(r.payer_email),
       receiverEmail: String(r.receiver_email),
       amountMinorUnits: Number(r.amount_minor_units),
@@ -414,11 +465,12 @@ export class TursoStore implements IDataStore {
     const groupId = statement.groupId || statement.flatId!;
     const id = `stmt_${groupId}_${statement.startDate.slice(0, 7)}`;
     await this.client.execute({
-      sql: `INSERT INTO monthly_statements (id, flat_id, month_label, start_date, end_date, total_spend, data_json, created_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      sql: `INSERT INTO monthly_statements (id, group_id, flat_id, month_label, start_date, end_date, total_spend, data_json, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(id) DO UPDATE SET data_json = excluded.data_json`,
       args: [
         id,
+        groupId,
         groupId,
         statement.periodLabel,
         statement.startDate,
@@ -432,14 +484,14 @@ export class TursoStore implements IDataStore {
 
   async getMonthlyStatements(groupId: string): Promise<MonthlyStatement[]> {
     const res = await this.client.execute({
-      sql: `SELECT * FROM monthly_statements WHERE flat_id = ? ORDER BY start_date DESC`,
-      args: [groupId],
+      sql: `SELECT * FROM monthly_statements WHERE (group_id = ? OR flat_id = ?) ORDER BY start_date DESC`,
+      args: [groupId, groupId],
     });
     return res.rows.map((r) => JSON.parse(String(r.data_json)));
   }
 
   private mapExpenseRow(r: any): Expense {
-    const groupId = String(r.flat_id);
+    const groupId = String(r.group_id || r.flat_id);
     return {
       id: String(r.id),
       groupId,
