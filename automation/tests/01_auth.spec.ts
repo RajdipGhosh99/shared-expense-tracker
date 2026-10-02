@@ -35,4 +35,14 @@ test.describe('Authentication & Session Management', () => {
     await expect(page).toHaveURL(/\/(onboarding|dashboard)/);
     await expect(page.locator('body')).toContainText('Welcome, Amit');
   });
+
+  test('Navigating to unknown URL shows Page Not Found 404 fallback with return button', async ({ page }) => {
+    await page.goto('/unknown-random-route');
+    await expect(page.locator('h1')).toContainText('Page Not Found');
+    await expect(page.locator('text=404')).toBeVisible();
+
+    // Click Back to Sign In
+    await page.click('button:has-text("Back to Sign In")');
+    await expect(page).toHaveURL(/\/auth/);
+  });
 });

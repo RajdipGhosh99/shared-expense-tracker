@@ -4,6 +4,7 @@ import app from '../server.js';
 import { Server } from 'http';
 
 import { getStorage } from '../storage/index.js';
+import jwt from 'jsonwebtoken';
 
 describe('Backend API End-to-End Integration Suite', () => {
   let server: Server;
@@ -46,6 +47,12 @@ describe('Backend API End-to-End Integration Suite', () => {
     assert.equal(r1.status, 201);
     const d1 = await r1.json();
     rahulToken = d1.token;
+
+    // Verify 30 days token expiry (30 * 24 * 60 * 60 = 2592000s)
+    const decoded = jwt.decode(rahulToken) as any;
+    assert.ok(decoded.exp);
+    assert.ok(decoded.iat);
+    assert.equal(decoded.exp - decoded.iat, 30 * 24 * 60 * 60);
 
     // Amit
     const r2 = await fetch(`${baseUrl}/api/auth/register`, {
@@ -257,6 +264,13 @@ describe('Backend API End-to-End Integration Suite', () => {
     assert.equal(data.group.name, 'Palm Springs 402');
     assert.ok(Array.isArray(data.members));
     assert.equal(data.members.length, 2);
+  });
+
+  test('Backend 404: Returns 404 for unknown endpoints', async () => {
+    const res = await fetch(`${baseUrl}/api/non-existent-route`);
+    assert.equal(res.status, 404);
+    const data = await res.json();
+    assert.equal(data.error, 'Endpoint not found');
   });
 
   test('Teardown test server', async () => {

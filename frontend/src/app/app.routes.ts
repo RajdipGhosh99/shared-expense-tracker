@@ -7,6 +7,7 @@ import { GroupOnboardingComponent } from './features/group/group-onboarding.comp
 import { DashboardComponent } from './features/dashboard/dashboard.component.js';
 import { IncomingScreenshotComponent } from './features/screenshot/incoming-screenshot.component.js';
 import { StatementsComponent } from './features/statements/statements.component.js';
+import { NotFoundComponent } from './features/not-found/not-found.component.js';
 
 const authGuard = () => {
   const api = inject(ApiService);
@@ -23,6 +24,7 @@ export const routes: Routes = [
   { path: 'dashboard', component: DashboardComponent, canActivate: [authGuard] },
   { path: 'screenshot-review', component: IncomingScreenshotComponent, canActivate: [authGuard] },
   { path: 'statements', component: StatementsComponent, canActivate: [authGuard] },
+  { path: '404', component: NotFoundComponent },
   { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
-  { path: '**', redirectTo: 'dashboard' },
+  { path: '**', component: NotFoundComponent },
 ];

@@ -57,6 +57,11 @@ app.use('/api/settlements', settleRoutes);
 app.use('/api/statements', statementRoutes);
 app.use('/api/cron', cronRoutes);
 
+// 404 Endpoint Not Found fallback
+app.use((req, res) => {
+  res.status(404).json({ error: 'Endpoint not found', path: req.originalUrl });
+});
+
 // Only listen if not imported for tests and not inside Vercel serverless wrapper
 if (process.env.NODE_ENV !== 'test' && !process.env.VERCEL) {
   app.listen(port, () => {
