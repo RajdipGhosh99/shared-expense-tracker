@@ -12,8 +12,7 @@ const authGuard = () => {
   const api = inject(ApiService);
   const router = inject(Router);
   if (!api.token()) {
-    router.navigate(['/auth']);
-    return false;
+    return router.createUrlTree(['/auth']);
   }
   return true;
 };
