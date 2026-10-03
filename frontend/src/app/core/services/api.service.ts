@@ -31,7 +31,8 @@ export interface AuthResponse {
   providedIn: 'root',
 })
 export class ApiService {
-  private baseUrl = '/api';
+  private baseUrl =
+    (typeof window !== 'undefined' && (window as any).__API_BASE_URL__) || '/api';
 
   // Reactive State Signals
   currentUser = signal<{ email: string; name: string; upiId?: string; avatar?: string } | null>(
