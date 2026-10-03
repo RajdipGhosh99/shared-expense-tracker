@@ -45,49 +45,6 @@ import { ApiService } from '../../core/services/api.service.js';
           </p>
         </div>
 
-        <!-- PROMINENT GOOGLE SIGN IN BUTTON -->
-        <div class="space-y-3">
-          <button
-            type="button"
-            (click)="openGooglePrompt()"
-            [disabled]="loading()"
-            class="w-full py-3.5 px-4 bg-white hover:bg-slate-100 active:scale-[0.98] transition-all text-slate-800 font-bold rounded-2xl shadow-xl shadow-white/5 border border-slate-200 flex items-center justify-center space-x-3 cursor-pointer group"
-          >
-            <!-- Google Official 4-Color SVG Icon -->
-            <svg class="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24">
-              <path
-                fill="#4285F4"
-                d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-              />
-              <path
-                fill="#34A853"
-                d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-              />
-              <path
-                fill="#FBBC05"
-                d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
-              />
-              <path
-                fill="#EA4335"
-                d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
-              />
-            </svg>
-            <span class="text-sm font-semibold tracking-wide text-slate-800"
-              >Continue with Google</span
-            >
-          </button>
-
-          <!-- Divider -->
-          <div class="relative flex py-1 items-center">
-            <div class="flex-grow border-t border-slate-700/60"></div>
-            <span
-              class="flex-shrink mx-3 text-slate-500 text-xs font-semibold uppercase tracking-wider"
-              >or with email</span
-            >
-            <div class="flex-grow border-t border-slate-700/60"></div>
-          </div>
-        </div>
-
         <!-- Mode Toggle (Log In / Sign Up) -->
         <div class="grid grid-cols-2 p-1 bg-slate-950/70 rounded-xl border border-slate-700/50">
           <button
@@ -188,105 +145,6 @@ import { ApiService } from '../../core/services/api.service.js';
           </button>
         </form>
       </div>
-
-      <!-- Google Sign-In Modal Prompt -->
-      <div
-        *ngIf="showGoogleModal()"
-        class="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4"
-      >
-        <div
-          class="bg-white text-slate-900 rounded-3xl max-w-sm w-full p-6 sm:p-7 shadow-2xl space-y-5 animate-in fade-in zoom-in-95 duration-150 border border-slate-100"
-        >
-          <!-- Header -->
-          <div class="flex items-center justify-between border-b border-slate-100 pb-3">
-            <div class="flex items-center space-x-2.5">
-              <svg class="w-6 h-6 flex-shrink-0" viewBox="0 0 24 24">
-                <path
-                  fill="#4285F4"
-                  d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                />
-                <path
-                  fill="#34A853"
-                  d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                />
-                <path
-                  fill="#FBBC05"
-                  d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
-                />
-                <path
-                  fill="#EA4335"
-                  d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
-                />
-              </svg>
-              <div>
-                <h3 class="font-bold text-sm text-slate-800 leading-tight">Sign in with Google</h3>
-                <p class="text-[10px] text-slate-500">to continue to Expense Tracker</p>
-              </div>
-            </div>
-            <button
-              (click)="showGoogleModal.set(false)"
-              class="text-slate-400 hover:text-slate-600 text-lg font-bold p-1 cursor-pointer"
-            >
-              ✕
-            </button>
-          </div>
-
-          <!-- Google Account Form -->
-          <form (ngSubmit)="loginWithGoogle()" class="space-y-3.5">
-            <div class="space-y-1">
-              <label class="text-xs font-bold text-slate-700">Google Account Email</label>
-              <input
-                type="email"
-                [(ngModel)]="googleEmail"
-                name="googleEmail"
-                required
-                placeholder="your.name@gmail.com"
-                class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs text-slate-900 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
-              />
-            </div>
-
-            <div class="space-y-1">
-              <label class="text-xs font-bold text-slate-700">Full Name</label>
-              <input
-                type="text"
-                [(ngModel)]="googleName"
-                name="googleName"
-                placeholder="e.g. Alex Johnson"
-                class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs text-slate-900 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
-              />
-            </div>
-
-            <div class="space-y-1">
-              <label class="text-xs font-bold text-slate-700 flex justify-between">
-                <span>UPI ID</span>
-                <span class="text-[10px] text-slate-400 font-normal">Optional</span>
-              </label>
-              <input
-                type="text"
-                [(ngModel)]="googleUpi"
-                name="googleUpi"
-                placeholder="yourname@okaxis"
-                class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs text-slate-900 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
-              />
-            </div>
-
-            <button
-              type="submit"
-              [disabled]="loading() || !googleEmail.trim()"
-              class="w-full py-3 bg-slate-900 hover:bg-slate-800 disabled:opacity-50 text-white font-bold rounded-xl shadow-md transition-all text-xs flex items-center justify-center space-x-2 cursor-pointer"
-            >
-              <span>Sign in with Google Account</span>
-            </button>
-          </form>
-
-          <p
-            class="text-[10px] text-slate-400 text-center flex items-center justify-center space-x-1"
-          >
-            <span>🔒</span>
-            <span>Secured via Google Identity Protocol</span>
-          </p>
-        </div>
-      </div>
     </div>
   `,
 })
@@ -294,58 +152,16 @@ export class AuthComponent {
   isRegister = signal<boolean>(false);
   loading = signal<boolean>(false);
   errorMessage = signal<string | null>(null);
-  showGoogleModal = signal<boolean>(false);
 
   name = '';
   email = '';
   password = '';
   upiId = '';
 
-  googleEmail = '';
-  googleName = '';
-  googleUpi = '';
-
   constructor(
     private api: ApiService,
     private router: Router,
   ) {}
-
-  openGooglePrompt() {
-    this.showGoogleModal.set(true);
-  }
-
-  loginWithGoogle() {
-    if (!this.googleEmail.trim()) {
-      this.errorMessage.set('Please enter your Google account email.');
-      return;
-    }
-
-    this.loading.set(true);
-    this.errorMessage.set(null);
-
-    const name =
-      this.googleName.trim() ||
-      this.googleEmail.split('@')[0].charAt(0).toUpperCase() +
-        this.googleEmail.split('@')[0].slice(1);
-
-    this.api
-      .loginWithGoogle({
-        email: this.googleEmail.trim(),
-        name,
-        upiId: this.googleUpi.trim() || undefined,
-      })
-      .subscribe({
-        next: () => {
-          this.loading.set(false);
-          this.showGoogleModal.set(false);
-          this.handlePostAuthNavigation();
-        },
-        error: (err) => {
-          this.loading.set(false);
-          this.errorMessage.set(err.error?.error || 'Google authentication failed.');
-        },
-      });
-  }
 
   submit() {
     this.loading.set(true);

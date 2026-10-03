@@ -48,17 +48,19 @@ test.describe('Authentication & Session Management', () => {
     await expect(page).toHaveURL(/\/auth/);
   });
 
-  test('User can sign in with prominent Continue with Google button', async ({ page }) => {
+  test('Google SSO is removed from UI (future scope) and email auth is primary', async ({
+    page,
+  }) => {
     await page.goto('/auth');
-    await expect(page.locator('button:has-text("Continue with Google")')).toBeVisible();
-    await page.click('button:has-text("Continue with Google")');
+    // Verify Google SSO button is not present
+    await expect(page.locator('button:has-text("Continue with Google")')).not.toBeVisible();
+    await expect(page.locator('text=Sign in with Google')).not.toBeVisible();
 
-    // Google modal appears
-    await expect(page.locator('h3:has-text("Sign in with Google")')).toBeVisible();
-    await page.fill('input[name="googleEmail"]', 'alex.tester@gmail.com');
-    await page.click('button:has-text("Sign in with Google Account")');
-
-    // Successfully navigates to onboarding or dashboard
-    await expect(page).toHaveURL(/\/(onboarding|dashboard)/);
+    // Verify Log In and Sign Up options are prominent and functional
+    await expect(page.getByRole('button', { name: 'Log In', exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Sign Up', exact: true })).toBeVisible();
+    await expect(page.locator('button:has-text("Log In to Tracker")')).toBeVisible();
+    await expect(page.locator('input[type="email"]')).toBeVisible();
+    await expect(page.locator('input[type="password"]')).toBeVisible();
   });
 });
