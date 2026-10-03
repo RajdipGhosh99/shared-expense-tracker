@@ -23,76 +23,69 @@ import {
     >
       <!-- Top Mature Executive Header -->
       <header
-        class="bg-white/95 backdrop-blur-md border-b border-slate-200/90 sticky top-0 z-30 px-3 py-1.5 pt-safe shadow-2xs"
+        class="bg-white/95 backdrop-blur-md border-b border-slate-200/90 sticky top-0 z-30 px-2 py-1 pt-safe shadow-2xs"
       >
-        <div class="relative space-y-1.5">
-          <div class="flex items-center justify-between gap-2">
-            <div class="flex min-w-0 items-center gap-2">
-              <img src="/pwa-icon.svg" alt="" class="size-8 shrink-0 rounded-lg shadow-xs" />
-              <h1 class="max-w-[210px] truncate text-xs font-extrabold leading-tight text-slate-900">
-                Shared Expense Tracker
-              </h1>
-            </div>
-
-            <div class="flex shrink-0 items-center space-x-1">
-              <div class="hidden md:block text-right leading-none">
-                <p class="text-xs font-bold text-slate-800 truncate max-w-[80px]">
-                  {{ api.currentUser()?.name }}
-                </p>
-              </div>
-
-              <button
-                (click)="api.logout(); router.navigate(['/auth'])"
-                class="rounded-lg px-1.5 py-0.5 text-[11px] font-semibold text-slate-500 transition-colors hover:bg-rose-50 hover:text-rose-600 cursor-pointer"
-                title="Log out"
-              >
-                Log out
-              </button>
-
-              <div
-                class="size-6 rounded-full bg-slate-100 border border-slate-300 text-slate-700 font-bold text-[10px] flex items-center justify-center flex-shrink-0 select-none shadow-2xs"
-                [title]="api.currentUser()?.email || ''"
-              >
-                {{ api.currentUser()?.name?.charAt(0) || 'U' }}
-              </div>
-            </div>
-          </div>
-
-          <div class="flex items-center justify-between gap-2 border-t border-slate-100 pt-1">
-            <div
-              (click)="showGroupMenu.set(!showGroupMenu())"
-              class="flex min-w-0 items-center space-x-1.5 rounded-lg py-0.5 pr-2 text-left hover:bg-slate-100 active:scale-98 transition-all cursor-pointer select-none group"
-              title="Switch or manage groups"
+        <div class="relative flex h-12 items-center gap-1">
+          <button
+            type="button"
+            [attr.aria-expanded]="showGroupMenu()"
+            aria-haspopup="true"
+            (click)="showGroupMenu.set(!showGroupMenu())"
+            class="flex h-11 min-w-0 flex-1 items-center gap-2 rounded-xl px-1.5 text-left transition-colors hover:bg-slate-100 active:bg-slate-200 cursor-pointer"
+            title="Switch or manage groups"
+          >
+            <img src="/pwa-icon.svg" alt="" class="size-8 shrink-0 rounded-lg" />
+            <span
+              role="heading"
+              aria-level="1"
+              class="min-w-0 flex-1 truncate text-sm font-bold text-slate-900"
             >
-              <svg
-                class="size-3.5 shrink-0 text-slate-500 group-hover:text-indigo-600"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                aria-hidden="true"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
-                />
-              </svg>
-              <span class="truncate text-[11px] font-bold text-slate-700 group-hover:text-indigo-600">
-                {{ api.activeGroup()?.name || 'My Group' }}
-              </span>
-              <span class="shrink-0 text-xs text-slate-400 group-hover:text-indigo-600">▾</span>
-            </div>
+              {{ api.activeGroup()?.name || 'My Group' }}
+            </span>
+            <svg
+              class="size-4 shrink-0 text-slate-500"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+            >
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m6 9 6 6 6-6" />
+            </svg>
+          </button>
 
+          <div class="flex shrink-0 items-center gap-0.5">
             <button
               type="button"
               (click)="copyCode()"
-              class="flex shrink-0 items-center space-x-1 rounded-lg border border-slate-200/80 bg-slate-100 px-2 py-0.5 text-[11px] transition-all cursor-pointer select-none hover:bg-slate-200/80 active:scale-95"
-              [title]="copiedCode() ? 'Copied!' : 'Click to copy invite code'"
+              class="flex size-11 items-center justify-center rounded-xl text-slate-600 transition-colors hover:bg-slate-100 active:bg-slate-200 cursor-pointer"
+              [title]="copiedCode() ? 'Invite code copied' : 'Copy invite code'"
+              [attr.aria-label]="copiedCode() ? 'Invite code copied' : 'Copy invite code'"
             >
-              <span class="max-w-[110px] truncate font-mono font-bold text-slate-700">{{ api.activeGroup()?.inviteCode }}</span>
-              <span class="text-slate-500">{{ copiedCode() ? '✓' : '📋' }}</span>
+              <svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <rect x="8" y="8" width="12" height="12" rx="2" stroke-width="2" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3" />
+              </svg>
             </button>
+
+            <button
+              type="button"
+              (click)="api.logout(); router.navigate(['/auth'])"
+              class="flex size-11 items-center justify-center rounded-xl text-slate-600 transition-colors hover:bg-rose-50 hover:text-rose-600 active:bg-rose-100 cursor-pointer"
+              title="Log out"
+              aria-label="Log out"
+            >
+              <svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 17l5-5-5-5m5 5H3m9-9h6a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-6" />
+              </svg>
+            </button>
+
+            <div
+              class="ml-1 flex size-8 shrink-0 items-center justify-center rounded-full border border-slate-300 bg-slate-100 text-xs font-bold text-slate-700 select-none"
+              [title]="api.currentUser()?.email || ''"
+              aria-hidden="true"
+            >
+              {{ api.currentUser()?.name?.charAt(0) || 'U' }}
+            </div>
           </div>
 
           <!-- Group Switcher Dropdown Menu -->
