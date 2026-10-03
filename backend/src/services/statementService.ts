@@ -69,8 +69,8 @@ export async function generateStatement(
 
     paidMap[exp.payerEmail] = (paidMap[exp.payerEmail] || 0) + exp.totalAmountMinorUnits;
 
-    for (const [email, owedMinor] of Object.entries(exp.splits)) {
-      shareMap[email] = (shareMap[email] || 0) + owedMinor;
+    for (const [email, owedMinor] of Object.entries(exp.splits as Record<string, number>)) {
+      shareMap[email] = (shareMap[email] || 0) + Number(owedMinor);
     }
   }
 

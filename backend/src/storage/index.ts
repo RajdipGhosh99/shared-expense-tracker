@@ -13,9 +13,9 @@ export function getStorage(): IDataStore {
   const tursoUrl = process.env.TURSO_DATABASE_URL || defaultDb;
   const tursoToken = process.env.TURSO_AUTH_TOKEN;
 
-  if (!process.env.TURSO_DATABASE_URL && process.env.VERCEL) {
-    console.warn(
-      '[Storage] WARNING: TURSO_DATABASE_URL is not set in Vercel. Using /tmp/local.db fallback',
+  if (!process.env.TURSO_DATABASE_URL) {
+    console.error(
+      '[Storage] Missing TURSO_DATABASE_URL. Please set TURSO_DATABASE_URL and TURSO_AUTH_TOKEN in Vercel Project Settings.',
     );
   }
 

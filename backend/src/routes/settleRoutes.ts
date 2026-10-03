@@ -36,7 +36,7 @@ router.get('/balances', authMiddleware, async (req: AuthRequest, res: Response) 
   const balanceSheet = simplifyDebts(groupId, memberLookups, expenseRecords, settlementRecords);
 
   // Attach dynamic UPI deep links to each simplified transaction
-  const transactionsWithUPI = balanceSheet.simplifiedDebts.map((tx) => {
+  const transactionsWithUPI = balanceSheet.simplifiedDebts.map((tx: any) => {
     let upiLink: string | undefined;
     if (tx.receiverUPI) {
       upiLink = generateUPIDeepLink({
