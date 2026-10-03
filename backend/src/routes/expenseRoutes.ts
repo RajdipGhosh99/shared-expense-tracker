@@ -141,6 +141,87 @@ router.post('/', authMiddleware, async (req: AuthRequest, res: Response) => {
   return res.status(201).json({ status: 'CREATED', expense: created });
 });
 
+// Batch / Multiple Expense Entry (Google Sheet Grid)
+router.post('/batch', authMiddleware, async (req: AuthRequest, res: Response) => {
+  const { groupId: reqGroupId, flatId: reqFlatId, items } = req.body;
+  const groupId = reqGroupId || reqFlatId;
+  const user = req.user!;
+  const db = getStorage();
+
+  if (!groupId || !Array.isArray(items) || items.length === 0) {
+    return res.status(400).json({ error: 'Group ID and non-empty items array are required.' });
+  }
+
+  const members = await db.getMembers(groupId);
+  const memberEmails = members.map((m) => m.userEmail);
+  const absentEmails = members.filter((m) => m.isAway).map((m) => m.userEmail);
+
+  const createdExpenses: Expense[] = [];
+  const errors: Array<{ index: number; title: string; error: string }> = [];
+
+  for (let i = 0; i < items.length; i++) {
+    const item = items[i];
+    if (!item.title || !item.title.trim() || item.amount === undefined || item.amount === null) {
+      continue; // Skip empty rows
+    }
+
+    const amountDisplay = parseFloat(item.amount);
+    if (isNaN(amountDisplay) || amountDisplay <= 0) {
+      errors.push({ index: i, title: item.title, error: 'Invalid amount' });
+      continue;
+    }
+
+    const amountMinorUnits = Math.round(amountDisplay * 100);
+    const expenseDate =
+      item.date && typeof item.date === 'string' && item.date.trim().length > 0
+        ? item.date.trim().slice(0, 10)
+        : new Date().toISOString().slice(0, 10);
+
+    const splitCalc = calculateSplits({
+      totalAmountMinorUnits: amountMinorUnits,
+      splitType: (item.splitType as SplitType) || 'EQUAL',
+      payerEmail: user.email,
+      memberEmails,
+      absentMemberEmails: absentEmails,
+    });
+
+    if (!splitCalc.isValid) {
+      errors.push({ index: i, title: item.title, error: splitCalc.errorMessage || 'Split failed' });
+      continue;
+    }
+
+    const expenseId = `exp_${Date.now()}_${i}`;
+    const newExpense: Expense = {
+      id: expenseId,
+      groupId,
+      flatId: groupId,
+      payerEmail: user.email,
+      title: item.title.trim(),
+      date: expenseDate,
+      totalAmountMinorUnits: amountMinorUnits,
+      totalAmountDisplay: amountDisplay,
+      category: (item.category as ExpenseCategory) || 'Household',
+      splitType: (item.splitType as SplitType) || 'EQUAL',
+      splits: splitCalc.splits,
+      utrNumber: item.utrNumber ? item.utrNumber.trim() : undefined,
+      overwrittenFlag: 'NO',
+      sheetSyncStatus: 'PENDING',
+      createdAt: `${expenseDate}T12:00:00.000Z`,
+      updatedAt: new Date().toISOString(),
+    };
+
+    const created = await db.createExpense(newExpense);
+    createdExpenses.push(created);
+  }
+
+  return res.status(201).json({
+    status: 'BATCH_CREATED',
+    count: createdExpenses.length,
+    expenses: createdExpenses,
+    errors,
+  });
+});
+
 // List Expenses for Group
 router.get('/', authMiddleware, async (req: AuthRequest, res: Response) => {
   const groupId = (req.query.groupId || req.query.flatId) as string;

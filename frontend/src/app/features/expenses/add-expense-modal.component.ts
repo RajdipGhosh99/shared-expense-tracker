@@ -15,66 +15,83 @@ import {
   template: `
     <!-- Mobile Bottom Sheet Backdrop -->
     <div
-      class="fixed inset-0 bg-black/80 backdrop-blur-md flex flex-col justify-end z-50 transition-opacity"
+      class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex flex-col justify-end z-50 transition-opacity"
     >
       <!-- Click backdrop to close -->
       <div class="flex-1" (click)="close.emit()"></div>
 
       <!-- Sheet Container -->
       <div
-        class="bg-slate-900/95 backdrop-blur-2xl rounded-t-3xl max-w-md w-full mx-auto p-5 pb-8 shadow-2xl border-t border-slate-800 animate-slide-up max-h-[90vh] overflow-y-auto space-y-4 text-slate-100"
+        class="bg-white rounded-t-3xl max-w-md w-full mx-auto p-5 pb-8 shadow-2xl border-t border-slate-200 animate-slide-up max-h-[90vh] overflow-y-auto space-y-4 text-slate-900"
       >
         <!-- Mobile Drag Handle -->
-        <div class="w-12 h-1 bg-slate-700 rounded-full mx-auto mb-1"></div>
+        <div class="w-12 h-1 bg-slate-300 rounded-full mx-auto mb-1"></div>
 
         <!-- Header -->
-        <div class="flex justify-between items-center pb-2 border-b border-slate-800/60">
+        <div class="flex justify-between items-center pb-2 border-b border-slate-100">
           <div class="flex items-center space-x-2.5">
             <div
-              class="w-8 h-8 rounded-xl bg-gradient-to-tr from-indigo-500 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-indigo-500/20 text-sm font-bold"
+              class="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center shadow-xs text-sm font-bold"
             >
               ＋
             </div>
             <div>
-              <h3 class="text-base font-black text-white">Add Group Expense</h3>
-              <p class="text-[11px] text-slate-400 font-medium">
+              <h3 class="text-base font-bold text-slate-900">Add Group Expense</h3>
+              <p class="text-[11px] text-slate-500 font-medium">
                 Split automatically with active members
               </p>
             </div>
           </div>
           <button
             (click)="close.emit()"
-            class="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-slate-400 hover:text-white font-bold active:scale-90 transition-all border border-slate-700/50"
+            class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500 hover:text-slate-800 font-bold active:scale-90 transition-all cursor-pointer"
           >
             ✕
           </button>
         </div>
 
+        <!-- Switch to Google Sheet Multiple Entry Banner -->
+        <div
+          (click)="openBulk.emit()"
+          class="p-2.5 bg-emerald-50 hover:bg-emerald-100/80 border border-emerald-200 rounded-xl flex items-center justify-between text-xs text-emerald-900 cursor-pointer transition-colors shadow-xs"
+        >
+          <div class="flex items-center space-x-2">
+            <span class="text-base">📊</span>
+            <div>
+              <span class="font-bold">Multiple Bills Entry (Google Sheet Grid)</span>
+              <p class="text-[11px] text-emerald-700">
+                Enter multiple rows at once like a spreadsheet
+              </p>
+            </div>
+          </div>
+          <span class="text-emerald-700 font-bold text-xs">Switch ↗</span>
+        </div>
+
         <!-- DUPLICATE CONFLICT POPUP (If triggered) -->
         <div
           *ngIf="conflictData()"
-          class="p-4 bg-amber-950/40 border border-amber-500/30 rounded-2xl space-y-3"
+          class="p-4 bg-amber-50 border border-amber-200 rounded-2xl space-y-3"
         >
-          <div class="flex items-center space-x-2 text-amber-400 font-bold text-sm">
+          <div class="flex items-center space-x-2 text-amber-800 font-bold text-sm">
             <span>⚠️ Duplicate Payment Detected</span>
           </div>
-          <p class="text-xs text-amber-200/90 leading-relaxed">{{ conflictData()?.message }}</p>
+          <p class="text-xs text-amber-900 leading-relaxed">{{ conflictData()?.message }}</p>
 
           <!-- Linked ID Card -->
-          <div class="bg-slate-950/70 p-3 rounded-xl border border-amber-500/20 text-xs space-y-1">
+          <div class="bg-white p-3 rounded-xl border border-amber-200 text-xs space-y-1 shadow-xs">
             <div class="flex justify-between items-center">
-              <span class="font-bold text-slate-300">Existing Record:</span>
+              <span class="font-bold text-slate-700">Existing Record:</span>
               <span
-                class="px-2 py-0.5 bg-indigo-500/20 text-indigo-400 font-mono font-bold rounded border border-indigo-500/30"
+                class="px-2 py-0.5 bg-indigo-50 text-indigo-700 font-mono font-bold rounded border border-indigo-200"
               >
                 #{{ conflictData()?.existingRecord?.id }}
               </span>
             </div>
             <p>
-              <span class="text-slate-400">Title:</span> {{ conflictData()?.existingRecord?.title }}
+              <span class="text-slate-500">Title:</span> {{ conflictData()?.existingRecord?.title }}
             </p>
             <p>
-              <span class="text-slate-400">Amount:</span> ₹{{
+              <span class="text-slate-500">Amount:</span> ₹{{
                 conflictData()?.existingRecord?.amountDisplay
               }}
             </p>
@@ -82,7 +99,7 @@ import {
               <a
                 [href]="conflictData()?.existingRecord?.sheetUrl"
                 target="_blank"
-                class="text-indigo-400 hover:text-indigo-300 font-medium underline"
+                class="text-indigo-600 hover:text-indigo-800 font-medium underline"
               >
                 View in Google Sheet ↗
               </a>
@@ -92,13 +109,13 @@ import {
           <div class="grid grid-cols-2 gap-2 pt-1">
             <button
               (click)="conflictData.set(null)"
-              class="py-2.5 rounded-xl border border-slate-700 bg-slate-800/80 text-xs font-semibold text-slate-300 hover:text-white active:scale-95 transition-transform"
+              class="py-2.5 rounded-xl border border-slate-300 bg-white text-xs font-semibold text-slate-700 hover:bg-slate-50 active:scale-95 transition-transform"
             >
               Cancel
             </button>
             <button
               (click)="submitWithOverwrite()"
-              class="py-2.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold shadow-md shadow-amber-600/30 active:scale-95 transition-transform"
+              class="py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold shadow-xs active:scale-95 transition-transform"
             >
               Overwrite #{{ conflictData()?.existingRecord?.id }}
             </button>
@@ -109,13 +126,13 @@ import {
         <form *ngIf="!conflictData()" (ngSubmit)="submit()" class="space-y-4">
           <!-- Big Mobile Amount Input -->
           <div
-            class="bg-slate-950/70 p-4 rounded-2xl border border-slate-800 text-center space-y-1 focus-within:border-indigo-500/60 focus-within:ring-1 focus-within:ring-indigo-500/30 transition-all"
+            class="bg-slate-50 p-4 rounded-2xl border border-slate-200 text-center space-y-1 focus-within:border-indigo-500 focus-within:bg-white focus-within:ring-1 focus-within:ring-indigo-500 transition-all"
           >
-            <label class="text-[11px] font-bold text-slate-400 uppercase tracking-wider"
+            <label class="text-[11px] font-bold text-slate-500 uppercase tracking-wider"
               >Amount</label
             >
-            <div class="flex items-center justify-center text-white font-black text-3xl">
-              <span class="text-indigo-400 mr-1.5 text-2xl font-bold">₹</span>
+            <div class="flex items-center justify-center text-slate-900 font-black text-3xl">
+              <span class="text-slate-400 mr-1.5 text-2xl font-bold">₹</span>
               <input
                 type="number"
                 step="0.01"
@@ -123,29 +140,29 @@ import {
                 name="amount"
                 required
                 placeholder="0.00"
-                class="w-48 bg-transparent text-center font-black focus:outline-none placeholder-slate-600"
+                class="w-48 bg-transparent text-center font-black focus:outline-none placeholder-slate-300"
               />
             </div>
           </div>
 
           <div class="space-y-1.5">
-            <label class="text-xs font-bold text-slate-300">What is this for?</label>
+            <label class="text-xs font-bold text-slate-700">What is this for?</label>
             <input
               type="text"
               [(ngModel)]="title"
               name="title"
               required
               placeholder="e.g. Blinkit Groceries, Wi-Fi"
-              class="w-full px-4 py-3 rounded-xl border border-slate-800 text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 bg-slate-950/70 text-white placeholder-slate-500 transition-all"
+              class="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 bg-white text-slate-900 placeholder-slate-400 transition-all"
             />
           </div>
 
           <!-- Mandatory Date Input -->
           <div class="space-y-1.5">
-            <label class="text-xs font-bold text-slate-300 flex items-center justify-between">
+            <label class="text-xs font-bold text-slate-700 flex items-center justify-between">
               <span>Date</span>
               <span
-                class="text-[10px] text-rose-400 font-extrabold tracking-wider bg-rose-500/10 px-2 py-0.5 rounded-md border border-rose-500/20"
+                class="text-[10px] text-rose-600 font-extrabold tracking-wider bg-rose-50 px-2 py-0.5 rounded-md border border-rose-200"
                 >* Mandatory</span
               >
             </label>
@@ -154,17 +171,17 @@ import {
               [(ngModel)]="date"
               name="date"
               required
-              class="w-full px-4 py-2.5 rounded-xl border border-slate-800 text-xs font-semibold focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 bg-slate-950/70 text-white [color-scheme:dark] transition-all"
+              class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-xs font-semibold focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 bg-white text-slate-900 transition-all"
             />
           </div>
 
           <div class="grid grid-cols-2 gap-2">
             <div class="space-y-1.5">
-              <label class="text-xs font-bold text-slate-300">Category</label>
+              <label class="text-xs font-bold text-slate-700">Category</label>
               <select
                 [(ngModel)]="category"
                 name="category"
-                class="w-full px-3 py-2.5 rounded-xl border border-slate-800 text-xs font-medium focus:outline-none focus:border-indigo-500 bg-slate-950/70 text-white [color-scheme:dark] transition-all"
+                class="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs font-medium focus:outline-none focus:border-indigo-500 bg-white text-slate-800 transition-all"
               >
                 <option value="Groceries">🛒 Groceries</option>
                 <option value="Rent">🏠 Rent</option>
@@ -179,11 +196,11 @@ import {
             </div>
 
             <div class="space-y-1.5">
-              <label class="text-xs font-bold text-slate-300">Split Method</label>
+              <label class="text-xs font-bold text-slate-700">Split Method</label>
               <select
                 [(ngModel)]="splitType"
                 name="splitType"
-                class="w-full px-3 py-2.5 rounded-xl border border-slate-800 text-xs font-medium focus:outline-none focus:border-indigo-500 bg-slate-950/70 text-white [color-scheme:dark] transition-all"
+                class="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs font-medium focus:outline-none focus:border-indigo-500 bg-white text-slate-800 transition-all"
               >
                 <option value="EQUAL">Equal Split</option>
                 <option value="EXACT">Exact Amounts</option>
@@ -194,23 +211,23 @@ import {
 
           <!-- Optional UTR Number -->
           <div class="space-y-1.5">
-            <label class="text-xs font-bold text-slate-300">UPI Ref / UTR (Optional)</label>
+            <label class="text-xs font-bold text-slate-700">UPI Ref / UTR (Optional)</label>
             <input
               type="text"
               [(ngModel)]="utrNumber"
               name="utrNumber"
               placeholder="12-digit transaction ID"
-              class="w-full px-4 py-2.5 rounded-xl border border-slate-800 text-xs font-mono focus:outline-none focus:border-indigo-500 bg-slate-950/70 text-slate-200 placeholder-slate-500 transition-all"
+              class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-xs font-mono focus:outline-none focus:border-indigo-500 bg-white text-slate-800 placeholder-slate-400 transition-all"
             />
           </div>
 
           <!-- Split Preview -->
           <div
             *ngIf="amount && amount > 0 && splitType === 'EQUAL'"
-            class="p-3 bg-indigo-950/40 rounded-xl border border-indigo-500/30 text-xs text-indigo-300 flex items-center justify-between"
+            class="p-3 bg-indigo-50 rounded-xl border border-indigo-100 text-xs text-indigo-900 flex items-center justify-between"
           >
-            <span class="font-medium">Each Group Member Pays:</span>
-            <span class="font-black text-indigo-400 text-sm"
+            <span class="font-medium text-slate-600">Each Group Member Pays:</span>
+            <span class="font-black text-indigo-700 text-sm"
               >₹{{ (amount / (api.members().length || 1)).toFixed(2) }}</span
             >
           </div>
@@ -218,7 +235,7 @@ import {
           <!-- Error Alert -->
           <div
             *ngIf="errorMessage()"
-            class="p-3 bg-rose-950/50 text-rose-300 rounded-xl text-xs font-medium border border-rose-500/30"
+            class="p-3 bg-rose-50 text-rose-700 rounded-xl text-xs font-medium border border-rose-200"
           >
             {{ errorMessage() }}
           </div>
@@ -226,7 +243,7 @@ import {
           <button
             type="submit"
             [disabled]="loading()"
-            class="w-full py-3.5 bg-gradient-to-r from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-indigo-700 active:scale-98 transition-all text-white font-bold rounded-xl shadow-lg shadow-indigo-500/25 text-sm"
+            class="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 active:scale-98 transition-all text-white font-bold rounded-xl shadow-xs text-sm cursor-pointer"
           >
             {{ loading() ? 'Saving Expense...' : 'Save & Split Bill' }}
           </button>
@@ -237,6 +254,7 @@ import {
 })
 export class AddExpenseModalComponent {
   @Output() close = new EventEmitter<void>();
+  @Output() openBulk = new EventEmitter<void>();
 
   title = '';
   amount: number | null = null;

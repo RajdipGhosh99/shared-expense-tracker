@@ -224,6 +224,31 @@ export class ApiService {
       .pipe(tap(() => this.refreshGroupData(group.id)));
   }
 
+  addExpensesBatch(
+    items: Array<{
+      title: string;
+      amount: number;
+      date?: string;
+      category?: string;
+      splitType?: string;
+      utrNumber?: string;
+    }>,
+  ): Observable<{ status: string; count: number; expenses: Expense[]; errors: any[] }> {
+    const group = this.activeGroup();
+    if (!group) throw new Error('No active group');
+
+    return this.http
+      .post<{ status: string; count: number; expenses: Expense[]; errors: any[] }>(
+        `${this.baseUrl}/expenses/batch`,
+        {
+          items,
+          groupId: group.id,
+          flatId: group.id,
+        },
+      )
+      .pipe(tap(() => this.refreshGroupData(group.id)));
+  }
+
   deleteExpense(id: string): Observable<any> {
     const group = this.activeGroup();
     return this.http.delete(`${this.baseUrl}/expenses/${id}`).pipe(

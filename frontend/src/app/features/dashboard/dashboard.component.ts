@@ -3,33 +3,26 @@ import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { ApiService } from '../../core/services/api.service.js';
 import { AddExpenseModalComponent } from '../expenses/add-expense-modal.component.js';
+import { BulkExpenseGridComponent } from '../expenses/bulk-expense-grid.component.js';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, AddExpenseModalComponent],
+  imports: [CommonModule, AddExpenseModalComponent, BulkExpenseGridComponent],
   template: `
-    <!-- Mobile App Container (Modern Dark Neo-Fintech) -->
+    <!-- Mobile & Desktop Responsive App Container (Standard Mature Theme) -->
     <div
-      class="min-h-screen max-w-md mx-auto bg-slate-950 text-slate-100 flex flex-col shadow-2xl relative border-x border-slate-800/40"
+      class="min-h-screen max-w-md sm:max-w-lg md:max-w-2xl mx-auto bg-slate-50 text-slate-900 flex flex-col shadow-xs relative border-x border-slate-200/80 font-sans"
     >
-      <!-- Background Ambient Glow Elements -->
-      <div
-        class="absolute -top-24 -left-24 w-72 h-72 bg-indigo-600/15 rounded-full blur-3xl pointer-events-none"
-      ></div>
-      <div
-        class="absolute top-96 -right-24 w-72 h-72 bg-purple-600/10 rounded-full blur-3xl pointer-events-none"
-      ></div>
-
-      <!-- Top Modern Header -->
+      <!-- Top Mature Executive Header -->
       <header
-        class="bg-slate-950/85 backdrop-blur-2xl border-b border-slate-800/80 sticky top-0 z-30 px-4 py-3 pt-safe shadow-lg"
+        class="bg-white border-b border-slate-200 sticky top-0 z-30 px-4 py-3 pt-safe shadow-xs"
       >
         <div class="flex items-center justify-between">
           <!-- Group Brand & Invite Code Chip -->
-          <div class="flex items-center space-x-2.5">
+          <div class="flex items-center space-x-3">
             <div
-              class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-indigo-500 via-indigo-600 to-purple-600 text-white flex items-center justify-center font-black shadow-lg shadow-indigo-500/25 flex-shrink-0"
+              class="w-9 h-9 rounded-xl bg-slate-900 text-white flex items-center justify-center font-bold shadow-xs flex-shrink-0"
             >
               <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path
@@ -41,23 +34,35 @@ import { AddExpenseModalComponent } from '../expenses/add-expense-modal.componen
               </svg>
             </div>
             <div>
-              <h1 class="text-sm font-extrabold leading-tight text-white truncate max-w-[170px]">
-                {{ api.activeGroup()?.name || 'My Group' }}
-              </h1>
-              <div class="flex items-center space-x-1.5 text-[11px] text-slate-400 mt-0.5">
-                <span class="font-medium text-slate-400">Code:</span>
+              <div class="flex items-center space-x-2">
+                <h1
+                  class="text-sm font-bold text-slate-900 leading-tight truncate max-w-[160px] sm:max-w-[220px]"
+                >
+                  {{ api.activeGroup()?.name || 'My Group' }}
+                </h1>
+                <!-- Google Sheet Sync Status -->
                 <span
-                  class="font-mono font-bold text-indigo-400 bg-indigo-950/80 border border-indigo-500/30 px-1.5 py-0.5 rounded-md"
+                  class="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200"
+                  title="Changes mirror automatically to Google Sheets"
+                >
+                  <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1 animate-pulse"></span>
+                  Sheets Synced
+                </span>
+              </div>
+              <div class="flex items-center space-x-1.5 text-[11px] text-slate-500 mt-0.5">
+                <span class="font-medium text-slate-500">Code:</span>
+                <span
+                  class="font-mono font-bold text-slate-700 bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded text-[11px]"
                 >
                   {{ api.activeGroup()?.inviteCode }}
                 </span>
                 <button
                   (click)="copyCode()"
-                  class="text-slate-400 hover:text-indigo-400 active:scale-90 transition-transform cursor-pointer"
+                  class="text-slate-400 hover:text-slate-700 active:scale-90 transition-transform cursor-pointer"
                   [title]="copiedCode() ? 'Copied!' : 'Copy Code'"
                 >
                   <span *ngIf="!copiedCode()" class="text-xs">📋</span>
-                  <span *ngIf="copiedCode()" class="text-xs text-emerald-400 font-bold">✓</span>
+                  <span *ngIf="copiedCode()" class="text-xs text-emerald-600 font-bold">✓</span>
                 </button>
               </div>
             </div>
@@ -67,19 +72,19 @@ import { AddExpenseModalComponent } from '../expenses/add-expense-modal.componen
           <div class="flex items-center space-x-2.5">
             <div class="text-right">
               <p
-                class="text-xs font-bold text-slate-200 leading-none truncate max-w-[85px] sm:max-w-none"
+                class="text-xs font-bold text-slate-800 leading-none truncate max-w-[85px] sm:max-w-none"
               >
                 {{ api.currentUser()?.name }}
               </p>
               <button
                 (click)="api.logout(); router.navigate(['/auth'])"
-                class="text-[10px] text-slate-400 font-semibold hover:text-rose-400 transition-colors cursor-pointer mt-0.5 inline-block"
+                class="text-[11px] text-slate-400 font-semibold hover:text-rose-600 transition-colors cursor-pointer mt-0.5 inline-block"
               >
                 Log out
               </button>
             </div>
             <div
-              class="w-9 h-9 rounded-2xl bg-gradient-to-br from-indigo-500/30 to-purple-500/30 border border-indigo-500/40 text-indigo-300 font-black text-xs flex items-center justify-center shadow-xs flex-shrink-0"
+              class="w-8 h-8 rounded-full bg-slate-100 border border-slate-300 text-slate-700 font-bold text-xs flex items-center justify-center shadow-xs flex-shrink-0"
             >
               {{ api.currentUser()?.name?.charAt(0) || 'U' }}
             </div>
@@ -87,18 +92,18 @@ import { AddExpenseModalComponent } from '../expenses/add-expense-modal.componen
         </div>
       </header>
 
-      <!-- Scrollable Mobile Body -->
-      <main class="flex-1 p-4 space-y-4 pb-28 overflow-y-auto relative z-10">
-        <!-- Modern Month-End Settlement Banner -->
+      <!-- Scrollable Body -->
+      <main class="flex-1 p-4 space-y-4 pb-28 overflow-y-auto">
+        <!-- Month-End Settlement Banner -->
         <div
-          class="bg-gradient-to-r from-amber-500/20 via-orange-500/15 to-amber-950/20 border border-amber-500/30 text-white p-3.5 rounded-2xl shadow-md flex items-center justify-between backdrop-blur-md"
+          class="bg-amber-50 border border-amber-200/80 text-amber-900 p-3.5 rounded-2xl shadow-xs flex items-center justify-between"
         >
           <div class="space-y-0.5">
             <p
-              class="text-[10px] font-black uppercase tracking-wider text-amber-300 flex items-center space-x-1.5"
+              class="text-[10px] font-bold uppercase tracking-wider text-amber-800 flex items-center space-x-1.5"
             >
               <svg
-                class="w-3.5 h-3.5 text-amber-400"
+                class="w-3.5 h-3.5 text-amber-600"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -112,61 +117,52 @@ import { AddExpenseModalComponent } from '../expenses/add-expense-modal.componen
               </svg>
               <span>Month-End Settlement</span>
             </p>
-            <p class="text-xs font-semibold text-slate-200">
+            <p class="text-xs font-medium text-amber-900">
               Ledger finalized. Settle up or export PDF!
             </p>
           </div>
           <button
             (click)="router.navigate(['/statements'])"
-            class="px-3.5 py-1.5 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-extrabold text-xs rounded-xl shadow-md active:scale-95 transition-all cursor-pointer"
+            class="px-3.5 py-1.5 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs rounded-xl shadow-xs active:scale-95 transition-all cursor-pointer"
           >
             View ↗
           </button>
         </div>
 
-        <!-- HERO NET STANDING CARD -->
-        <div
-          class="bg-gradient-to-br from-slate-900 via-slate-900/90 to-indigo-950/60 rounded-3xl p-5 border border-slate-800/90 shadow-[0_20px_40px_rgba(0,0,0,0.6)] space-y-4 relative overflow-hidden"
-        >
-          <!-- Corner Ambient Glow -->
-          <div
-            class="absolute -right-8 -top-8 w-36 h-36 bg-indigo-500/20 rounded-full blur-2xl pointer-events-none"
-          ></div>
-
-          <div class="flex justify-between items-center text-xs relative z-10">
-            <span class="text-slate-400 uppercase tracking-widest font-extrabold text-[10px]"
+        <!-- HERO NET STANDING CARD (Standard Clean Executive) -->
+        <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-xs space-y-4">
+          <div class="flex justify-between items-center text-xs">
+            <span class="text-slate-500 uppercase tracking-wider font-bold text-[10px]"
               >Your Net Standing</span
             >
             <span
               class="px-3 py-1 rounded-full text-[11px] font-extrabold tracking-wide border shadow-xs"
-              [class.bg-emerald-500/15]="myNetBalance() >= 0"
-              [class.text-emerald-400]="myNetBalance() >= 0"
-              [class.border-emerald-500/30]="myNetBalance() >= 0"
-              [class.bg-rose-500/15]="myNetBalance() < 0"
-              [class.text-rose-400]="myNetBalance() < 0"
-              [class.border-rose-500/30]="myNetBalance() < 0"
+              [class.bg-emerald-50]="myNetBalance() >= 0"
+              [class.text-emerald-700]="myNetBalance() >= 0"
+              [class.border-emerald-200]="myNetBalance() >= 0"
+              [class.bg-rose-50]="myNetBalance() < 0"
+              [class.text-rose-700]="myNetBalance() < 0"
+              [class.border-rose-200]="myNetBalance() < 0"
             >
               {{ myNetBalance() >= 0 ? '🟢 You get back' : '🔴 You owe' }}
             </span>
           </div>
 
-          <div class="flex items-baseline space-x-1.5 relative z-10">
+          <div class="flex items-baseline space-x-1.5">
             <span
               class="text-4xl sm:text-5xl font-black tracking-tight"
-              [class.text-emerald-400]="myNetBalance() >= 0"
-              [class.text-rose-400]="myNetBalance() < 0"
+              [class.text-emerald-600]="myNetBalance() >= 0"
+              [class.text-rose-600]="myNetBalance() < 0"
             >
               {{ myNetBalance() >= 0 ? '+' : '-' }}₹{{ absNetBalance() }}
             </span>
           </div>
 
           <!-- Vacation Mode Toggle Bar -->
-          <div
-            class="pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs relative z-10"
-          >
-            <div class="flex items-center space-x-2 text-slate-300">
+          <div class="pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
+            <div class="flex items-center space-x-2 text-slate-600">
               <svg
-                class="w-4 h-4 text-emerald-400"
+                class="w-4 h-4 text-slate-500"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -183,27 +179,27 @@ import { AddExpenseModalComponent } from '../expenses/add-expense-modal.componen
             <button
               (click)="toggleVacation()"
               class="px-3 py-1.5 rounded-xl font-bold text-xs transition-all active:scale-95 cursor-pointer shadow-xs"
-              [class.bg-emerald-500]="isAway()"
-              [class.text-slate-950]="isAway()"
-              [class.bg-slate-800]="!isAway()"
-              [class.text-slate-300]="!isAway()"
+              [class.bg-amber-600]="isAway()"
+              [class.text-white]="isAway()"
+              [class.bg-slate-100]="!isAway()"
+              [class.text-slate-700]="!isAway()"
               [class.border]="!isAway()"
-              [class.border-slate-700]="!isAway()"
+              [class.border-slate-300]="!isAway()"
             >
               {{ isAway() ? 'Away (Excluded)' : 'At Group (Active)' }}
             </button>
           </div>
         </div>
 
-        <!-- QUICK ACTIONS BAR -->
-        <div class="grid grid-cols-4 gap-2.5">
+        <!-- QUICK ACTIONS BAR (Includes Google Sheet Multiple Entry) -->
+        <div class="grid grid-cols-4 sm:grid-cols-5 gap-2">
           <!-- Action: Scan Bill -->
           <button
             (click)="router.navigate(['/screenshot-review'])"
-            class="p-3 bg-slate-900/80 hover:bg-slate-800/80 border border-slate-800/80 rounded-2xl flex flex-col items-center justify-center space-y-1.5 shadow-sm active:scale-95 transition-all cursor-pointer group"
+            class="p-3 bg-white hover:bg-slate-50 border border-slate-200 rounded-2xl flex flex-col items-center justify-center space-y-1.5 shadow-xs active:scale-95 transition-all cursor-pointer group"
           >
             <div
-              class="w-8 h-8 rounded-xl bg-indigo-500/15 text-indigo-400 flex items-center justify-center group-hover:scale-110 transition-transform"
+              class="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center group-hover:scale-105 transition-transform"
             >
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path
@@ -220,36 +216,50 @@ import { AddExpenseModalComponent } from '../expenses/add-expense-modal.componen
                 />
               </svg>
             </div>
-            <span class="text-[10px] font-bold text-slate-300">Scan Bill</span>
+            <span class="text-[10px] font-bold text-slate-700">Scan Bill</span>
           </button>
 
-          <!-- Action: Add Expense -->
+          <!-- Action: Single Add Bill -->
           <button
             (click)="showAddModal.set(true)"
-            class="p-3 bg-slate-900/80 hover:bg-slate-800/80 border border-slate-800/80 rounded-2xl flex flex-col items-center justify-center space-y-1.5 shadow-sm active:scale-95 transition-all cursor-pointer group"
+            class="p-3 bg-white hover:bg-slate-50 border border-slate-200 rounded-2xl flex flex-col items-center justify-center space-y-1.5 shadow-xs active:scale-95 transition-all cursor-pointer group"
           >
             <div
-              class="w-8 h-8 rounded-xl bg-purple-500/15 text-purple-400 flex items-center justify-center group-hover:scale-110 transition-transform"
+              class="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center group-hover:scale-105 transition-transform shadow-xs"
+            >
+              <span class="text-base font-bold">＋</span>
+            </div>
+            <span class="text-[10px] font-bold text-slate-700">Add Bill</span>
+          </button>
+
+          <!-- Action: Multiple Entry (Google Sheet Mode) -->
+          <button
+            (click)="showBulkModal.set(true)"
+            class="p-3 bg-emerald-50/80 hover:bg-emerald-100/70 border border-emerald-200 rounded-2xl flex flex-col items-center justify-center space-y-1.5 shadow-xs active:scale-95 transition-all cursor-pointer group"
+            title="Add multiple expenses at once in a spreadsheet table"
+          >
+            <div
+              class="w-8 h-8 rounded-xl bg-emerald-600 text-white flex items-center justify-center group-hover:scale-105 transition-transform shadow-xs"
             >
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path
                   stroke-linecap="round"
                   stroke-linejoin="round"
-                  stroke-width="2.5"
-                  d="M12 4v16m8-8H4"
+                  stroke-width="2"
+                  d="M3 10h18M3 14h18m-9-4v8m-7 4h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
                 />
               </svg>
             </div>
-            <span class="text-[10px] font-bold text-slate-300">Add Bill</span>
+            <span class="text-[10px] font-bold text-emerald-800">Sheet Entry</span>
           </button>
 
           <!-- Action: Statements -->
           <button
             (click)="router.navigate(['/statements'])"
-            class="p-3 bg-slate-900/80 hover:bg-slate-800/80 border border-slate-800/80 rounded-2xl flex flex-col items-center justify-center space-y-1.5 shadow-sm active:scale-95 transition-all cursor-pointer group"
+            class="p-3 bg-white hover:bg-slate-50 border border-slate-200 rounded-2xl flex flex-col items-center justify-center space-y-1.5 shadow-xs active:scale-95 transition-all cursor-pointer group"
           >
             <div
-              class="w-8 h-8 rounded-xl bg-sky-500/15 text-sky-400 flex items-center justify-center group-hover:scale-110 transition-transform"
+              class="w-8 h-8 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center group-hover:scale-105 transition-transform"
             >
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path
@@ -260,16 +270,16 @@ import { AddExpenseModalComponent } from '../expenses/add-expense-modal.componen
                 />
               </svg>
             </div>
-            <span class="text-[10px] font-bold text-slate-300">Reports</span>
+            <span class="text-[10px] font-bold text-slate-700">Reports</span>
           </button>
 
           <!-- Action: Share WhatsApp -->
           <button
             (click)="shareInvite()"
-            class="p-3 bg-slate-900/80 hover:bg-slate-800/80 border border-slate-800/80 rounded-2xl flex flex-col items-center justify-center space-y-1.5 shadow-sm active:scale-95 transition-all cursor-pointer group"
+            class="hidden sm:flex p-3 bg-white hover:bg-slate-50 border border-slate-200 rounded-2xl flex-col items-center justify-center space-y-1.5 shadow-xs active:scale-95 transition-all cursor-pointer group"
           >
             <div
-              class="w-8 h-8 rounded-xl bg-emerald-500/15 text-emerald-400 flex items-center justify-center group-hover:scale-110 transition-transform"
+              class="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center group-hover:scale-105 transition-transform"
             >
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path
@@ -280,23 +290,21 @@ import { AddExpenseModalComponent } from '../expenses/add-expense-modal.componen
                 />
               </svg>
             </div>
-            <span class="text-[10px] font-bold text-slate-300">Invite</span>
+            <span class="text-[10px] font-bold text-slate-700">Invite</span>
           </button>
         </div>
 
         <!-- SUGGESTED SETTLEMENTS (Min-Cash-Flow) -->
-        <div
-          class="bg-slate-900/70 backdrop-blur-xl p-4.5 rounded-3xl border border-slate-800/80 shadow-md space-y-3"
-        >
+        <div class="bg-white p-4.5 rounded-2xl border border-slate-200 shadow-xs space-y-3">
           <div class="flex justify-between items-center">
             <h3
-              class="font-extrabold text-slate-200 text-xs uppercase tracking-wider flex items-center space-x-1.5"
+              class="font-bold text-slate-800 text-xs uppercase tracking-wider flex items-center space-x-1.5"
             >
-              <span class="text-amber-400">⚡</span>
+              <span class="text-amber-500">⚡</span>
               <span>Suggested Settlements</span>
             </h3>
             <span
-              class="text-[10px] text-slate-400 font-semibold bg-slate-800/60 px-2 py-0.5 rounded-full border border-slate-700/50"
+              class="text-[10px] text-slate-500 font-semibold bg-slate-100 px-2 py-0.5 rounded-full border border-slate-200"
             >
               Min-Cash-Flow
             </span>
@@ -304,7 +312,7 @@ import { AddExpenseModalComponent } from '../expenses/add-expense-modal.componen
 
           <div
             *ngIf="simplifiedDebts().length === 0"
-            class="py-6 text-center text-xs text-slate-400 font-medium space-y-1"
+            class="py-6 text-center text-xs text-slate-500 font-medium space-y-1"
           >
             <p class="text-2xl">🎉</p>
             <p>Everyone is settled up! Zero outstanding debts.</p>
@@ -312,17 +320,17 @@ import { AddExpenseModalComponent } from '../expenses/add-expense-modal.componen
 
           <div
             *ngFor="let tx of simplifiedDebts()"
-            class="p-3.5 bg-slate-950/60 hover:bg-slate-950/80 rounded-2xl border border-slate-800/70 flex items-center justify-between transition-all"
+            class="p-3.5 bg-slate-50 hover:bg-slate-100/80 rounded-xl border border-slate-200/80 flex items-center justify-between transition-all"
           >
-            <div class="space-y-1">
-              <p class="text-xs font-bold text-slate-300">
-                <span class="text-white font-black">{{ tx.fromUserEmail.split('@')[0] }}</span>
-                <span class="text-slate-500 font-normal mx-1">owes</span>
-                <span class="text-indigo-400 font-black">{{
+            <div class="space-y-0.5">
+              <p class="text-xs font-semibold text-slate-700">
+                <span class="text-slate-900 font-bold">{{ tx.fromUserEmail.split('@')[0] }}</span>
+                <span class="text-slate-400 mx-1">owes</span>
+                <span class="text-indigo-600 font-bold">{{
                   tx.receiverName || tx.toUserEmail.split('@')[0]
                 }}</span>
               </p>
-              <p class="text-lg font-black text-white">₹{{ tx.amountDisplay }}</p>
+              <p class="text-lg font-black text-slate-900">₹{{ tx.amountDisplay }}</p>
             </div>
 
             <!-- Instant UPI Deep Link Button -->
@@ -330,13 +338,13 @@ import { AddExpenseModalComponent } from '../expenses/add-expense-modal.componen
               <a
                 *ngIf="tx.upiLink"
                 [href]="tx.upiLink"
-                class="px-3.5 py-2 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 active:scale-95 transition-all text-slate-950 rounded-xl text-xs font-black shadow-md shadow-emerald-500/20 flex items-center space-x-1 cursor-pointer"
+                class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 transition-all text-white rounded-lg text-xs font-bold shadow-xs flex items-center space-x-1 cursor-pointer"
               >
                 <span>⚡ Pay UPI</span>
               </a>
               <button
                 (click)="markSettled(tx)"
-                class="px-3 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700/80 active:scale-95 transition-all text-slate-300 rounded-xl text-xs font-bold cursor-pointer"
+                class="px-3 py-1.5 bg-white hover:bg-slate-100 border border-slate-300 active:scale-95 transition-all text-slate-700 rounded-lg text-xs font-semibold cursor-pointer shadow-xs"
               >
                 Settled
               </button>
@@ -345,18 +353,16 @@ import { AddExpenseModalComponent } from '../expenses/add-expense-modal.componen
         </div>
 
         <!-- RECENT GROUP EXPENSES FEED -->
-        <div
-          class="bg-slate-900/70 backdrop-blur-xl p-4.5 rounded-3xl border border-slate-800/80 shadow-md space-y-3"
-        >
+        <div class="bg-white p-4.5 rounded-2xl border border-slate-200 shadow-xs space-y-3">
           <div class="flex justify-between items-center">
             <h3
-              class="font-extrabold text-slate-200 text-xs uppercase tracking-wider flex items-center space-x-1.5"
+              class="font-bold text-slate-800 text-xs uppercase tracking-wider flex items-center space-x-1.5"
             >
               <span>🧾</span>
               <span>Recent Bills</span>
             </h3>
             <span
-              class="text-[11px] font-bold text-indigo-400 bg-indigo-950/80 border border-indigo-500/30 px-2 py-0.5 rounded-full"
+              class="text-[11px] font-semibold text-indigo-700 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded-full"
             >
               {{ api.expenses().length }} entries
             </span>
@@ -367,38 +373,38 @@ import { AddExpenseModalComponent } from '../expenses/add-expense-modal.componen
             class="py-8 text-center text-xs text-slate-400 space-y-1"
           >
             <p class="text-2xl">📋</p>
-            <p>No bills logged yet. Tap ➕ Add Bill or Scan Bill above!</p>
+            <p>No bills logged yet. Tap ＋ Add Bill or Sheet Entry above!</p>
           </div>
 
-          <div class="divide-y divide-slate-800/60">
+          <div class="divide-y divide-slate-100">
             <div *ngFor="let exp of api.expenses()" class="py-3 flex items-center justify-between">
               <div class="space-y-1">
                 <div class="flex items-center space-x-2">
                   <span class="text-sm">{{ getCategoryIcon(exp.category) }}</span>
-                  <p class="font-bold text-white text-xs">{{ exp.title }}</p>
+                  <p class="font-bold text-slate-900 text-xs">{{ exp.title }}</p>
                   <!-- Overwritten Flag Badge -->
                   <span
                     *ngIf="exp.overwrittenFlag === 'YES'"
-                    class="px-1.5 py-0.5 bg-amber-500/20 text-amber-300 border border-amber-500/30 font-mono text-[9px] font-bold rounded"
+                    class="px-1.5 py-0.5 bg-amber-50 text-amber-700 border border-amber-200 font-mono text-[9px] font-bold rounded"
                   >
                     🔄 Overwritten
                   </span>
                 </div>
-                <p class="text-[11px] text-slate-400">
+                <p class="text-[11px] text-slate-500">
                   Paid by
-                  <span class="font-bold text-slate-300">{{ exp.payerEmail.split('@')[0] }}</span> •
-                  {{ exp.category }} •
-                  <span class="font-semibold text-slate-400">{{
-                    exp.date || exp.createdAt.slice(0, 10)
+                  <span class="font-semibold text-slate-700">{{
+                    exp.payerEmail.split('@')[0]
                   }}</span>
+                  • {{ exp.category }} •
+                  <span class="text-slate-500">{{ exp.date || exp.createdAt.slice(0, 10) }}</span>
                 </p>
               </div>
 
               <div class="text-right space-y-0.5">
-                <p class="font-black text-white text-sm">₹{{ exp.totalAmountDisplay }}</p>
+                <p class="font-bold text-slate-900 text-sm">₹{{ exp.totalAmountDisplay }}</p>
                 <button
                   (click)="deleteExpense(exp.id)"
-                  class="text-slate-500 hover:text-rose-400 text-[10px] font-bold active:scale-90 cursor-pointer transition-colors"
+                  class="text-slate-400 hover:text-rose-600 text-[10px] font-semibold active:scale-90 cursor-pointer transition-colors"
                 >
                   Delete
                 </button>
@@ -410,63 +416,71 @@ import { AddExpenseModalComponent } from '../expenses/add-expense-modal.componen
 
       <!-- Fixed Mobile Bottom Navigation Bar -->
       <nav
-        class="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-slate-950/90 backdrop-blur-2xl border-t border-slate-800/80 px-4 py-2 flex items-center justify-around z-40 shadow-2xl"
+        class="fixed bottom-0 left-0 right-0 max-w-md sm:max-w-lg md:max-w-2xl mx-auto bg-white/95 backdrop-blur-md border-t border-slate-200 px-4 py-2 flex items-center justify-around z-40 shadow-sm"
       >
         <!-- Home Tab -->
         <button
           (click)="router.navigate(['/dashboard'])"
-          class="flex flex-col items-center justify-center text-indigo-400 active:scale-90 transition-transform cursor-pointer"
+          class="flex flex-col items-center justify-center text-indigo-600 active:scale-90 transition-transform cursor-pointer"
         >
           <span class="text-lg">🏠</span>
-          <span class="text-[10px] font-extrabold text-indigo-400">Home</span>
+          <span class="text-[10px] font-bold text-indigo-600">Home</span>
         </button>
 
         <!-- Scan Receipt Tab -->
         <button
           (click)="router.navigate(['/screenshot-review'])"
-          class="flex flex-col items-center justify-center text-slate-400 hover:text-slate-200 active:scale-90 transition-transform cursor-pointer"
+          class="flex flex-col items-center justify-center text-slate-500 hover:text-slate-800 active:scale-90 transition-transform cursor-pointer"
         >
           <span class="text-lg">📷</span>
-          <span class="text-[10px] font-bold">Scan Bill</span>
+          <span class="text-[10px] font-medium">Scan Bill</span>
         </button>
 
         <!-- Center Prominent ADD EXPENSE Floating Button -->
         <button
           (click)="showAddModal.set(true)"
-          class="-mt-6 w-14 h-14 rounded-full bg-gradient-to-tr from-indigo-500 via-indigo-600 to-purple-600 text-white flex items-center justify-center text-2xl font-black shadow-xl shadow-indigo-500/30 border-4 border-slate-950 active:scale-95 transition-transform cursor-pointer"
+          class="-mt-5 w-12 h-12 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white flex items-center justify-center text-2xl font-bold shadow-md active:scale-95 transition-transform cursor-pointer"
         >
           ＋
+        </button>
+
+        <!-- Multiple Entry (Sheet View) Tab -->
+        <button
+          (click)="showBulkModal.set(true)"
+          class="flex flex-col items-center justify-center text-emerald-700 hover:text-emerald-800 active:scale-90 transition-transform cursor-pointer"
+        >
+          <span class="text-lg">📊</span>
+          <span class="text-[10px] font-bold">Sheet</span>
         </button>
 
         <!-- Statements Tab -->
         <button
           (click)="router.navigate(['/statements'])"
-          class="flex flex-col items-center justify-center text-slate-400 hover:text-slate-200 active:scale-90 transition-transform cursor-pointer"
+          class="flex flex-col items-center justify-center text-slate-500 hover:text-slate-800 active:scale-90 transition-transform cursor-pointer"
         >
-          <span class="text-lg">📊</span>
-          <span class="text-[10px] font-bold">Reports</span>
-        </button>
-
-        <!-- WhatsApp Group Share Tab -->
-        <button
-          (click)="shareInvite()"
-          class="flex flex-col items-center justify-center text-emerald-400 hover:text-emerald-300 active:scale-90 transition-transform cursor-pointer"
-        >
-          <span class="text-lg">💬</span>
-          <span class="text-[10px] font-bold">Invite</span>
+          <span class="text-lg">📈</span>
+          <span class="text-[10px] font-medium">Reports</span>
         </button>
       </nav>
 
-      <!-- Add Expense Mobile Bottom Sheet -->
+      <!-- Single Add Expense Mobile Bottom Sheet -->
       <app-add-expense-modal
         *ngIf="showAddModal()"
         (close)="showAddModal.set(false)"
+        (openBulk)="showAddModal.set(false); showBulkModal.set(true)"
       ></app-add-expense-modal>
+
+      <!-- Google Sheet Multiple Entry Spreadsheet Grid Modal -->
+      <app-bulk-expense-grid
+        *ngIf="showBulkModal()"
+        (close)="showBulkModal.set(false)"
+      ></app-bulk-expense-grid>
     </div>
   `,
 })
 export class DashboardComponent {
   showAddModal = signal<boolean>(false);
+  showBulkModal = signal<boolean>(false);
   copiedCode = signal<boolean>(false);
 
   myNetBalance = computed(() => {

@@ -10,52 +10,44 @@ import { ApiService } from '../../core/services/api.service.js';
   imports: [CommonModule, FormsModule],
   template: `
     <div
-      class="min-h-screen flex items-center justify-center p-4 bg-slate-950 text-slate-100 relative overflow-hidden"
+      class="min-h-screen flex items-center justify-center p-4 bg-slate-50 text-slate-900 font-sans"
     >
-      <!-- Ambient background glows -->
       <div
-        class="absolute -top-32 -left-32 w-96 h-96 bg-indigo-600/15 rounded-full blur-3xl pointer-events-none"
-      ></div>
-      <div
-        class="absolute -bottom-32 -right-32 w-96 h-96 bg-emerald-600/10 rounded-full blur-3xl pointer-events-none"
-      ></div>
-
-      <div
-        class="max-w-lg w-full bg-slate-900/85 backdrop-blur-2xl p-8 rounded-3xl border border-slate-800 shadow-2xl space-y-6 relative z-10"
+        class="max-w-lg w-full bg-white p-7 sm:p-9 rounded-2xl border border-slate-200 shadow-xs space-y-6"
       >
         <div class="text-center space-y-2">
           <div
-            class="w-12 h-12 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center mx-auto text-xl shadow-inner"
+            class="w-12 h-12 rounded-xl bg-slate-900 text-white flex items-center justify-center mx-auto text-xl shadow-xs"
           >
             🏢
           </div>
-          <h2 class="text-2xl font-black text-white tracking-tight">
+          <h2 class="text-2xl font-bold text-slate-900 tracking-tight">
             Welcome, {{ api.currentUser()?.name }}! 👋
           </h2>
-          <p class="text-xs text-slate-400 max-w-sm mx-auto">
-            To start tracking shared expenses, create a new group or join an existing flat using an
+          <p class="text-xs text-slate-500 max-w-sm mx-auto">
+            To start tracking shared expenses, create a new group or join an existing one using an
             invite code.
           </p>
         </div>
 
-        <div class="grid grid-cols-2 p-1 bg-slate-950/80 rounded-2xl border border-slate-800">
+        <div class="grid grid-cols-2 p-1 bg-slate-100 rounded-xl border border-slate-200">
           <button
             (click)="mode.set('CREATE')"
-            [class.bg-slate-800]="mode() === 'CREATE'"
-            [class.text-white]="mode() === 'CREATE'"
-            [class.shadow-md]="mode() === 'CREATE'"
-            [class.text-slate-400]="mode() !== 'CREATE'"
-            class="py-2.5 text-xs font-bold rounded-xl transition-all"
+            [class.bg-white]="mode() === 'CREATE'"
+            [class.text-slate-900]="mode() === 'CREATE'"
+            [class.shadow-xs]="mode() === 'CREATE'"
+            [class.text-slate-600]="mode() !== 'CREATE'"
+            class="py-2.5 text-xs font-bold rounded-lg transition-all cursor-pointer"
           >
             🏠 Create Group
           </button>
           <button
             (click)="mode.set('JOIN')"
-            [class.bg-slate-800]="mode() === 'JOIN'"
-            [class.text-white]="mode() === 'JOIN'"
-            [class.shadow-md]="mode() === 'JOIN'"
-            [class.text-slate-400]="mode() !== 'JOIN'"
-            class="py-2.5 text-xs font-bold rounded-xl transition-all"
+            [class.bg-white]="mode() === 'JOIN'"
+            [class.text-slate-900]="mode() === 'JOIN'"
+            [class.shadow-xs]="mode() === 'JOIN'"
+            [class.text-slate-600]="mode() !== 'JOIN'"
+            class="py-2.5 text-xs font-bold rounded-lg transition-all cursor-pointer"
           >
             🔗 Join with Code
           </button>
@@ -63,7 +55,7 @@ import { ApiService } from '../../core/services/api.service.js';
 
         <div
           *ngIf="error()"
-          class="p-3 bg-rose-950/50 border border-rose-500/30 rounded-xl text-rose-300 text-xs font-medium"
+          class="p-3 bg-rose-50 border border-rose-200 rounded-xl text-rose-700 text-xs font-semibold"
         >
           {{ error() }}
         </div>
@@ -71,23 +63,23 @@ import { ApiService } from '../../core/services/api.service.js';
         <!-- CREATE FORM -->
         <form *ngIf="mode() === 'CREATE'" (ngSubmit)="createGroup()" class="space-y-4">
           <div class="space-y-1.5">
-            <label class="text-xs font-bold text-slate-300">Group Name</label>
+            <label class="text-xs font-bold text-slate-700">Group Name</label>
             <input
               type="text"
               [(ngModel)]="groupName"
               name="groupName"
               required
               placeholder="e.g. Palm Springs 402, Trip to Goa"
-              class="w-full px-4 py-3 rounded-xl bg-slate-950/70 border border-slate-800 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all"
+              class="w-full px-4 py-2.5 rounded-xl bg-white border border-slate-300 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all"
             />
           </div>
 
           <div class="space-y-1.5">
-            <label class="text-xs font-bold text-slate-300">Currency</label>
+            <label class="text-xs font-bold text-slate-700">Currency</label>
             <select
               [(ngModel)]="currency"
               name="currency"
-              class="w-full px-4 py-2.5 rounded-xl bg-slate-950/70 border border-slate-800 text-xs font-medium text-white focus:outline-none focus:border-indigo-500 [color-scheme:dark] transition-all"
+              class="w-full px-4 py-2.5 rounded-xl bg-white border border-slate-300 text-xs font-medium text-slate-800 focus:outline-none focus:border-indigo-500 transition-all cursor-pointer"
             >
               <option value="INR">₹ INR (Indian Rupee)</option>
               <option value="USD">$ USD (US Dollar)</option>
@@ -98,7 +90,7 @@ import { ApiService } from '../../core/services/api.service.js';
           <button
             type="submit"
             [disabled]="loading()"
-            class="w-full py-3.5 bg-gradient-to-r from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-indigo-700 active:scale-98 text-white font-bold rounded-xl shadow-lg shadow-indigo-500/25 transition-all text-sm"
+            class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 active:scale-98 text-white font-bold rounded-xl shadow-xs transition-all text-xs cursor-pointer"
           >
             {{ loading() ? 'Creating Group...' : 'Create Group & Get Invite Code' }}
           </button>
@@ -107,21 +99,21 @@ import { ApiService } from '../../core/services/api.service.js';
         <!-- JOIN FORM -->
         <form *ngIf="mode() === 'JOIN'" (ngSubmit)="joinGroup()" class="space-y-4">
           <div class="space-y-1.5">
-            <label class="text-xs font-bold text-slate-300">6-Character Invite Code</label>
+            <label class="text-xs font-bold text-slate-700">6-Character Invite Code</label>
             <input
               type="text"
               [(ngModel)]="inviteCode"
               name="inviteCode"
               required
               placeholder="e.g. PAL4X9"
-              class="w-full px-4 py-3 rounded-xl bg-slate-950/70 border border-slate-800 font-mono text-center tracking-widest uppercase text-lg text-white placeholder-slate-600 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all"
+              class="w-full px-4 py-3 rounded-xl bg-white border border-slate-300 font-mono text-center tracking-widest uppercase text-lg text-slate-900 placeholder-slate-400 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all"
             />
           </div>
 
           <button
             type="submit"
             [disabled]="loading()"
-            class="w-full py-3.5 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 active:scale-98 text-white font-bold rounded-xl shadow-lg shadow-emerald-500/25 transition-all text-sm"
+            class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 active:scale-98 text-white font-bold rounded-xl shadow-xs transition-all text-xs cursor-pointer"
           >
             {{ loading() ? 'Joining...' : 'Join Group' }}
           </button>
