@@ -7,6 +7,9 @@ import {
   Expense,
   Settlement,
   MonthlyStatement,
+  GroupInvite,
+  GroupInviteStatus,
+  EligibleMember,
 } from '@shared-expense-tracker/shared';
 import { IDataStore, UserRecord } from './IDataStore.js';
 
@@ -21,6 +24,8 @@ export class GoogleSheetsStore implements IDataStore {
   private spreadsheetId: string;
   private isConfigured: boolean = false;
   private memoryUsers: Map<string, UserRecord> = new Map();
+  private memoryInvites: Map<string, GroupInvite> = new Map();
+  private memoryTenancy: Map<string, { movedInAt: string; movedOutAt?: string | null }> = new Map();
 
   // --- Users & Auth ---
   async createUser(user: {
@@ -293,6 +298,109 @@ export class GoogleSheetsStore implements IDataStore {
     awayUntil?: string,
   ): Promise<boolean> {
     return true; // Maintained primarily in Turso
+  }
+
+  async updateMemberTenancy(
+    groupId: string,
+    userEmail: string,
+    movedInAt: string,
+    movedOutAt?: string | null,
+  ): Promise<boolean> {
+    this.memoryTenancy.set(`${groupId}_${userEmail.toLowerCase().trim()}`, {
+      movedInAt,
+      movedOutAt,
+    });
+    return true;
+  }
+
+  async getEligibleMembers(groupId: string, date: string): Promise<EligibleMember[]> {
+    const targetDate = date ? date.slice(0, 10) : new Date().toISOString().slice(0, 10);
+    const members = await this.getMembers(groupId);
+    const result: EligibleMember[] = [];
+
+    for (const m of members) {
+      const ten = this.memoryTenancy.get(`${groupId}_${m.userEmail.toLowerCase().trim()}`);
+      const movedInAt = ten?.movedInAt || m.joinedAt.slice(0, 10);
+      const movedOutAt = ten?.movedOutAt || undefined;
+
+      let eligibilityStatus: 'ACTIVE' | 'NOT_YET_MOVED_IN' | 'MOVED_OUT' = 'ACTIVE';
+      if (movedInAt > targetDate) {
+        eligibilityStatus = 'NOT_YET_MOVED_IN';
+      } else if (movedOutAt && movedOutAt < targetDate) {
+        eligibilityStatus = 'MOVED_OUT';
+      }
+
+      result.push({
+        userEmail: m.userEmail,
+        name: m.name,
+        upiId: m.upiId,
+        role: m.role,
+        movedInAt,
+        movedOutAt,
+        isAway: m.isAway,
+        isPendingInvite: false,
+        eligibilityStatus,
+      });
+    }
+
+    for (const inv of this.memoryInvites.values()) {
+      if (inv.groupId === groupId && inv.status === 'PENDING') {
+        const effectiveMoveInDate = inv.effectiveMoveInDate;
+        const eligibilityStatus =
+          effectiveMoveInDate > targetDate ? 'NOT_YET_MOVED_IN' : 'PENDING_INVITE';
+        result.push({
+          userEmail: inv.inviteeEmail,
+          name: inv.inviteeName,
+          role: 'MEMBER',
+          movedInAt: effectiveMoveInDate,
+          isPendingInvite: true,
+          effectiveMoveInDate,
+          eligibilityStatus,
+        });
+      }
+    }
+
+    return result;
+  }
+
+  async createGroupInvite(invite: GroupInvite): Promise<GroupInvite> {
+    this.memoryInvites.set(invite.id, invite);
+    return invite;
+  }
+
+  async getGroupInviteByCode(inviteCode: string): Promise<GroupInvite | null> {
+    const code = inviteCode.trim().toUpperCase();
+    for (const inv of this.memoryInvites.values()) {
+      if (inv.inviteCode.toUpperCase() === code) return inv;
+    }
+    return null;
+  }
+
+  async getGroupInvitesByGroup(groupId: string): Promise<GroupInvite[]> {
+    return Array.from(this.memoryInvites.values()).filter((i) => i.groupId === groupId);
+  }
+
+  async getPendingInviteByEmail(groupId: string, email: string): Promise<GroupInvite | null> {
+    const cleanEmail = email.toLowerCase().trim();
+    for (const inv of this.memoryInvites.values()) {
+      if (
+        inv.groupId === groupId &&
+        inv.inviteeEmail.toLowerCase().trim() === cleanEmail &&
+        inv.status === 'PENDING'
+      ) {
+        return inv;
+      }
+    }
+    return null;
+  }
+
+  async updateGroupInviteStatus(inviteId: string, status: GroupInviteStatus): Promise<boolean> {
+    const inv = this.memoryInvites.get(inviteId);
+    if (inv) {
+      inv.status = status;
+      return true;
+    }
+    return false;
   }
 
   // --- Expenses ---

@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Output, signal, computed } from '@angular/core';
+import { Component, EventEmitter, Output, signal, computed, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../core/services/api.service.js';
@@ -9,6 +9,7 @@ import {
   SplitType,
   CATEGORY_TAXONOMY,
   DEFAULT_GROUP_FORM_CONTROLS,
+  EligibleMember,
 } from '@shared-expense-tracker/shared';
 
 @Component({
@@ -196,6 +197,7 @@ import {
             <input
               type="date"
               [(ngModel)]="date"
+              (ngModelChange)="onDateChange($event)"
               name="date"
               [required]="controls().date === 'mandatory'"
               [disabled]="controls().date === 'view_only'"
@@ -334,15 +336,123 @@ import {
             </div>
           </div>
 
-          <!-- Split Preview -->
-          <div
-            *ngIf="amount && amount > 0 && splitType === 'EQUAL'"
-            class="p-3 bg-indigo-50 rounded-xl border border-indigo-100 text-xs text-indigo-900 flex items-center justify-between"
-          >
-            <span class="font-medium text-slate-600">Each Group Member Pays:</span>
-            <span class="font-black text-indigo-700 text-sm"
-              >₹{{ (amount / (api.members().length || 1)).toFixed(2) }}</span
+          <!-- Roommate Split for Expense Date (Tenancy & Move-in Aware) -->
+          <div class="space-y-2 pt-1 border-t border-slate-100">
+            <div class="flex justify-between items-center">
+              <span class="text-xs font-bold text-slate-700 flex items-center space-x-1.5">
+                <span>👥</span>
+                <span>Roommate Split for {{ date }}</span>
+              </span>
+              <span class="text-[11px] font-semibold text-slate-500">
+                {{ effectiveParticipants().length }} active
+              </span>
+            </div>
+
+            <!-- Loading indicator -->
+            <div *ngIf="loadingEligibility()" class="p-2 text-center text-xs text-slate-400">
+              Checking active flatmates for {{ date }}...
+            </div>
+
+            <!-- Roommate list -->
+            <div *ngIf="!loadingEligibility() && eligibleMembers().length > 0" class="space-y-1.5 max-h-48 overflow-y-auto pr-0.5">
+              <div
+                *ngFor="let m of eligibleMembers()"
+                class="flex items-center justify-between p-2 rounded-xl border text-xs transition-all"
+                [class.border-indigo-100]="(m.eligibilityStatus === 'ACTIVE' || m.eligibilityStatus === 'PENDING_INVITE') && !isExcluded(m.userEmail)"
+                [class.bg-indigo-50/40]="(m.eligibilityStatus === 'ACTIVE' || m.eligibilityStatus === 'PENDING_INVITE') && !isExcluded(m.userEmail)"
+                [class.border-slate-100]="isExcluded(m.userEmail) || m.eligibilityStatus === 'NOT_YET_MOVED_IN' || m.eligibilityStatus === 'MOVED_OUT'"
+                [class.bg-slate-50]="isExcluded(m.userEmail) || m.eligibilityStatus === 'NOT_YET_MOVED_IN' || m.eligibilityStatus === 'MOVED_OUT'"
+                [class.opacity-60]="m.eligibilityStatus === 'NOT_YET_MOVED_IN' || m.eligibilityStatus === 'MOVED_OUT'"
+              >
+                <!-- Member checkbox + Name & Tenancy Badges -->
+                <div class="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    *ngIf="m.eligibilityStatus === 'ACTIVE' || m.eligibilityStatus === 'PENDING_INVITE'"
+                    [checked]="!isExcluded(m.userEmail)"
+                    (change)="toggleExclude(m.userEmail)"
+                    class="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                  />
+                  <!-- Ineligible placeholder -->
+                  <span
+                    *ngIf="m.eligibilityStatus === 'NOT_YET_MOVED_IN' || m.eligibilityStatus === 'MOVED_OUT'"
+                    class="w-4 h-4 flex items-center justify-center text-slate-300 select-none text-[10px]"
+                  >
+                    ✕
+                  </span>
+
+                  <div>
+                    <div class="flex flex-wrap items-center gap-1">
+                      <span
+                        class="font-semibold text-slate-800"
+                        [class.line-through]="isExcluded(m.userEmail) || m.eligibilityStatus === 'MOVED_OUT'"
+                      >
+                        {{ m.name }}
+                      </span>
+                      <!-- Pending Invite Badge -->
+                      <span
+                        *ngIf="m.isPendingInvite"
+                        class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-100 text-amber-800 border border-amber-200"
+                      >
+                        ⏳ [Pending Invite - Effective {{ m.effectiveMoveInDate }}]
+                      </span>
+                      <!-- Ineligible Tags -->
+                      <span
+                        *ngIf="m.eligibilityStatus === 'NOT_YET_MOVED_IN'"
+                        class="px-1.5 py-0.5 rounded text-[9px] font-medium bg-slate-200 text-slate-600"
+                      >
+                        Joined on {{ m.movedInAt }}
+                      </span>
+                      <span
+                        *ngIf="m.eligibilityStatus === 'MOVED_OUT'"
+                        class="px-1.5 py-0.5 rounded text-[9px] font-medium bg-rose-100 text-rose-700"
+                      >
+                        Moved out {{ m.movedOutAt || '' }}
+                      </span>
+                      <!-- Away Tag -->
+                      <span
+                        *ngIf="m.isAway && m.eligibilityStatus === 'ACTIVE'"
+                        class="px-1.5 py-0.5 rounded text-[9px] font-medium bg-slate-200 text-slate-600"
+                      >
+                        🌴 Away
+                      </span>
+                    </div>
+                    <p class="text-[10px] text-slate-400">{{ m.userEmail }}</p>
+                  </div>
+                </div>
+
+                <!-- Share amount -->
+                <div class="text-right">
+                  <span
+                    *ngIf="(m.eligibilityStatus === 'ACTIVE' || m.eligibilityStatus === 'PENDING_INVITE') && !isExcluded(m.userEmail) && amount && amount > 0 && splitType === 'EQUAL'"
+                    class="font-bold text-indigo-700 font-mono text-xs"
+                  >
+                    ₹{{ perPersonShare().toFixed(2) }}
+                  </span>
+                  <span
+                    *ngIf="isExcluded(m.userEmail) && (m.eligibilityStatus === 'ACTIVE' || m.eligibilityStatus === 'PENDING_INVITE')"
+                    class="text-[10px] text-slate-400 font-medium italic"
+                  >
+                    Excluded
+                  </span>
+                  <span
+                    *ngIf="m.eligibilityStatus === 'NOT_YET_MOVED_IN' || m.eligibilityStatus === 'MOVED_OUT'"
+                    class="text-[10px] text-slate-400 italic"
+                  >
+                    Not residing
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Summary banner -->
+            <div
+              *ngIf="amount && amount > 0 && splitType === 'EQUAL' && effectiveParticipants().length > 0"
+              class="p-2.5 bg-indigo-50 rounded-xl border border-indigo-100 text-xs text-indigo-900 flex items-center justify-between"
             >
+              <span class="font-medium text-slate-600">Each Active Roommate Pays:</span>
+              <span class="font-black text-indigo-700 text-sm">₹{{ perPersonShare().toFixed(2) }}</span>
+            </div>
           </div>
 
           <!-- Error Alert -->
@@ -365,7 +475,7 @@ import {
     </div>
   `,
 })
-export class AddExpenseModalComponent {
+export class AddExpenseModalComponent implements OnInit {
   @Output() close = new EventEmitter<void>();
   @Output() openBulk = new EventEmitter<void>();
 
@@ -382,6 +492,29 @@ export class AddExpenseModalComponent {
   conflictData = signal<DuplicateConflictResponse | null>(null);
   aiSuggestion = signal<AiPrediction | null>(null);
 
+  // Tenancy & Dynamic Member Eligibility
+  eligibleMembers = signal<EligibleMember[]>([]);
+  loadingEligibility = signal<boolean>(false);
+  excludedEmails = signal<Set<string>>(new Set());
+
+  activeEligibleMembers = computed(() =>
+    this.eligibleMembers().filter(
+      (m) => m.eligibilityStatus === 'ACTIVE' || m.eligibilityStatus === 'PENDING_INVITE',
+    ),
+  );
+
+  effectiveParticipants = computed(() =>
+    this.activeEligibleMembers().filter(
+      (m) => !this.excludedEmails().has(m.userEmail.toLowerCase()),
+    ),
+  );
+
+  perPersonShare = computed(() => {
+    const count = this.effectiveParticipants().length;
+    if (!this.amount || count === 0) return 0;
+    return Math.round(((this.amount / count) + Number.EPSILON) * 100) / 100;
+  });
+
   // Group Form Controls (dynamically customized by Admin, with basic auto-defaults)
   controls = computed(() => {
     return this.api.activeGroup()?.formControls || DEFAULT_GROUP_FORM_CONTROLS;
@@ -395,6 +528,48 @@ export class AddExpenseModalComponent {
     public api: ApiService,
     private aiCategoryService: AiCategoryService,
   ) {}
+
+  ngOnInit() {
+    this.loadEligibleMembers(this.date);
+  }
+
+  onDateChange(newDate: string) {
+    this.date = newDate;
+    if (newDate) {
+      this.loadEligibleMembers(newDate);
+    }
+  }
+
+  loadEligibleMembers(dateStr: string) {
+    const group = this.api.activeGroup();
+    if (!group) return;
+
+    this.loadingEligibility.set(true);
+    this.api.getEligibleMembers(group.id, dateStr).subscribe({
+      next: (res) => {
+        this.eligibleMembers.set(res.eligibleMembers || []);
+        this.loadingEligibility.set(false);
+      },
+      error: () => {
+        this.loadingEligibility.set(false);
+      },
+    });
+  }
+
+  isExcluded(email: string): boolean {
+    return this.excludedEmails().has(email.toLowerCase());
+  }
+
+  toggleExclude(email: string) {
+    const normalized = email.toLowerCase();
+    const next = new Set(this.excludedEmails());
+    if (next.has(normalized)) {
+      next.delete(normalized);
+    } else {
+      next.add(normalized);
+    }
+    this.excludedEmails.set(next);
+  }
 
   onCategoryChange(newCat: ExpenseCategory) {
     const subs = CATEGORY_TAXONOMY[newCat] || [];
@@ -442,6 +617,19 @@ export class AddExpenseModalComponent {
     const isExpense =
       this.category !== 'Transfers & Adjustments' && this.category !== 'Transfers & Settlements';
 
+    let customSplits: Record<string, number> | undefined = undefined;
+    const participants = this.effectiveParticipants();
+    if (this.excludedEmails().size > 0 && participants.length > 0 && this.amount) {
+      const minorTotal = Math.round(this.amount * 100);
+      const share = Math.floor(minorTotal / participants.length);
+      let remainder = minorTotal - share * participants.length;
+      customSplits = {};
+      for (const p of participants) {
+        customSplits[p.userEmail] = share + (remainder > 0 ? 1 : 0);
+        if (remainder > 0) remainder--;
+      }
+    }
+
     this.api
       .addExpense({
         title: this.title,
@@ -451,7 +639,8 @@ export class AddExpenseModalComponent {
         subCategory: this.controls().subCategory !== 'hidden' ? this.subCategory : undefined,
         notes: this.controls().notes !== 'hidden' ? this.notes : undefined,
         isExpense,
-        splitType: effectiveSplit,
+        splitType: customSplits ? 'EXACT' : effectiveSplit,
+        splits: customSplits,
       })
       .subscribe({
         next: () => {
@@ -476,6 +665,19 @@ export class AddExpenseModalComponent {
     this.loading.set(true);
     const effectiveSplit = this.controls().splitType === 'view_only' ? 'EQUAL' : this.splitType;
 
+    let customSplits: Record<string, number> | undefined = undefined;
+    const participants = this.effectiveParticipants();
+    if (this.excludedEmails().size > 0 && participants.length > 0 && this.amount) {
+      const minorTotal = Math.round(this.amount * 100);
+      const share = Math.floor(minorTotal / participants.length);
+      let remainder = minorTotal - share * participants.length;
+      customSplits = {};
+      for (const p of participants) {
+        customSplits[p.userEmail] = share + (remainder > 0 ? 1 : 0);
+        if (remainder > 0) remainder--;
+      }
+    }
+
     this.api
       .addExpense({
         title: this.title,
@@ -484,7 +686,8 @@ export class AddExpenseModalComponent {
         category: this.category,
         subCategory: this.controls().subCategory !== 'hidden' ? this.subCategory : undefined,
         notes: this.controls().notes !== 'hidden' ? this.notes : undefined,
-        splitType: effectiveSplit,
+        splitType: customSplits ? 'EXACT' : effectiveSplit,
+        splits: customSplits,
         allowOverwrite: true,
         overwriteTargetId: conflict.existingRecord.id,
       })

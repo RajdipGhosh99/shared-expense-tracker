@@ -6,6 +6,9 @@ import {
   Expense,
   Settlement,
   MonthlyStatement,
+  GroupInvite,
+  GroupInviteStatus,
+  EligibleMember,
 } from '@shared-expense-tracker/shared';
 import { IDataStore, UserRecord } from './IDataStore.js';
 import { TursoStore } from './TursoStore.js';
@@ -155,6 +158,40 @@ export class DualSyncStore implements IDataStore {
     awayUntil?: string,
   ): Promise<boolean> {
     return this.turso.updateMemberAway(groupId, userEmail, isAway, awayUntil);
+  }
+
+  async updateMemberTenancy(
+    groupId: string,
+    userEmail: string,
+    movedInAt: string,
+    movedOutAt?: string | null,
+  ): Promise<boolean> {
+    return this.turso.updateMemberTenancy(groupId, userEmail, movedInAt, movedOutAt);
+  }
+
+  async getEligibleMembers(groupId: string, date: string): Promise<EligibleMember[]> {
+    return this.turso.getEligibleMembers(groupId, date);
+  }
+
+  // --- Group Invites ---
+  async createGroupInvite(invite: GroupInvite): Promise<GroupInvite> {
+    return this.turso.createGroupInvite(invite);
+  }
+
+  async getGroupInviteByCode(inviteCode: string): Promise<GroupInvite | null> {
+    return this.turso.getGroupInviteByCode(inviteCode);
+  }
+
+  async getGroupInvitesByGroup(groupId: string): Promise<GroupInvite[]> {
+    return this.turso.getGroupInvitesByGroup(groupId);
+  }
+
+  async getPendingInviteByEmail(groupId: string, email: string): Promise<GroupInvite | null> {
+    return this.turso.getPendingInviteByEmail(groupId, email);
+  }
+
+  async updateGroupInviteStatus(inviteId: string, status: GroupInviteStatus): Promise<boolean> {
+    return this.turso.updateGroupInviteStatus(inviteId, status);
   }
 
   // --- Expenses ---

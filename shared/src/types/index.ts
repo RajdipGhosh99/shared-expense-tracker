@@ -2,7 +2,7 @@
 // User & Member Models
 // ==========================================
 export type MemberRole = 'ADMIN' | 'MEMBER';
-export type MemberStatus = 'ACTIVE' | 'PENDING' | 'REJECTED';
+export type MemberStatus = 'ACTIVE' | 'PENDING' | 'REJECTED' | 'LEFT';
 
 export interface User {
   id: string;
@@ -21,10 +21,12 @@ export interface GroupMember {
   name: string;
   upiId?: string;
   role: MemberRole;
-  status?: MemberStatus; // 'ACTIVE' | 'PENDING' | 'REJECTED'
+  status?: MemberStatus; // 'ACTIVE' | 'PENDING' | 'REJECTED' | 'LEFT'
   isAway?: boolean; // Vacation / Absence mode
   awayUntil?: string;
   joinedAt: string;
+  movedInAt?: string; // Physical move-in date (YYYY-MM-DD)
+  movedOutAt?: string; // Physical move-out date (YYYY-MM-DD, null if still residing)
 }
 
 export interface UserGroupMembership {
@@ -263,6 +265,9 @@ export interface Expense {
   payerEmail: string;
   title: string;
   date: string; // Mandatory expense date (YYYY-MM-DD)
+  expenseDate?: string; // Effective receipt date (YYYY-MM-DD)
+  billingPeriodStart?: string; // Optional start of billing period (YYYY-MM-DD)
+  billingPeriodEnd?: string; // Optional end of billing period (YYYY-MM-DD)
   totalAmountMinorUnits: number; // Stored in paise/cents
   totalAmountDisplay: number; // Stored in standard unit (e.g., 100.00)
   category: ExpenseCategory;
@@ -281,6 +286,39 @@ export interface Expense {
   sheetSyncStatus: 'SYNCED' | 'PENDING' | 'FAILED';
   createdAt: string;
   updatedAt: string;
+}
+
+// ==========================================
+// Tenancy & Group Invites Models
+// ==========================================
+export type GroupInviteStatus = 'PENDING' | 'ACCEPTED' | 'EXPIRED' | 'REVOKED';
+
+export interface GroupInvite {
+  id: string;
+  groupId: string;
+  inviteCode: string;
+  inviteeName: string;
+  inviteeEmail: string;
+  effectiveMoveInDate: string; // YYYY-MM-DD
+  createdBy: string;
+  status: GroupInviteStatus;
+  expiresAt: string; // ISO datetime
+  createdAt: string;
+}
+
+export type EligibilityStatus = 'ACTIVE' | 'NOT_YET_MOVED_IN' | 'MOVED_OUT' | 'PENDING_INVITE';
+
+export interface EligibleMember {
+  userEmail: string;
+  name: string;
+  upiId?: string;
+  role: MemberRole;
+  movedInAt: string;
+  movedOutAt?: string;
+  isAway?: boolean;
+  isPendingInvite?: boolean;
+  effectiveMoveInDate?: string;
+  eligibilityStatus: EligibilityStatus;
 }
 
 // ==========================================

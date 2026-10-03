@@ -12,6 +12,9 @@ import {
   Expense,
   Settlement,
   MonthlyStatement,
+  GroupInvite,
+  GroupInviteStatus,
+  EligibleMember,
 } from '@shared-expense-tracker/shared';
 import { IDataStore, UserRecord } from './IDataStore.js';
 
@@ -106,6 +109,19 @@ export class TursoStore implements IDataStore {
           data_json TEXT NOT NULL,
           created_at DATETIME DEFAULT CURRENT_TIMESTAMP
         );`,
+
+        `CREATE TABLE IF NOT EXISTS group_invites (
+          id TEXT PRIMARY KEY,
+          group_id TEXT NOT NULL REFERENCES groups(id),
+          invite_code TEXT UNIQUE NOT NULL,
+          invitee_name TEXT NOT NULL,
+          invitee_email TEXT NOT NULL,
+          effective_move_in_date DATE NOT NULL,
+          created_by TEXT NOT NULL,
+          status TEXT DEFAULT 'PENDING',
+          expires_at DATETIME NOT NULL,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        );`,
       ],
       'write',
     );
@@ -164,6 +180,33 @@ export class TursoStore implements IDataStore {
     try {
       await this.client.execute(
         'UPDATE monthly_statements SET group_id = flat_id WHERE group_id IS NULL;',
+      );
+    } catch {}
+
+    // Tenancy & billing period migrations
+    try {
+      await this.client.execute("ALTER TABLE group_members ADD COLUMN moved_in_at TEXT;");
+    } catch {}
+    try {
+      await this.client.execute("ALTER TABLE group_members ADD COLUMN moved_out_at TEXT;");
+    } catch {}
+    try {
+      await this.client.execute("ALTER TABLE expenses ADD COLUMN expense_date TEXT;");
+    } catch {}
+    try {
+      await this.client.execute("ALTER TABLE expenses ADD COLUMN billing_period_start TEXT;");
+    } catch {}
+    try {
+      await this.client.execute("ALTER TABLE expenses ADD COLUMN billing_period_end TEXT;");
+    } catch {}
+    try {
+      await this.client.execute(
+        "UPDATE expenses SET expense_date = COALESCE(SUBSTR(created_at, 1, 10), DATE('now')) WHERE expense_date IS NULL;",
+      );
+    } catch {}
+    try {
+      await this.client.execute(
+        "UPDATE group_members SET moved_in_at = COALESCE(SUBSTR(joined_at, 1, 10), DATE('now')) WHERE moved_in_at IS NULL;",
       );
     } catch {}
 
@@ -359,11 +402,15 @@ export class TursoStore implements IDataStore {
   async addMember(member: GroupMember): Promise<GroupMember> {
     const groupId = member.groupId || member.flatId!;
     const status = member.status || 'ACTIVE';
+    const movedInAt = member.movedInAt || new Date().toISOString().slice(0, 10);
+    const movedOutAt = member.movedOutAt || null;
     await this.client.execute({
-      sql: `INSERT INTO group_members (id, group_id, user_email, name, upi_id, role, status, is_away, away_until, joined_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      sql: `INSERT INTO group_members (id, group_id, user_email, name, upi_id, role, status, is_away, away_until, joined_at, moved_in_at, moved_out_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(group_id, user_email) DO UPDATE SET
-            name = excluded.name, upi_id = excluded.upi_id, role = excluded.role, status = excluded.status`,
+            name = excluded.name, upi_id = excluded.upi_id, role = excluded.role, status = excluded.status,
+            moved_in_at = COALESCE(excluded.moved_in_at, group_members.moved_in_at),
+            moved_out_at = excluded.moved_out_at`,
       args: [
         member.id,
         groupId,
@@ -375,9 +422,11 @@ export class TursoStore implements IDataStore {
         member.isAway ? 1 : 0,
         member.awayUntil || null,
         member.joinedAt,
+        movedInAt,
+        movedOutAt,
       ],
     });
-    return { ...member, groupId, flatId: groupId, status };
+    return { ...member, groupId, flatId: groupId, status, movedInAt, movedOutAt: movedOutAt || undefined };
   }
 
   async getMembers(groupId: string): Promise<GroupMember[]> {
@@ -397,6 +446,12 @@ export class TursoStore implements IDataStore {
       isAway: Boolean(r.is_away),
       awayUntil: r.away_until ? String(r.away_until) : undefined,
       joinedAt: String(r.joined_at),
+      movedInAt: r.moved_in_at
+        ? String(r.moved_in_at)
+        : r.joined_at
+          ? String(r.joined_at).slice(0, 10)
+          : undefined,
+      movedOutAt: r.moved_out_at ? String(r.moved_out_at) : undefined,
     }));
   }
 
@@ -419,6 +474,12 @@ export class TursoStore implements IDataStore {
       isAway: Boolean(r.is_away),
       awayUntil: r.away_until ? String(r.away_until) : undefined,
       joinedAt: String(r.joined_at),
+      movedInAt: r.moved_in_at
+        ? String(r.moved_in_at)
+        : r.joined_at
+          ? String(r.joined_at).slice(0, 10)
+          : undefined,
+      movedOutAt: r.moved_out_at ? String(r.moved_out_at) : undefined,
     };
   }
 
@@ -488,6 +549,189 @@ export class TursoStore implements IDataStore {
     return res.rowsAffected > 0;
   }
 
+  async updateMemberTenancy(
+    groupId: string,
+    userEmail: string,
+    movedInAt: string,
+    movedOutAt?: string | null,
+  ): Promise<boolean> {
+    const normalizedEmail = userEmail.toLowerCase().trim();
+    const statusClause = movedOutAt ? ", status = 'LEFT'" : "";
+    const res = await this.client.execute({
+      sql: `UPDATE group_members SET moved_in_at = ?, moved_out_at = ?${statusClause} WHERE group_id = ? AND LOWER(user_email) = LOWER(?)`,
+      args: [movedInAt, movedOutAt || null, groupId, normalizedEmail],
+    });
+    return res.rowsAffected > 0;
+  }
+
+  async getEligibleMembers(groupId: string, date: string): Promise<EligibleMember[]> {
+    const targetDate = date ? date.slice(0, 10) : new Date().toISOString().slice(0, 10);
+
+    const memRes = await this.client.execute({
+      sql: `SELECT * FROM group_members WHERE group_id = ? ORDER BY joined_at ASC`,
+      args: [groupId],
+    });
+
+    const eligibleMembers: EligibleMember[] = [];
+
+    for (const r of memRes.rows) {
+      const movedInAt = r.moved_in_at ? String(r.moved_in_at) : String(r.joined_at).slice(0, 10);
+      const movedOutAt = r.moved_out_at ? String(r.moved_out_at) : undefined;
+      const memberStatus = (r.status as any) || 'ACTIVE';
+
+      let eligibilityStatus: 'ACTIVE' | 'NOT_YET_MOVED_IN' | 'MOVED_OUT' = 'ACTIVE';
+
+      if (movedInAt > targetDate) {
+        eligibilityStatus = 'NOT_YET_MOVED_IN';
+      } else if (movedOutAt && movedOutAt < targetDate) {
+        eligibilityStatus = 'MOVED_OUT';
+      } else if (memberStatus === 'LEFT') {
+        eligibilityStatus = 'MOVED_OUT';
+      } else {
+        eligibilityStatus = 'ACTIVE';
+      }
+
+      eligibleMembers.push({
+        userEmail: String(r.user_email),
+        name: String(r.name),
+        upiId: r.upi_id ? String(r.upi_id) : undefined,
+        role: r.role as any,
+        movedInAt,
+        movedOutAt,
+        isAway: Boolean(r.is_away),
+        isPendingInvite: false,
+        eligibilityStatus,
+      });
+    }
+
+    const invRes = await this.client.execute({
+      sql: `SELECT * FROM group_invites
+            WHERE group_id = ? AND status = 'PENDING' AND expires_at > datetime('now')
+            ORDER BY created_at ASC`,
+      args: [groupId],
+    });
+
+    const existingEmails = new Set(eligibleMembers.map((m) => m.userEmail.toLowerCase()));
+
+    for (const r of invRes.rows) {
+      const email = String(r.invitee_email).toLowerCase().trim();
+      if (existingEmails.has(email)) continue;
+
+      const effectiveMoveInDate = String(r.effective_move_in_date);
+      let eligibilityStatus: 'PENDING_INVITE' | 'NOT_YET_MOVED_IN' = 'PENDING_INVITE';
+
+      if (effectiveMoveInDate > targetDate) {
+        eligibilityStatus = 'NOT_YET_MOVED_IN';
+      } else {
+        eligibilityStatus = 'PENDING_INVITE';
+      }
+
+      eligibleMembers.push({
+        userEmail: email,
+        name: String(r.invitee_name),
+        role: 'MEMBER',
+        movedInAt: effectiveMoveInDate,
+        isPendingInvite: true,
+        effectiveMoveInDate,
+        eligibilityStatus,
+      });
+    }
+
+    return eligibleMembers;
+  }
+
+  // --- Group Invites ---
+  async createGroupInvite(invite: GroupInvite): Promise<GroupInvite> {
+    await this.client.execute({
+      sql: `INSERT INTO group_invites (
+        id, group_id, invite_code, invitee_name, invitee_email, effective_move_in_date,
+        created_by, status, expires_at, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      args: [
+        invite.id,
+        invite.groupId,
+        invite.inviteCode,
+        invite.inviteeName,
+        invite.inviteeEmail.toLowerCase().trim(),
+        invite.effectiveMoveInDate,
+        invite.createdBy.toLowerCase().trim(),
+        invite.status || 'PENDING',
+        invite.expiresAt,
+        invite.createdAt,
+      ],
+    });
+    return invite;
+  }
+
+  async getGroupInviteByCode(inviteCode: string): Promise<GroupInvite | null> {
+    const res = await this.client.execute({
+      sql: `SELECT * FROM group_invites WHERE UPPER(invite_code) = UPPER(?) LIMIT 1`,
+      args: [inviteCode.trim()],
+    });
+    if (res.rows.length === 0) return null;
+    const r = res.rows[0];
+    return {
+      id: String(r.id),
+      groupId: String(r.group_id),
+      inviteCode: String(r.invite_code),
+      inviteeName: String(r.invitee_name),
+      inviteeEmail: String(r.invitee_email),
+      effectiveMoveInDate: String(r.effective_move_in_date),
+      createdBy: String(r.created_by),
+      status: r.status as GroupInviteStatus,
+      expiresAt: String(r.expires_at),
+      createdAt: String(r.created_at),
+    };
+  }
+
+  async getGroupInvitesByGroup(groupId: string): Promise<GroupInvite[]> {
+    const res = await this.client.execute({
+      sql: `SELECT * FROM group_invites WHERE group_id = ? ORDER BY created_at DESC`,
+      args: [groupId],
+    });
+    return res.rows.map((r) => ({
+      id: String(r.id),
+      groupId: String(r.group_id),
+      inviteCode: String(r.invite_code),
+      inviteeName: String(r.invitee_name),
+      inviteeEmail: String(r.invitee_email),
+      effectiveMoveInDate: String(r.effective_move_in_date),
+      createdBy: String(r.created_by),
+      status: r.status as GroupInviteStatus,
+      expiresAt: String(r.expires_at),
+      createdAt: String(r.created_at),
+    }));
+  }
+
+  async getPendingInviteByEmail(groupId: string, email: string): Promise<GroupInvite | null> {
+    const res = await this.client.execute({
+      sql: `SELECT * FROM group_invites WHERE group_id = ? AND LOWER(invitee_email) = LOWER(?) AND status = 'PENDING' LIMIT 1`,
+      args: [groupId, email.trim()],
+    });
+    if (res.rows.length === 0) return null;
+    const r = res.rows[0];
+    return {
+      id: String(r.id),
+      groupId: String(r.group_id),
+      inviteCode: String(r.invite_code),
+      inviteeName: String(r.invitee_name),
+      inviteeEmail: String(r.invitee_email),
+      effectiveMoveInDate: String(r.effective_move_in_date),
+      createdBy: String(r.created_by),
+      status: r.status as GroupInviteStatus,
+      expiresAt: String(r.expires_at),
+      createdAt: String(r.created_at),
+    };
+  }
+
+  async updateGroupInviteStatus(inviteId: string, status: GroupInviteStatus): Promise<boolean> {
+    const res = await this.client.execute({
+      sql: `UPDATE group_invites SET status = ? WHERE id = ?`,
+      args: [status, inviteId],
+    });
+    return res.rowsAffected > 0;
+  }
+
   // --- Expenses ---
   async createExpense(expense: Expense): Promise<Expense> {
     const groupId = expense.groupId || expense.flatId!;
@@ -497,13 +741,15 @@ export class TursoStore implements IDataStore {
         : expense.category !== 'Transfers & Adjustments' &&
           expense.category !== 'Transfers & Settlements';
 
+    const expenseDate = expense.expenseDate || expense.date || new Date().toISOString().slice(0, 10);
+
     await this.client.execute({
       sql: `INSERT INTO expenses (
         id, group_id, flat_id, payer_email, title, amount_minor_units, amount_display,
         category, sub_category, notes, is_expense, split_type, splits_json, utr_number, overwritten_flag,
         original_expense_id, duplicate_of_id, sheet_row_index, sheet_row_link,
-        history_log, sheet_sync_status, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        history_log, sheet_sync_status, expense_date, billing_period_start, billing_period_end, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       args: [
         expense.id,
         groupId,
@@ -526,11 +772,14 @@ export class TursoStore implements IDataStore {
         expense.sheetRowLink || null,
         expense.historyLog || null,
         expense.sheetSyncStatus,
+        expenseDate,
+        expense.billingPeriodStart || null,
+        expense.billingPeriodEnd || null,
         expense.createdAt,
         expense.updatedAt,
       ],
     });
-    return { ...expense, isExpense, groupId, flatId: groupId };
+    return { ...expense, isExpense, groupId, flatId: groupId, date: expenseDate, expenseDate };
   }
 
   async updateExpense(id: string, updates: Partial<Expense>): Promise<Expense | null> {
@@ -544,12 +793,15 @@ export class TursoStore implements IDataStore {
         : merged.category !== 'Transfers & Adjustments' &&
           merged.category !== 'Transfers & Settlements';
 
+    const expenseDate = merged.expenseDate || merged.date || existing.date;
+
     await this.client.execute({
       sql: `UPDATE expenses SET
         title = ?, amount_minor_units = ?, amount_display = ?, category = ?, sub_category = ?, notes = ?, is_expense = ?,
         split_type = ?, splits_json = ?, utr_number = ?, overwritten_flag = ?,
         original_expense_id = ?, duplicate_of_id = ?, sheet_row_index = ?,
-        sheet_row_link = ?, history_log = ?, sheet_sync_status = ?, updated_at = ?
+        sheet_row_link = ?, history_log = ?, sheet_sync_status = ?,
+        expense_date = ?, billing_period_start = ?, billing_period_end = ?, updated_at = ?
         WHERE id = ?`,
       args: [
         merged.title,
@@ -569,6 +821,9 @@ export class TursoStore implements IDataStore {
         merged.sheetRowLink || null,
         merged.historyLog || null,
         merged.sheetSyncStatus,
+        expenseDate,
+        merged.billingPeriodStart || null,
+        merged.billingPeriodEnd || null,
         merged.updatedAt,
         id,
       ],
@@ -685,7 +940,10 @@ export class TursoStore implements IDataStore {
       flatId: groupId,
       payerEmail: String(r.payer_email),
       title: String(r.title),
-      date: String(r.created_at).slice(0, 10),
+      date: r.expense_date ? String(r.expense_date) : String(r.created_at).slice(0, 10),
+      expenseDate: r.expense_date ? String(r.expense_date) : String(r.created_at).slice(0, 10),
+      billingPeriodStart: r.billing_period_start ? String(r.billing_period_start) : undefined,
+      billingPeriodEnd: r.billing_period_end ? String(r.billing_period_end) : undefined,
       totalAmountMinorUnits: Number(r.amount_minor_units),
       totalAmountDisplay: Number(r.amount_display),
       category,

@@ -18,6 +18,8 @@ import {
   MonthlyStatement,
   ExtractedReceiptResult,
   DuplicateConflictResponse,
+  EligibleMember,
+  GroupInvite,
 } from '@shared-expense-tracker/shared';
 
 export interface AuthResponse {
@@ -283,6 +285,74 @@ export class ApiService {
           this.refreshGroupData(groupId);
         }),
       );
+  }
+
+  // --- Tenancy & Dynamic Member Eligibility ---
+  getEligibleMembers(
+    groupId: string,
+    date: string,
+  ): Observable<{ eligibleMembers: EligibleMember[]; date: string; totalEligible: number }> {
+    return this.http.get<{
+      eligibleMembers: EligibleMember[];
+      date: string;
+      totalEligible: number;
+    }>(`${this.baseUrl}/groups/${groupId}/eligible-members?date=${encodeURIComponent(date)}`);
+  }
+
+  updateMemberTenancy(
+    groupId: string,
+    userEmail: string,
+    data: { moved_in_at?: string; moved_out_at?: string | null },
+  ): Observable<{ success: boolean; member: GroupMember; message: string }> {
+    return this.http
+      .patch<{ success: boolean; member: GroupMember; message: string }>(
+        `${this.baseUrl}/groups/${groupId}/members/${encodeURIComponent(userEmail)}/tenancy`,
+        data,
+      )
+      .pipe(
+        tap(() => {
+          this.refreshGroupData(groupId);
+        }),
+      );
+  }
+
+  createGroupInvite(
+    groupId: string,
+    data: { invitee_name: string; invitee_email: string; effective_move_in_date: string },
+  ): Observable<{ invite: GroupInvite; joinLink: string; inviteCode: string }> {
+    return this.http.post<{ invite: GroupInvite; joinLink: string; inviteCode: string }>(
+      `${this.baseUrl}/groups/${groupId}/invites`,
+      data,
+    );
+  }
+
+  getGroupInvites(groupId: string): Observable<{ invites: GroupInvite[] }> {
+    return this.http.get<{ invites: GroupInvite[] }>(`${this.baseUrl}/groups/${groupId}/invites`);
+  }
+
+  revokeGroupInvite(groupId: string, inviteId: string): Observable<{ success: boolean; message: string }> {
+    return this.http.delete<{ success: boolean; message: string }>(
+      `${this.baseUrl}/groups/${groupId}/invites/${inviteId}`,
+    );
+  }
+
+  acceptInvite(inviteCode: string): Observable<any> {
+    return this.http
+      .post(`${this.baseUrl}/invites/accept`, { invite_code: inviteCode })
+      .pipe(
+        tap((res: any) => {
+          if (res.group) {
+            this.setActiveGroup(res.group);
+            this.fetchUserGroups().subscribe();
+          }
+        }),
+      );
+  }
+
+  getInviteDetails(inviteCode: string): Observable<{ invite: GroupInvite; groupName: string; currency: string }> {
+    return this.http.get<{ invite: GroupInvite; groupName: string; currency: string }>(
+      `${this.baseUrl}/invites/${encodeURIComponent(inviteCode)}`,
+    );
   }
 
   // --- Expenses ---

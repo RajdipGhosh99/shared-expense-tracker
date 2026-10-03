@@ -1,7 +1,7 @@
 import { Router, Response } from 'express';
 import { getStorage } from '../storage/index.js';
 import { authMiddleware, AuthRequest } from '../middleware/authMiddleware.js';
-import { Group, GroupMember } from '@shared-expense-tracker/shared';
+import { Group, GroupMember, GroupInvite } from '@shared-expense-tracker/shared';
 
 const router = Router();
 
@@ -249,6 +249,161 @@ router.patch('/:id/form-controls', authMiddleware, async (req: AuthRequest, res:
     success: updated,
     formControls: updatedGroup?.formControls,
     message: 'Group entry form controls updated successfully.',
+  });
+});
+
+// --- Tenancy: Admin Create Personalized Invite with Move-In Date ---
+router.post('/:id/invites', authMiddleware, async (req: AuthRequest, res: Response) => {
+  const user = req.user!;
+  const groupId = req.params.id as string;
+  const db = getStorage();
+
+  const caller = await db.getMember(groupId, user.email);
+  if (!caller || caller.role !== 'ADMIN') {
+    return res.status(403).json({ error: 'Only a group Admin can create invites.' });
+  }
+
+  const inviteeName = req.body.invitee_name || req.body.inviteeName;
+  const inviteeEmail = (req.body.invitee_email || req.body.inviteeEmail || '').toLowerCase().trim();
+  const effectiveMoveInDate =
+    req.body.effective_move_in_date ||
+    req.body.effectiveMoveInDate ||
+    new Date().toISOString().slice(0, 10);
+
+  if (!inviteeName || !inviteeEmail || !effectiveMoveInDate) {
+    return res.status(400).json({
+      error: 'invitee_name, invitee_email, and effective_move_in_date are required.',
+    });
+  }
+
+  // Check if member is already in group
+  const existingMember = await db.getMember(groupId, inviteeEmail);
+  if (existingMember && existingMember.status !== 'LEFT') {
+    return res.status(409).json({ error: 'This user is already a member of this group.' });
+  }
+
+  const inviteCode =
+    'INV' + Math.random().toString(36).substring(2, 8).toUpperCase();
+  const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+
+  const invite: GroupInvite = {
+    id: `inv_${Date.now()}`,
+    groupId,
+    inviteCode,
+    inviteeName: inviteeName.trim(),
+    inviteeEmail,
+    effectiveMoveInDate: effectiveMoveInDate.slice(0, 10),
+    createdBy: user.email,
+    status: 'PENDING',
+    expiresAt,
+    createdAt: new Date().toISOString(),
+  };
+
+  await db.createGroupInvite(invite);
+
+  return res.status(201).json({
+    invite,
+    joinLink: `/join?invite=${invite.inviteCode}`,
+    inviteCode: invite.inviteCode,
+  });
+});
+
+// --- Tenancy: Admin List Invites ---
+router.get('/:id/invites', authMiddleware, async (req: AuthRequest, res: Response) => {
+  const user = req.user!;
+  const groupId = req.params.id as string;
+  const db = getStorage();
+
+  const caller = await db.getMember(groupId, user.email);
+  if (!caller || caller.role !== 'ADMIN') {
+    return res.status(403).json({ error: 'Only a group Admin can view invites.' });
+  }
+
+  const invites = await db.getGroupInvitesByGroup(groupId);
+  return res.json({ invites });
+});
+
+// --- Tenancy: Admin Revoke Invite ---
+router.delete('/:id/invites/:inviteId', authMiddleware, async (req: AuthRequest, res: Response) => {
+  const user = req.user!;
+  const groupId = req.params.id as string;
+  const inviteId = req.params.inviteId as string;
+  const db = getStorage();
+
+  const caller = await db.getMember(groupId, user.email);
+  if (!caller || caller.role !== 'ADMIN') {
+    return res.status(403).json({ error: 'Only a group Admin can revoke invites.' });
+  }
+
+  const updated = await db.updateGroupInviteStatus(inviteId, 'REVOKED');
+  return res.json({ success: updated, message: 'Invite revoked.' });
+});
+
+// --- Tenancy: Admin Update Member Move-In / Move-Out Dates ---
+router.patch(
+  '/:id/members/:email/tenancy',
+  authMiddleware,
+  async (req: AuthRequest, res: Response) => {
+    const user = req.user!;
+    const groupId = req.params.id as string;
+    const targetEmail = req.params.email as string;
+    const db = getStorage();
+
+    const caller = await db.getMember(groupId, user.email);
+    if (!caller || caller.role !== 'ADMIN') {
+      return res.status(403).json({ error: 'Only a group Admin can modify tenancy dates.' });
+    }
+
+    const member = await db.getMember(groupId, targetEmail);
+    if (!member) {
+      return res.status(404).json({ error: 'Member not found in this group.' });
+    }
+
+    const movedInAt =
+      req.body.moved_in_at ||
+      req.body.movedInAt ||
+      member.movedInAt ||
+      member.joinedAt.slice(0, 10);
+    const movedOutAt =
+      req.body.moved_out_at !== undefined
+        ? req.body.moved_out_at
+        : req.body.movedOutAt !== undefined
+          ? req.body.movedOutAt
+          : member.movedOutAt || null;
+
+    const updated = await db.updateMemberTenancy(
+      groupId,
+      targetEmail,
+      movedInAt.slice(0, 10),
+      movedOutAt ? movedOutAt.slice(0, 10) : null,
+    );
+
+    const updatedMember = await db.getMember(groupId, targetEmail);
+    return res.json({
+      success: updated,
+      member: updatedMember,
+      message: movedOutAt
+        ? `Marked ${targetEmail} as vacated on ${movedOutAt}.`
+        : `Updated tenancy dates for ${targetEmail}.`,
+    });
+  },
+);
+
+// --- Tenancy: Dynamic Eligible Member Resolution ---
+router.get('/:id/eligible-members', authMiddleware, async (req: AuthRequest, res: Response) => {
+  const groupId = req.params.id as string;
+  const db = getStorage();
+  const dateQuery = (req.query.date as string) || new Date().toISOString().slice(0, 10);
+
+  const eligibleMembers = await db.getEligibleMembers(groupId, dateQuery);
+  const activeCount = eligibleMembers.filter(
+    (m) => m.eligibilityStatus === 'ACTIVE' || m.eligibilityStatus === 'PENDING_INVITE',
+  ).length;
+
+  return res.json({
+    eligibleMembers,
+    date: dateQuery,
+    totalEligible: activeCount,
   });
 });
 

@@ -7,6 +7,9 @@ import {
   Expense,
   Settlement,
   MonthlyStatement,
+  GroupInvite,
+  GroupInviteStatus,
+  EligibleMember,
 } from '@shared-expense-tracker/shared';
 
 export interface UserRecord {
@@ -61,6 +64,20 @@ export interface IDataStore {
     isAway: boolean,
     awayUntil?: string,
   ): Promise<boolean>;
+  updateMemberTenancy(
+    groupId: string,
+    userEmail: string,
+    movedInAt: string,
+    movedOutAt?: string | null,
+  ): Promise<boolean>;
+  getEligibleMembers(groupId: string, date: string): Promise<EligibleMember[]>;
+
+  // Tenancy & Group Invites
+  createGroupInvite(invite: GroupInvite): Promise<GroupInvite>;
+  getGroupInviteByCode(inviteCode: string): Promise<GroupInvite | null>;
+  getGroupInvitesByGroup(groupId: string): Promise<GroupInvite[]>;
+  getPendingInviteByEmail(groupId: string, email: string): Promise<GroupInvite | null>;
+  updateGroupInviteStatus(inviteId: string, status: GroupInviteStatus): Promise<boolean>;
 
   // Expenses
   createExpense(expense: Expense): Promise<Expense>;

@@ -19,6 +19,7 @@ describe('Backend API End-to-End Integration Suite', () => {
     await getStorage().init();
     await getStorage().deleteUserByEmail('rahul@group.com');
     await getStorage().deleteUserByEmail('amit@group.com');
+    await getStorage().deleteUserByEmail('priya@group.com');
 
     await new Promise<void>((resolve) => {
       server = app.listen(0, () => {
@@ -445,6 +446,220 @@ describe('Backend API End-to-End Integration Suite', () => {
     assert.equal(data.success, true);
     assert.equal(data.formControls.subCategory, 'mandatory');
     assert.equal(data.formControls.splitType, 'view_only');
+  });
+
+  // ==========================================
+  // Tenancy & Move-In / Move-Out Engine Tests
+  // ==========================================
+  let priyaInviteCode: string;
+  let priyaToken: string;
+
+  test('Tenancy: Admin creates personalized invite with effective move-in date', async () => {
+    // 1. Non-admin (Amit) attempts to invite -> 403 Forbidden
+    const unauthRes = await fetch(`${baseUrl}/api/groups/${groupId}/invites`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${amitToken}`,
+      },
+      body: JSON.stringify({
+        invitee_name: 'Priya Sharma',
+        invitee_email: 'priya@group.com',
+        effective_move_in_date: '2026-10-15',
+      }),
+    });
+    assert.equal(unauthRes.status, 403);
+
+    // 2. Admin (Rahul) creates invite for Priya with move-in date 2026-10-15 -> 201 Created
+    const authRes = await fetch(`${baseUrl}/api/groups/${groupId}/invites`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${rahulToken}`,
+      },
+      body: JSON.stringify({
+        invitee_name: 'Priya Sharma',
+        invitee_email: 'priya@group.com',
+        effective_move_in_date: '2026-10-15',
+      }),
+    });
+    assert.equal(authRes.status, 201);
+    const data = await authRes.json();
+    assert.ok(data.invite);
+    assert.ok(data.invite.inviteCode);
+    assert.equal(data.invite.effectiveMoveInDate, '2026-10-15');
+    assert.equal(data.invite.status, 'PENDING');
+    priyaInviteCode = data.invite.inviteCode;
+
+    // 3. Inspect invite endpoint
+    const inspectRes = await fetch(`${baseUrl}/api/invites/${priyaInviteCode}`);
+    assert.equal(inspectRes.status, 200);
+    const inspectData = await inspectRes.json();
+    assert.equal(inspectData.invite.inviteeEmail, 'priya@group.com');
+  });
+
+  test('Tenancy: Dynamic Eligible Members includes pending invitee after effective move-in date', async () => {
+    // On 2026-10-10 (before Priya's move-in): Priya has NOT_YET_MOVED_IN
+    const resBefore = await fetch(`${baseUrl}/api/groups/${groupId}/eligible-members?date=2026-10-10`, {
+      headers: { Authorization: `Bearer ${rahulToken}` },
+    });
+    assert.equal(resBefore.status, 200);
+    const dataBefore = await resBefore.json();
+    const priyaBefore = dataBefore.eligibleMembers.find(
+      (m: any) => m.userEmail.toLowerCase() === 'priya@group.com',
+    );
+    assert.ok(priyaBefore);
+    assert.equal(priyaBefore.eligibilityStatus, 'NOT_YET_MOVED_IN');
+
+    // On 2026-10-16 (after Priya's move-in): Priya has PENDING_INVITE
+    const resAfter = await fetch(`${baseUrl}/api/groups/${groupId}/eligible-members?date=2026-10-16`, {
+      headers: { Authorization: `Bearer ${rahulToken}` },
+    });
+    assert.equal(resAfter.status, 200);
+    const dataAfter = await resAfter.json();
+    const priyaAfter = dataAfter.eligibleMembers.find(
+      (m: any) => m.userEmail.toLowerCase() === 'priya@group.com',
+    );
+    assert.ok(priyaAfter);
+    assert.equal(priyaAfter.eligibilityStatus, 'PENDING_INVITE');
+    assert.equal(priyaAfter.isPendingInvite, true);
+  });
+
+  test('Tenancy: User registers and accepts invite -> inherits effective move-in date', async () => {
+    // 1. Priya registers
+    const regRes = await fetch(`${baseUrl}/api/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: 'Priya Sharma',
+        email: 'priya@group.com',
+        password: 'password123',
+        upiId: 'priya@okhdfc',
+      }),
+    });
+    assert.equal(regRes.status, 201);
+    const regData = await regRes.json();
+    priyaToken = regData.token;
+
+    // 2. Priya accepts invite via /api/invites/accept
+    const acceptRes = await fetch(`${baseUrl}/api/invites/accept`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${priyaToken}`,
+      },
+      body: JSON.stringify({ invite_code: priyaInviteCode }),
+    });
+    assert.equal(acceptRes.status, 200);
+    const acceptData = await acceptRes.json();
+    assert.equal(acceptData.success, true);
+    assert.equal(acceptData.member.status, 'ACTIVE');
+    assert.equal(acceptData.member.movedInAt, '2026-10-15');
+
+    // 3. Now Priya is an ACTIVE member with movedInAt = 2026-10-15
+    const eligibleRes = await fetch(`${baseUrl}/api/groups/${groupId}/eligible-members?date=2026-10-16`, {
+      headers: { Authorization: `Bearer ${rahulToken}` },
+    });
+    const eligibleData = await eligibleRes.json();
+    const priyaActive = eligibleData.eligibleMembers.find(
+      (m: any) => m.userEmail.toLowerCase() === 'priya@group.com',
+    );
+    assert.ok(priyaActive);
+    assert.equal(priyaActive.eligibilityStatus, 'ACTIVE');
+    assert.equal(priyaActive.isPendingInvite, false);
+  });
+
+  test('Tenancy: Expense splits automatically respect occupancy window', async () => {
+    // Expense on 2026-10-10 (before Priya moved in) -> Only Rahul and Amit split!
+    const expBeforeRes = await fetch(`${baseUrl}/api/expenses`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${rahulToken}`,
+      },
+      body: JSON.stringify({
+        groupId,
+        title: 'Pre-move-in Groceries',
+        amount: 1000,
+        date: '2026-10-10',
+        category: 'Food & Dining',
+        subCategory: 'Groceries & Dark Stores',
+        splitType: 'EQUAL',
+      }),
+    });
+    assert.equal(expBeforeRes.status, 201);
+    const expBeforeData = await expBeforeRes.json();
+    const splitsBefore = expBeforeData.expense.splits;
+    // Priya should NOT be in splits
+    assert.equal(splitsBefore['priya@group.com'], undefined);
+    assert.ok(splitsBefore['rahul@group.com'] > 0);
+    assert.ok(splitsBefore['amit@group.com'] > 0);
+
+    // Expense on 2026-10-18 (after Priya moved in) -> Rahul, Amit, and Priya split!
+    const expAfterRes = await fetch(`${baseUrl}/api/expenses`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${rahulToken}`,
+      },
+      body: JSON.stringify({
+        groupId,
+        title: 'Post-move-in Wi-Fi Bill',
+        amount: 900,
+        date: '2026-10-18',
+        category: 'Bills & Utilities',
+        subCategory: 'Internet & Telecom',
+        splitType: 'EQUAL',
+      }),
+    });
+    assert.equal(expAfterRes.status, 201);
+    const expAfterData = await expAfterRes.json();
+    const splitsAfter = expAfterData.expense.splits;
+    assert.ok(splitsAfter['priya@group.com'] > 0);
+    assert.equal(splitsAfter['priya@group.com'], 30000); // 900 / 3 = 300 each (30000 minor units)
+  });
+
+  test('Tenancy: Admin updates tenancy dates and marks member as moved out', async () => {
+    // Admin marks Amit as moved out on 2026-10-20
+    const patchRes = await fetch(`${baseUrl}/api/groups/${groupId}/members/amit@group.com/tenancy`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${rahulToken}`,
+      },
+      body: JSON.stringify({
+        moved_out_at: '2026-10-20',
+      }),
+    });
+    assert.equal(patchRes.status, 200);
+    const patchData = await patchRes.json();
+    assert.equal(patchData.success, true);
+    assert.equal(patchData.member.status, 'LEFT');
+    assert.equal(patchData.member.movedOutAt, '2026-10-20');
+
+    // On 2026-10-25: Amit is MOVED_OUT, so expense on 2026-10-25 only splits between Rahul and Priya!
+    const expPostRes = await fetch(`${baseUrl}/api/expenses`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${rahulToken}`,
+      },
+      body: JSON.stringify({
+        groupId,
+        title: 'Electricity After Amit Moved Out',
+        amount: 800,
+        date: '2026-10-25',
+        category: 'Bills & Utilities',
+        subCategory: 'Electricity & Power',
+        splitType: 'EQUAL',
+      }),
+    });
+    assert.equal(expPostRes.status, 201);
+    const expPostData = await expPostRes.json();
+    const postSplits = expPostData.expense.splits;
+    assert.equal(postSplits['amit@group.com'], undefined);
+    assert.equal(postSplits['priya@group.com'], 40000); // 800 / 2 = 400 each
+    assert.equal(postSplits['rahul@group.com'], 40000);
   });
 
   test('Backend 404: Returns 404 for unknown endpoints', async () => {

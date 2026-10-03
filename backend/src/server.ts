@@ -13,6 +13,7 @@ import receiptRoutes from './routes/receiptRoutes.js';
 import settleRoutes from './routes/settleRoutes.js';
 import statementRoutes from './routes/statementRoutes.js';
 import cronRoutes from './routes/cronRoutes.js';
+import inviteRoutes from './routes/inviteRoutes.js';
 import { appConfig } from './config/appConfig.js';
 
 const app = express();
@@ -61,6 +62,7 @@ app.use('/api/receipts', receiptRoutes);
 app.use('/api/settlements', settleRoutes);
 app.use('/api/statements', statementRoutes);
 app.use('/api/cron', cronRoutes);
+app.use('/api/invites', inviteRoutes);
 
 // 404 Endpoint Not Found fallback
 app.use((req, res) => {

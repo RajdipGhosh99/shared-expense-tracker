@@ -74,11 +74,13 @@ router.post('/', authMiddleware, async (req: AuthRequest, res: Response) => {
     return res.status(409).json(validation.conflict);
   }
 
-  // 2. Calculate Splits
-  const allMembers = await db.getMembers(groupId);
-  const members = allMembers.filter((m) => (m.status || 'ACTIVE') === 'ACTIVE');
-  const memberEmails = members.map((m) => m.userEmail);
-  const absentEmails = members.filter((m) => m.isAway).map((m) => m.userEmail);
+  // 2. Calculate Splits (tenancy-aware based on expenseDate)
+  const eligibleMembers = await db.getEligibleMembers(groupId, expenseDate);
+  const activeEligible = eligibleMembers.filter(
+    (m) => m.eligibilityStatus === 'ACTIVE' || m.eligibilityStatus === 'PENDING_INVITE',
+  );
+  const memberEmails = activeEligible.map((m) => m.userEmail);
+  const absentEmails = activeEligible.filter((m) => m.isAway).map((m) => m.userEmail);
 
   let finalSplits: Record<string, number> = {};
 
@@ -146,6 +148,9 @@ router.post('/', authMiddleware, async (req: AuthRequest, res: Response) => {
     payerEmail: user.email,
     title: title.trim(),
     date: expenseDate,
+    expenseDate,
+    billingPeriodStart: req.body.billingPeriodStart || req.body.billing_period_start || undefined,
+    billingPeriodEnd: req.body.billingPeriodEnd || req.body.billing_period_end || undefined,
     totalAmountMinorUnits: amountMinorUnits,
     totalAmountDisplay: amountDisplay,
     category: finalCategory || 'Other',
@@ -202,12 +207,19 @@ router.post('/batch', authMiddleware, async (req: AuthRequest, res: Response) =>
         ? item.date.trim().slice(0, 10)
         : new Date().toISOString().slice(0, 10);
 
+    const eligibleMembers = await db.getEligibleMembers(groupId, expenseDate);
+    const activeEligible = eligibleMembers.filter(
+      (m) => m.eligibilityStatus === 'ACTIVE' || m.eligibilityStatus === 'PENDING_INVITE',
+    );
+    const itemMemberEmails = activeEligible.map((m) => m.userEmail);
+    const itemAbsentEmails = activeEligible.filter((m) => m.isAway).map((m) => m.userEmail);
+
     const splitCalc = calculateSplits({
       totalAmountMinorUnits: amountMinorUnits,
       splitType: (item.splitType as SplitType) || 'EQUAL',
       payerEmail: user.email,
-      memberEmails,
-      absentMemberEmails: absentEmails,
+      memberEmails: itemMemberEmails,
+      absentMemberEmails: itemAbsentEmails,
     });
 
     if (!splitCalc.isValid) {
@@ -223,6 +235,7 @@ router.post('/batch', authMiddleware, async (req: AuthRequest, res: Response) =>
       payerEmail: user.email,
       title: item.title.trim(),
       date: expenseDate,
+      expenseDate,
       totalAmountMinorUnits: amountMinorUnits,
       totalAmountDisplay: amountDisplay,
       category: (item.category as ExpenseCategory) || 'Household',

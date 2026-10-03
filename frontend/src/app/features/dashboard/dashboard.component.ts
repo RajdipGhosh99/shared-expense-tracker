@@ -7,6 +7,7 @@ import { AddExpenseModalComponent } from '../expenses/add-expense-modal.componen
 import { BulkExpenseGridComponent } from '../expenses/bulk-expense-grid.component.js';
 import {
   Group,
+  GroupMember,
   GroupFormControls,
   DEFAULT_GROUP_FORM_CONTROLS,
 } from '@shared-expense-tracker/shared';
@@ -522,12 +523,22 @@ import {
               <span>👥</span>
               <span>Group Members ({{ activeMembers().length }})</span>
             </h3>
-            <span
-              *ngIf="isAdmin()"
-              class="text-[10px] font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded-full"
-            >
-              👑 You are Admin
-            </span>
+            <div class="flex items-center space-x-2">
+              <button
+                *ngIf="isAdmin()"
+                (click)="openInviteModal()"
+                class="text-[10px] font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 px-2 py-0.5 rounded-full cursor-pointer transition-colors"
+                title="Create personalized invite with move-in date"
+              >
+                ＋ Invite Roommate
+              </button>
+              <span
+                *ngIf="isAdmin()"
+                class="text-[10px] font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded-full"
+              >
+                👑 Admin
+              </span>
+            </div>
           </div>
 
           <div class="divide-y divide-slate-100">
@@ -539,7 +550,7 @@ import {
                   {{ m.name.charAt(0).toUpperCase() }}
                 </div>
                 <div class="truncate">
-                  <div class="flex items-center space-x-1.5">
+                  <div class="flex flex-wrap items-center gap-1">
                     <p class="text-xs font-bold text-slate-900 truncate">{{ m.name }}</p>
                     <span
                       *ngIf="m.role === 'ADMIN'"
@@ -552,6 +563,18 @@ import {
                       class="px-1.5 py-0.2 bg-rose-50 text-rose-700 border border-rose-200 text-[9px] font-bold rounded"
                     >
                       Pending
+                    </span>
+                    <span
+                      *ngIf="m.status === 'LEFT'"
+                      class="px-1.5 py-0.2 bg-rose-50 text-rose-700 border border-rose-200 text-[9px] font-bold rounded"
+                    >
+                      🚪 Vacated {{ m.movedOutAt || '' }}
+                    </span>
+                    <span
+                      *ngIf="m.movedInAt && m.status !== 'LEFT'"
+                      class="px-1.5 py-0.2 bg-slate-100 text-slate-600 text-[9px] font-medium rounded"
+                    >
+                      📅 Since {{ m.movedInAt }}
                     </span>
                     <span
                       *ngIf="m.isAway"
@@ -582,14 +605,19 @@ import {
                   </button>
                 </ng-container>
 
-                <!-- If member is active and caller is admin: promote/demote -->
+                <!-- If caller is admin: tenancy update & promote/demote -->
                 <ng-container
-                  *ngIf="
-                    isAdmin() && m.status !== 'PENDING' && m.userEmail !== api.currentUser()?.email
-                  "
+                  *ngIf="isAdmin() && m.status !== 'PENDING'"
                 >
                   <button
-                    *ngIf="m.role === 'MEMBER'"
+                    (click)="openTenancyModal(m)"
+                    class="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-[10px] font-bold rounded-lg cursor-pointer transition-colors"
+                    title="Edit move-in or move-out dates"
+                  >
+                    📅 Tenancy
+                  </button>
+                  <button
+                    *ngIf="m.role === 'MEMBER' && m.userEmail !== api.currentUser()?.email"
                     (click)="setRole(m.userEmail, 'ADMIN')"
                     class="px-2 py-1 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 text-indigo-700 text-[10px] font-bold rounded-lg cursor-pointer transition-colors"
                     title="Make this member an Admin"
@@ -597,7 +625,7 @@ import {
                     👑 Make Admin
                   </button>
                   <button
-                    *ngIf="m.role === 'ADMIN'"
+                    *ngIf="m.role === 'ADMIN' && m.userEmail !== api.currentUser()?.email"
                     (click)="setRole(m.userEmail, 'MEMBER')"
                     class="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-600 text-[10px] font-medium rounded-lg cursor-pointer transition-colors"
                     title="Demote to standard Member"
@@ -1126,6 +1154,174 @@ import {
           </form>
         </div>
       </div>
+
+      <!-- Invite Roommate with Move-In Date Modal -->
+      <div
+        *ngIf="showInviteModal()"
+        class="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-center justify-center p-4"
+      >
+        <div
+          class="bg-white rounded-3xl max-w-sm w-full p-6 space-y-4 shadow-2xl border border-slate-200"
+        >
+          <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+            <div class="flex items-center space-x-2">
+              <span class="text-lg">💌</span>
+              <h3 class="font-bold text-sm text-slate-900">Invite Roommate</h3>
+            </div>
+            <button
+              (click)="showInviteModal.set(false)"
+              class="text-slate-400 hover:text-slate-700 text-base font-bold cursor-pointer"
+            >
+              ✕
+            </button>
+          </div>
+
+          <div
+            *ngIf="inviteError()"
+            class="p-2.5 bg-rose-50 border border-rose-200 text-rose-700 text-xs rounded-xl"
+          >
+            {{ inviteError() }}
+          </div>
+
+          <div
+            *ngIf="inviteSuccessCode()"
+            class="p-3 bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs rounded-xl space-y-2"
+          >
+            <p class="font-bold text-emerald-800">✅ Invite Created!</p>
+            <p class="text-[11px] text-slate-600">Share this code with your flatmate:</p>
+            <div class="flex items-center justify-between bg-white px-3 py-2 rounded-lg border border-emerald-200 font-mono text-xs font-bold text-emerald-700">
+              <span>{{ inviteSuccessCode() }}</span>
+              <button
+                type="button"
+                (click)="copyInviteLink()"
+                class="px-2 py-0.5 bg-emerald-600 text-white rounded text-[10px] cursor-pointer"
+              >
+                {{ copiedInvite() ? 'Copied!' : 'Copy Code' }}
+              </button>
+            </div>
+          </div>
+
+          <form *ngIf="!inviteSuccessCode()" (ngSubmit)="sendInviteSubmit()" class="space-y-3">
+            <div class="space-y-1">
+              <label class="text-xs font-bold text-slate-700">Roommate Name</label>
+              <input
+                type="text"
+                [(ngModel)]="inviteName"
+                name="inviteName"
+                required
+                placeholder="e.g. Priya Sharma"
+                class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs text-slate-900 focus:outline-none focus:border-indigo-500"
+              />
+            </div>
+
+            <div class="space-y-1">
+              <label class="text-xs font-bold text-slate-700">Email Address</label>
+              <input
+                type="email"
+                [(ngModel)]="inviteEmail"
+                name="inviteEmail"
+                required
+                placeholder="e.g. priya@gmail.com"
+                class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs text-slate-900 focus:outline-none focus:border-indigo-500"
+              />
+            </div>
+
+            <div class="space-y-1">
+              <label class="text-xs font-bold text-slate-700 flex items-center justify-between">
+                <span>Effective Move-In Date</span>
+                <span class="text-[10px] text-indigo-600 font-semibold">Liabilities start from this date</span>
+              </label>
+              <input
+                type="date"
+                [(ngModel)]="inviteMoveInDate"
+                name="inviteMoveInDate"
+                required
+                class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs text-slate-900 focus:outline-none focus:border-indigo-500"
+              />
+            </div>
+
+            <button
+              type="submit"
+              [disabled]="inviteLoading() || !inviteName.trim() || !inviteEmail.trim() || !inviteMoveInDate"
+              class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-bold rounded-xl text-xs transition-all cursor-pointer shadow-xs"
+            >
+              {{ inviteLoading() ? 'Generating Invite...' : 'Generate Personalized Invite' }}
+            </button>
+          </form>
+        </div>
+      </div>
+
+      <!-- Member Tenancy Modal -->
+      <div
+        *ngIf="showTenancyModal()"
+        class="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-center justify-center p-4"
+      >
+        <div
+          class="bg-white rounded-3xl max-w-sm w-full p-6 space-y-4 shadow-2xl border border-slate-200"
+        >
+          <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+            <div class="flex items-center space-x-2">
+              <span class="text-lg">📅</span>
+              <h3 class="font-bold text-sm text-slate-900">Manage Member Tenancy</h3>
+            </div>
+            <button
+              (click)="showTenancyModal.set(false)"
+              class="text-slate-400 hover:text-slate-700 text-base font-bold cursor-pointer"
+            >
+              ✕
+            </button>
+          </div>
+
+          <div
+            *ngIf="tenancyError()"
+            class="p-2.5 bg-rose-50 border border-rose-200 text-rose-700 text-xs rounded-xl"
+          >
+            {{ tenancyError() }}
+          </div>
+
+          <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-0.5">
+            <p class="font-bold text-xs text-slate-900">{{ tenancyTargetMember?.name }}</p>
+            <p class="text-[10px] text-slate-500 font-mono">{{ tenancyTargetMember?.userEmail }}</p>
+          </div>
+
+          <form (ngSubmit)="saveTenancySubmit()" class="space-y-3">
+            <div class="space-y-1">
+              <label class="text-xs font-bold text-slate-700">Physical Move-In Date</label>
+              <input
+                type="date"
+                [(ngModel)]="tenancyMoveInDate"
+                name="tenancyMoveInDate"
+                required
+                class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs text-slate-900 focus:outline-none focus:border-indigo-500"
+              />
+            </div>
+
+            <div class="space-y-1">
+              <label class="text-xs font-bold text-slate-700 flex items-center justify-between">
+                <span>Move-Out Date (Vacated)</span>
+                <span class="text-[10px] text-slate-400">Leave blank if residing</span>
+              </label>
+              <input
+                type="date"
+                [(ngModel)]="tenancyMoveOutDate"
+                name="tenancyMoveOutDate"
+                class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs text-slate-900 focus:outline-none focus:border-indigo-500"
+              />
+              <p class="text-[10px] text-slate-500">
+                Setting a move-out date marks this flatmate as left. They won't be charged for subsequent bills.
+              </p>
+            </div>
+
+            <button
+              type="submit"
+              [disabled]="tenancyLoading() || !tenancyMoveInDate"
+              class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-bold rounded-xl text-xs transition-all cursor-pointer shadow-xs"
+            >
+              {{ tenancyLoading() ? 'Saving...' : 'Update Tenancy Dates' }}
+            </button>
+          </form>
+        </div>
+      </div>
     </div>
   `,
 })
@@ -1144,6 +1340,23 @@ export class DashboardComponent implements OnInit {
   modalLoading = signal<boolean>(false);
   modalError = signal<string | null>(null);
   modalSuccess = signal<string | null>(null);
+
+  // Tenancy & Personalized Invites
+  showInviteModal = signal<boolean>(false);
+  inviteName = '';
+  inviteEmail = '';
+  inviteMoveInDate = new Date().toISOString().slice(0, 10);
+  inviteLoading = signal<boolean>(false);
+  inviteError = signal<string | null>(null);
+  inviteSuccessCode = signal<string | null>(null);
+  copiedInvite = signal<boolean>(false);
+
+  showTenancyModal = signal<boolean>(false);
+  tenancyTargetMember: GroupMember | null = null;
+  tenancyMoveInDate = '';
+  tenancyMoveOutDate = '';
+  tenancyLoading = signal<boolean>(false);
+  tenancyError = signal<string | null>(null);
 
   isAdmin = computed(() => {
     const user = this.api.currentUser();
@@ -1442,5 +1655,86 @@ export class DashboardComponent implements OnInit {
     )
       return '🔄';
     return '📦';
+  }
+
+  // --- Tenancy & Invite Actions ---
+  openInviteModal() {
+    this.inviteName = '';
+    this.inviteEmail = '';
+    this.inviteMoveInDate = new Date().toISOString().slice(0, 10);
+    this.inviteError.set(null);
+    this.inviteSuccessCode.set(null);
+    this.copiedInvite.set(false);
+    this.showInviteModal.set(true);
+  }
+
+  sendInviteSubmit() {
+    const group = this.api.activeGroup();
+    if (!group) return;
+
+    if (!this.inviteName.trim() || !this.inviteEmail.trim() || !this.inviteMoveInDate) {
+      this.inviteError.set('Please fill out all fields.');
+      return;
+    }
+
+    this.inviteLoading.set(true);
+    this.inviteError.set(null);
+
+    this.api
+      .createGroupInvite(group.id, {
+        invitee_name: this.inviteName.trim(),
+        invitee_email: this.inviteEmail.trim(),
+        effective_move_in_date: this.inviteMoveInDate,
+      })
+      .subscribe({
+        next: (res) => {
+          this.inviteLoading.set(false);
+          this.inviteSuccessCode.set(res.inviteCode);
+        },
+        error: (err) => {
+          this.inviteLoading.set(false);
+          this.inviteError.set(err.error?.error || 'Failed to create invite.');
+        },
+      });
+  }
+
+  copyInviteLink() {
+    const code = this.inviteSuccessCode();
+    if (!code) return;
+    navigator.clipboard.writeText(code);
+    this.copiedInvite.set(true);
+    setTimeout(() => this.copiedInvite.set(false), 2000);
+  }
+
+  openTenancyModal(m: GroupMember) {
+    this.tenancyTargetMember = m;
+    this.tenancyMoveInDate = m.movedInAt || m.joinedAt.slice(0, 10);
+    this.tenancyMoveOutDate = m.movedOutAt || '';
+    this.tenancyError.set(null);
+    this.showTenancyModal.set(true);
+  }
+
+  saveTenancySubmit() {
+    const group = this.api.activeGroup();
+    if (!group || !this.tenancyTargetMember) return;
+
+    this.tenancyLoading.set(true);
+    this.tenancyError.set(null);
+
+    this.api
+      .updateMemberTenancy(group.id, this.tenancyTargetMember.userEmail, {
+        moved_in_at: this.tenancyMoveInDate,
+        moved_out_at: this.tenancyMoveOutDate ? this.tenancyMoveOutDate : null,
+      })
+      .subscribe({
+        next: () => {
+          this.tenancyLoading.set(false);
+          this.showTenancyModal.set(false);
+        },
+        error: (err) => {
+          this.tenancyLoading.set(false);
+          this.tenancyError.set(err.error?.error || 'Failed to update tenancy.');
+        },
+      });
   }
 }
