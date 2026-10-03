@@ -204,6 +204,7 @@ export class ApiService {
   addExpense(data: {
     title: string;
     amount: number;
+    date?: string;
     category: string;
     splitType: string;
     splits?: Record<string, number>;

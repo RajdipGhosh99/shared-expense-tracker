@@ -18,6 +18,7 @@ router.post('/', authMiddleware, async (req: AuthRequest, res: Response) => {
     flatId: reqFlatId,
     title,
     amount,
+    date,
     category,
     splitType,
     splits: customSplits,
@@ -33,6 +34,11 @@ router.post('/', authMiddleware, async (req: AuthRequest, res: Response) => {
   if (!groupId || !title || !amount) {
     return res.status(400).json({ error: 'Group ID, title, and amount are required.' });
   }
+
+  const expenseDate =
+    date && typeof date === 'string' && date.trim().length > 0
+      ? date.trim().slice(0, 10)
+      : new Date().toISOString().slice(0, 10);
 
   const amountDisplay = parseFloat(amount);
   const amountMinorUnits = Math.round(amountDisplay * 100);
@@ -92,6 +98,7 @@ router.post('/', authMiddleware, async (req: AuthRequest, res: Response) => {
 
     const updated = await db.updateExpense(target.id, {
       title: title.trim(),
+      date: expenseDate,
       totalAmountMinorUnits: amountMinorUnits,
       totalAmountDisplay: amountDisplay,
       category: (category as ExpenseCategory) || target.category,
@@ -117,6 +124,7 @@ router.post('/', authMiddleware, async (req: AuthRequest, res: Response) => {
     flatId: groupId,
     payerEmail: user.email,
     title: title.trim(),
+    date: expenseDate,
     totalAmountMinorUnits: amountMinorUnits,
     totalAmountDisplay: amountDisplay,
     category: (category as ExpenseCategory) || 'Household',
@@ -125,7 +133,7 @@ router.post('/', authMiddleware, async (req: AuthRequest, res: Response) => {
     utrNumber: utrNumber ? utrNumber.trim() : undefined,
     overwrittenFlag: 'NO',
     sheetSyncStatus: 'PENDING',
-    createdAt: new Date().toISOString(),
+    createdAt: `${expenseDate}T12:00:00.000Z`,
     updatedAt: new Date().toISOString(),
   };
 

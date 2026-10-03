@@ -7,7 +7,7 @@ export default defineConfig({
   testDir: './tests',
   fullyParallel: false, // Run sequentially for predictable end-to-end user journeys
   forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 2 : 0,
+  retries: 1,
   workers: 1, // Sequential run for deterministic ledger/session state
   reporter: [['list'], ['html', { outputFolder: 'playwright-report', open: 'never' }]],
   use: {

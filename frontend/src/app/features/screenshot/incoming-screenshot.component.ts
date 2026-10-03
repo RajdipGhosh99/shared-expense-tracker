@@ -202,6 +202,7 @@ export class IncomingScreenshotComponent implements OnInit {
       .addExpense({
         title: data.merchant,
         amount: data.amountDisplay,
+        date: new Date().toISOString().split('T')[0],
         category: data.category,
         splitType: 'EQUAL',
         utrNumber: data.utrNumber,

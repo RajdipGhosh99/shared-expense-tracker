@@ -285,7 +285,10 @@ import { AddExpenseModalComponent } from '../expenses/add-expense-modal.componen
                 <p class="text-[11px] text-slate-400">
                   Paid by
                   <span class="font-bold text-slate-700">{{ exp.payerEmail.split('@')[0] }}</span> •
-                  {{ exp.category }}
+                  {{ exp.category }} •
+                  <span class="font-semibold text-slate-500">{{
+                    exp.date || exp.createdAt.slice(0, 10)
+                  }}</span>
                 </p>
               </div>
 

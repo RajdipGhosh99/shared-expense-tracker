@@ -506,6 +506,7 @@ export class TursoStore implements IDataStore {
       flatId: groupId,
       payerEmail: String(r.payer_email),
       title: String(r.title),
+      date: String(r.created_at).slice(0, 10),
       totalAmountMinorUnits: Number(r.amount_minor_units),
       totalAmountDisplay: Number(r.amount_display),
       category: r.category as any,

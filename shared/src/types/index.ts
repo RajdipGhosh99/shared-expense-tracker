@@ -70,6 +70,7 @@ export interface Expense {
   flatId?: string; // Backwards-compatible alias
   payerEmail: string;
   title: string;
+  date: string; // Mandatory expense date (YYYY-MM-DD)
   totalAmountMinorUnits: number; // Stored in paise/cents
   totalAmountDisplay: number; // Stored in standard unit (e.g., 100.00)
   category: ExpenseCategory;

@@ -124,6 +124,21 @@ import {
             />
           </div>
 
+          <!-- Mandatory Date Input -->
+          <div class="space-y-1">
+            <label class="text-xs font-bold text-slate-600 flex items-center justify-between">
+              <span>Date</span>
+              <span class="text-[10px] text-rose-500 font-extrabold">* Mandatory</span>
+            </label>
+            <input
+              type="date"
+              [(ngModel)]="date"
+              name="date"
+              required
+              class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-xs font-semibold focus:outline-none focus:border-indigo-500 bg-slate-50/50"
+            />
+          </div>
+
           <div class="grid grid-cols-2 gap-2">
             <div class="space-y-1">
               <label class="text-xs font-bold text-slate-600">Category</label>
@@ -206,6 +221,7 @@ export class AddExpenseModalComponent {
 
   title = '';
   amount: number | null = null;
+  date: string = new Date().toISOString().split('T')[0];
   category: ExpenseCategory = 'Groceries';
   splitType: SplitType = 'EQUAL';
   utrNumber = '';
@@ -217,7 +233,7 @@ export class AddExpenseModalComponent {
   constructor(public api: ApiService) {}
 
   submit() {
-    if (!this.title || !this.amount) return;
+    if (!this.title || !this.amount || !this.date) return;
 
     this.loading.set(true);
     this.errorMessage.set(null);
@@ -226,6 +242,7 @@ export class AddExpenseModalComponent {
       .addExpense({
         title: this.title,
         amount: this.amount,
+        date: this.date,
         category: this.category,
         splitType: this.splitType,
         utrNumber: this.utrNumber ? this.utrNumber.trim() : undefined,
@@ -255,6 +272,7 @@ export class AddExpenseModalComponent {
       .addExpense({
         title: this.title,
         amount: this.amount!,
+        date: this.date,
         category: this.category,
         splitType: this.splitType,
         utrNumber: this.utrNumber ? this.utrNumber.trim() : undefined,

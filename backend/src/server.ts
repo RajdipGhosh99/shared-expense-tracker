@@ -67,6 +67,15 @@ app.use((req, res) => {
   res.status(404).json({ error: 'Endpoint not found', path: req.originalUrl });
 });
 
+// Process safety handlers for background sync errors
+process.on('unhandledRejection', (reason) => {
+  console.warn('[Server] Unhandled background rejection captured:', reason);
+});
+
+process.on('uncaughtException', (err) => {
+  console.warn('[Server] Uncaught exception captured:', err);
+});
+
 // Only listen if not imported for tests and not inside Vercel serverless wrapper
 if (process.env.NODE_ENV !== 'test' && !process.env.VERCEL) {
   app.listen(port, () => {

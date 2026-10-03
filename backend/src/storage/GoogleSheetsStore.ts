@@ -31,7 +31,12 @@ export class GoogleSheetsStore implements IDataStore {
           key: config.privateKey.replace(/\\n/g, '\n'),
           scopes: ['https://www.googleapis.com/auth/spreadsheets'],
         });
-        this.sheets = google.sheets({ version: 'v4', auth });
+        (auth as any).retryConfig = { retry: 0, noResponseRetries: 0 };
+        this.sheets = google.sheets({
+          version: 'v4',
+          auth,
+          retryConfig: { retry: 0, noResponseRetries: 0 },
+        });
         this.isConfigured = true;
       } catch (err) {
         console.warn('[GoogleSheetsStore] Failed to initialize Google Auth:', err);
@@ -297,6 +302,7 @@ export class GoogleSheetsStore implements IDataStore {
         flatId: r[1],
         payerEmail: r[2],
         title: r[3],
+        date: (r[11] || new Date().toISOString()).slice(0, 10),
         totalAmountDisplay: parseFloat(r[4]) || 0,
         totalAmountMinorUnits: Math.round((parseFloat(r[4]) || 0) * 100),
         category: r[5] || 'Other',
