@@ -6,7 +6,7 @@
   "main": "dist/server.js",
   "scripts": {
     "dev": "tsx watch src/server.ts",
-    "build": "tsc",
+    "build": "npm run --prefix ../shared build && tsc",
     "start": "node dist/server.js",
     "test": "tsx src/test/integration.test.ts"
   },

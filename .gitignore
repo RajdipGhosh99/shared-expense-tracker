@@ -1,5 +1,8 @@
 node_modules/
+backend/dist/
+frontend/dist/
 dist/
+!shared/dist/
 .angular/
 .vercel/
 .env
