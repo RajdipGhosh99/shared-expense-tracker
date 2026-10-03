@@ -2,7 +2,6 @@ import { Component, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { ToastrService } from 'ngx-toastr';
 import { ApiService } from '../../core/services/api.service.js';
 
 @Component({
@@ -174,7 +173,6 @@ export class AuthComponent {
   constructor(
     private api: ApiService,
     private router: Router,
-    private toastr: ToastrService,
   ) {}
 
   setMode(register: boolean) {
@@ -249,11 +247,6 @@ export class AuthComponent {
       next: () => {
         this.loading.set(false);
         this.clearError();
-        this.toastr.success(
-          this.isRegister() ? 'Account created successfully!' : 'Logged in successfully!',
-          'Success',
-          { timeOut: 3000 },
-        );
         this.handlePostAuthNavigation();
       },
       error: (err) => {
@@ -266,14 +259,6 @@ export class AuthComponent {
         this.errorTimeout = setTimeout(() => {
           this.errorMessage.set(null);
         }, 6000);
-
-        // Show toast notification
-        this.toastr.error(msg, this.isRegister() ? 'Registration Failed' : 'Login Failed', {
-          timeOut: 5000,
-          closeButton: true,
-          progressBar: true,
-          positionClass: 'toast-top-right',
-        });
       },
     });
   }
