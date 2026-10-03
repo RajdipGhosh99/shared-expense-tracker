@@ -20,7 +20,9 @@ router.post('/', authMiddleware, async (req: AuthRequest, res: Response) => {
     title,
     amount,
     date,
-    category,
+    category: reqCategory,
+    subCategory: reqSubCategory,
+    notes,
     splitType,
     splits: customSplits,
     utrNumber,
@@ -43,6 +45,15 @@ router.post('/', authMiddleware, async (req: AuthRequest, res: Response) => {
 
   const amountDisplay = parseFloat(amount);
   const amountMinorUnits = Math.round(amountDisplay * 100);
+
+  let finalCategory = reqCategory as ExpenseCategory;
+  let finalSubCategory = reqSubCategory as string | undefined;
+
+  if (!finalCategory || !finalSubCategory) {
+    const aiPred = await AiCategoryService.predict(title);
+    if (!finalCategory) finalCategory = aiPred.category;
+    if (!finalSubCategory) finalSubCategory = aiPred.subCategory;
+  }
 
   // 1. Deduplication Validation
   const validator = new DuplicateValidator(db);
@@ -103,7 +114,9 @@ router.post('/', authMiddleware, async (req: AuthRequest, res: Response) => {
       date: expenseDate,
       totalAmountMinorUnits: amountMinorUnits,
       totalAmountDisplay: amountDisplay,
-      category: (category as ExpenseCategory) || target.category,
+      category: finalCategory || target.category,
+      subCategory: finalSubCategory || target.subCategory,
+      notes: notes !== undefined ? notes : target.notes,
       splitType: (splitType as SplitType) || target.splitType,
       splits: finalSplits,
       utrNumber: utrNumber || target.utrNumber,
@@ -129,7 +142,9 @@ router.post('/', authMiddleware, async (req: AuthRequest, res: Response) => {
     date: expenseDate,
     totalAmountMinorUnits: amountMinorUnits,
     totalAmountDisplay: amountDisplay,
-    category: (category as ExpenseCategory) || 'Household',
+    category: finalCategory || 'Food & Dining',
+    subCategory: finalSubCategory,
+    notes: notes ? String(notes).trim() : undefined,
     splitType: (splitType as SplitType) || 'EQUAL',
     splits: finalSplits,
     utrNumber: utrNumber ? utrNumber.trim() : undefined,

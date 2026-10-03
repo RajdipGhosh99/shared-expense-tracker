@@ -226,4 +226,30 @@ router.patch('/:id/sync-settings', authMiddleware, async (req: AuthRequest, res:
   return res.json({ success: updated, googleSheetSync: Boolean(googleSheetSync) });
 });
 
+// Update Group Expense Entry Form Controls (Admin Only)
+router.patch('/:id/form-controls', authMiddleware, async (req: AuthRequest, res: Response) => {
+  const user = req.user!;
+  const groupId = req.params.id as string;
+  const { formControls } = req.body;
+  const db = getStorage();
+
+  if (!formControls || typeof formControls !== 'object') {
+    return res.status(400).json({ error: 'Valid formControls object is required.' });
+  }
+
+  const caller = await db.getMember(groupId, user.email);
+  if (!caller || caller.role !== 'ADMIN') {
+    return res.status(403).json({ error: 'Only a group Admin can customize entry form controls.' });
+  }
+
+  const updated = await db.updateGroupFormControls(groupId, formControls);
+  const updatedGroup = await db.getGroupById(groupId);
+
+  return res.json({
+    success: updated,
+    formControls: updatedGroup?.formControls,
+    message: 'Group entry form controls updated successfully.',
+  });
+});
+
 export default router;

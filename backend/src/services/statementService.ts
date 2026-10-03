@@ -38,6 +38,7 @@ export async function generateStatement(
 
   let totalSpendMinorUnits = 0;
   const categoryMap: Record<string, number> = {};
+  const subcategoryMap: Record<string, Record<string, number>> = {};
   const paidMap: Record<string, number> = {};
   const shareMap: Record<string, number> = {};
 
@@ -55,6 +56,13 @@ export async function generateStatement(
     totalSpendMinorUnits += exp.totalAmountMinorUnits;
     categoryMap[exp.category] = (categoryMap[exp.category] || 0) + exp.totalAmountMinorUnits;
 
+    const sub = exp.subCategory || 'General';
+    if (!subcategoryMap[exp.category]) {
+      subcategoryMap[exp.category] = {};
+    }
+    subcategoryMap[exp.category][sub] =
+      (subcategoryMap[exp.category][sub] || 0) + exp.totalAmountMinorUnits;
+
     paidMap[exp.payerEmail] = (paidMap[exp.payerEmail] || 0) + exp.totalAmountMinorUnits;
 
     for (const [email, owedMinor] of Object.entries(exp.splits)) {
@@ -63,12 +71,24 @@ export async function generateStatement(
   }
 
   const categoryBreakdown: StatementCategorySummary[] = Object.entries(categoryMap).map(
-    ([category, amountMinor]) => ({
-      category,
-      amountDisplay: Math.round((amountMinor / 100) * 100) / 100,
-      percentage:
-        totalSpendMinorUnits > 0 ? Math.round((amountMinor / totalSpendMinorUnits) * 1000) / 10 : 0,
-    }),
+    ([category, amountMinor]) => {
+      const subEntries = Object.entries(subcategoryMap[category] || {});
+      const subcategories = subEntries.map(([subCat, subMinor]) => ({
+        subCategory: subCat,
+        amountDisplay: Math.round((subMinor / 100) * 100) / 100,
+        percentage: amountMinor > 0 ? Math.round((subMinor / amountMinor) * 1000) / 10 : 0,
+      }));
+
+      return {
+        category,
+        amountDisplay: Math.round((amountMinor / 100) * 100) / 100,
+        percentage:
+          totalSpendMinorUnits > 0
+            ? Math.round((amountMinor / totalSpendMinorUnits) * 1000) / 10
+            : 0,
+        subcategories,
+      };
+    },
   );
 
   const memberSummaries: StatementMemberSummary[] = members.map((m) => {

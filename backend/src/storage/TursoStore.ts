@@ -2,6 +2,8 @@ import { createClient, Client } from '@libsql/client';
 import {
   Group,
   GroupMember,
+  GroupFormControls,
+  DEFAULT_GROUP_FORM_CONTROLS,
   MemberRole,
   MemberStatus,
   UserGroupMembership,
@@ -127,6 +129,15 @@ export class TursoStore implements IDataStore {
       await this.client.execute('ALTER TABLE expenses ADD COLUMN group_id TEXT;');
     } catch {}
     try {
+      await this.client.execute('ALTER TABLE groups ADD COLUMN form_controls TEXT;');
+    } catch {}
+    try {
+      await this.client.execute('ALTER TABLE expenses ADD COLUMN sub_category TEXT;');
+    } catch {}
+    try {
+      await this.client.execute('ALTER TABLE expenses ADD COLUMN notes TEXT;');
+    } catch {}
+    try {
       await this.client.execute(
         "ALTER TABLE group_members ADD COLUMN status TEXT DEFAULT 'ACTIVE';",
       );
@@ -208,6 +219,9 @@ export class TursoStore implements IDataStore {
       inviteCode: String(r.invite_code),
       currency: String(r.currency),
       googleSheetSync: r.google_sheet_sync === undefined || Number(r.google_sheet_sync) !== 0,
+      formControls: r.form_controls
+        ? JSON.parse(String(r.form_controls))
+        : DEFAULT_GROUP_FORM_CONTROLS,
       createdAt: String(r.created_at),
     };
   }
@@ -229,6 +243,9 @@ export class TursoStore implements IDataStore {
       inviteCode: String(r.invite_code),
       currency: String(r.currency),
       googleSheetSync: r.google_sheet_sync === undefined || Number(r.google_sheet_sync) !== 0,
+      formControls: r.form_controls
+        ? JSON.parse(String(r.form_controls))
+        : DEFAULT_GROUP_FORM_CONTROLS,
       createdAt: String(r.created_at),
     };
   }
@@ -245,6 +262,9 @@ export class TursoStore implements IDataStore {
       inviteCode: String(r.invite_code),
       currency: String(r.currency),
       googleSheetSync: r.google_sheet_sync === undefined || Number(r.google_sheet_sync) !== 0,
+      formControls: r.form_controls
+        ? JSON.parse(String(r.form_controls))
+        : DEFAULT_GROUP_FORM_CONTROLS,
       createdAt: String(r.created_at),
     }));
   }
@@ -263,6 +283,17 @@ export class TursoStore implements IDataStore {
 
   async updateFlatSync(flatId: string, googleSheetSync: boolean): Promise<boolean> {
     return this.updateGroupSync(flatId, googleSheetSync);
+  }
+
+  async updateGroupFormControls(
+    groupId: string,
+    formControls: GroupFormControls,
+  ): Promise<boolean> {
+    const res = await this.client.execute({
+      sql: `UPDATE groups SET form_controls = ? WHERE id = ?`,
+      args: [JSON.stringify(formControls), groupId],
+    });
+    return res.rowsAffected > 0;
   }
 
   // --- Members ---
@@ -404,10 +435,10 @@ export class TursoStore implements IDataStore {
     await this.client.execute({
       sql: `INSERT INTO expenses (
         id, group_id, flat_id, payer_email, title, amount_minor_units, amount_display,
-        category, split_type, splits_json, utr_number, overwritten_flag,
+        category, sub_category, notes, split_type, splits_json, utr_number, overwritten_flag,
         original_expense_id, duplicate_of_id, sheet_row_index, sheet_row_link,
         history_log, sheet_sync_status, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       args: [
         expense.id,
         groupId,
@@ -417,6 +448,8 @@ export class TursoStore implements IDataStore {
         expense.totalAmountMinorUnits,
         expense.totalAmountDisplay,
         expense.category,
+        expense.subCategory || null,
+        expense.notes || null,
         expense.splitType,
         JSON.stringify(expense.splits),
         expense.utrNumber || null,
@@ -442,7 +475,7 @@ export class TursoStore implements IDataStore {
 
     await this.client.execute({
       sql: `UPDATE expenses SET
-        title = ?, amount_minor_units = ?, amount_display = ?, category = ?,
+        title = ?, amount_minor_units = ?, amount_display = ?, category = ?, sub_category = ?, notes = ?,
         split_type = ?, splits_json = ?, utr_number = ?, overwritten_flag = ?,
         original_expense_id = ?, duplicate_of_id = ?, sheet_row_index = ?,
         sheet_row_link = ?, history_log = ?, sheet_sync_status = ?, updated_at = ?
@@ -452,6 +485,8 @@ export class TursoStore implements IDataStore {
         merged.totalAmountMinorUnits,
         merged.totalAmountDisplay,
         merged.category,
+        merged.subCategory || null,
+        merged.notes || null,
         merged.splitType,
         JSON.stringify(merged.splits),
         merged.utrNumber || null,
@@ -576,6 +611,8 @@ export class TursoStore implements IDataStore {
       totalAmountMinorUnits: Number(r.amount_minor_units),
       totalAmountDisplay: Number(r.amount_display),
       category: r.category as any,
+      subCategory: r.sub_category ? String(r.sub_category) : undefined,
+      notes: r.notes ? String(r.notes) : undefined,
       splitType: r.split_type as any,
       splits: JSON.parse(String(r.splits_json)),
       utrNumber: r.utr_number ? String(r.utr_number) : undefined,

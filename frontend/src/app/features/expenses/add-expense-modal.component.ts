@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Output, signal } from '@angular/core';
+import { Component, EventEmitter, Output, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../core/services/api.service.js';
@@ -7,6 +7,8 @@ import {
   DuplicateConflictResponse,
   ExpenseCategory,
   SplitType,
+  CATEGORY_TAXONOMY,
+  DEFAULT_GROUP_FORM_CONTROLS,
 } from '@shared-expense-tracker/shared';
 
 @Component({
@@ -38,25 +40,21 @@ import {
             </div>
             <div>
               <h3 class="text-base font-bold text-slate-900 leading-tight">Add Group Expense</h3>
-              <p class="text-[11px] text-slate-400 font-medium">
-                Split automatically with active members
-              </p>
+              <p class="text-[11px] text-slate-500">Split automatically with active members</p>
             </div>
           </div>
 
+          <!-- Header Right Actions: Bulk Entry Button & Close Icon -->
           <div class="flex items-center space-x-2">
-            <!-- Integrated Bulk Entry Button in Header -->
             <button
               type="button"
               (click)="openBulk.emit()"
-              class="px-2.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 active:scale-95 border border-emerald-200 text-emerald-800 text-xs font-bold rounded-xl transition-all flex items-center space-x-1.5 cursor-pointer shadow-2xs"
-              title="Switch to Google Sheet multiple bills entry"
+              class="inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 text-xs font-bold shadow-2xs active:scale-95 transition-all cursor-pointer"
+              title="Open spreadsheet bulk entry"
             >
               <span>📊</span>
               <span>Bulk Entry</span>
             </button>
-
-            <!-- Close Button -->
             <button
               type="button"
               (click)="close.emit()"
@@ -123,14 +121,17 @@ import {
         </div>
 
         <!-- Main Form -->
-        <form *ngIf="!conflictData()" (ngSubmit)="submit()" class="space-y-4">
+        <form *ngIf="!conflictData()" (ngSubmit)="submit()" class="space-y-3.5">
           <!-- Big Mobile Amount Input -->
           <div
             class="bg-slate-50 p-4 rounded-2xl border border-slate-200 text-center space-y-1 focus-within:border-indigo-500 focus-within:bg-white focus-within:ring-1 focus-within:ring-indigo-500 transition-all"
           >
-            <label class="text-[11px] font-bold text-slate-500 uppercase tracking-wider"
-              >Amount</label
+            <label
+              class="text-[11px] font-bold text-slate-500 uppercase tracking-wider flex items-center justify-center space-x-1"
             >
+              <span>Amount</span>
+              <span class="text-[10px] text-rose-600 font-extrabold">*</span>
+            </label>
             <div class="flex items-center justify-center text-slate-900 font-black text-3xl">
               <span class="text-slate-400 mr-1.5 text-2xl font-bold">₹</span>
               <input
@@ -146,7 +147,10 @@ import {
           </div>
 
           <div class="space-y-1.5">
-            <label class="text-xs font-bold text-slate-700">What is this for?</label>
+            <label class="text-xs font-bold text-slate-700 flex items-center justify-between">
+              <span>What is this for?</span>
+              <span class="text-[10px] text-rose-600 font-extrabold">* Mandatory</span>
+            </label>
             <input
               type="text"
               [(ngModel)]="title"
@@ -159,13 +163,16 @@ import {
             <!-- Real-time AI Suggested Category Badge -->
             <div
               *ngIf="aiSuggestion() && aiSuggestion()?.matchedKeyword"
-              class="flex items-center space-x-2 pt-0.5"
+              class="flex flex-wrap items-center gap-1.5 pt-0.5"
             >
               <div
                 class="inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-lg bg-indigo-50 border border-indigo-200 text-indigo-700 text-xs font-semibold shadow-2xs animate-fade-in"
               >
                 <span>✨ AI Suggested:</span>
                 <span class="font-bold text-indigo-900">{{ aiSuggestion()?.category }}</span>
+                <span *ngIf="aiSuggestion()?.subCategory" class="text-indigo-600 font-medium"
+                  >› {{ aiSuggestion()?.subCategory }}</span
+                >
                 <span class="text-[10px] text-indigo-500 font-normal">
                   ({{
                     aiSuggestion()?.matchReason ||
@@ -176,11 +183,12 @@ import {
             </div>
           </div>
 
-          <!-- Mandatory Date Input -->
+          <!-- Date Input -->
           <div class="space-y-1.5">
             <label class="text-xs font-bold text-slate-700 flex items-center justify-between">
               <span>Date</span>
               <span
+                *ngIf="controls().date === 'mandatory'"
                 class="text-[10px] text-rose-600 font-extrabold tracking-wider bg-rose-50 px-2 py-0.5 rounded-md border border-rose-200"
                 >* Mandatory</span
               >
@@ -189,16 +197,27 @@ import {
               type="date"
               [(ngModel)]="date"
               name="date"
-              required
-              class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-xs font-semibold focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 bg-white text-slate-900 transition-all"
+              [required]="controls().date === 'mandatory'"
+              [disabled]="controls().date === 'view_only'"
+              class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-xs font-semibold focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 bg-white text-slate-900 transition-all disabled:bg-slate-100 disabled:text-slate-500"
             />
           </div>
 
-          <div class="grid grid-cols-2 gap-2">
+          <!-- Category & Subcategory Row -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            <!-- Category -->
             <div class="space-y-1.5">
-              <label class="text-xs font-bold text-slate-700">Category</label>
+              <label class="text-xs font-bold text-slate-700 flex items-center justify-between">
+                <span>Category</span>
+                <span
+                  *ngIf="controls().category === 'mandatory'"
+                  class="text-[10px] text-rose-600 font-extrabold"
+                  >* Mandatory</span
+                >
+              </label>
               <select
                 [(ngModel)]="category"
+                (ngModelChange)="onCategoryChange($event)"
                 name="category"
                 class="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs font-medium focus:outline-none focus:border-indigo-500 bg-white text-slate-800 transition-all"
               >
@@ -213,9 +232,56 @@ import {
               </select>
             </div>
 
-            <div class="space-y-1.5">
-              <label class="text-xs font-bold text-slate-700">Split Method</label>
+            <!-- Subcategory (Mapped to Main Category) -->
+            <div *ngIf="controls().subCategory !== 'hidden'" class="space-y-1.5">
+              <label class="text-xs font-bold text-slate-700 flex items-center justify-between">
+                <span>Subcategory</span>
+                <span
+                  *ngIf="controls().subCategory === 'mandatory'"
+                  class="text-[10px] text-rose-600 font-extrabold tracking-wider bg-rose-50 px-2 py-0.5 rounded-md border border-rose-200"
+                  >* Mandatory</span
+                >
+                <span
+                  *ngIf="controls().subCategory === 'editable'"
+                  class="text-[10px] text-slate-400 font-medium"
+                  >Optional</span
+                >
+              </label>
               <select
+                [(ngModel)]="subCategory"
+                name="subCategory"
+                [required]="controls().subCategory === 'mandatory'"
+                class="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs font-medium focus:outline-none focus:border-indigo-500 bg-white text-slate-800 transition-all"
+              >
+                <option *ngFor="let sub of availableSubcategories()" [value]="sub">
+                  • {{ sub }}
+                </option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Split Method & Optional Notes -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            <!-- Split Method -->
+            <div *ngIf="controls().splitType !== 'hidden'" class="space-y-1.5">
+              <label class="text-xs font-bold text-slate-700 flex items-center justify-between">
+                <span>Split Method</span>
+                <span
+                  *ngIf="controls().splitType === 'view_only'"
+                  class="text-[9px] text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-200 font-bold"
+                  >Locked: Equal</span
+                >
+              </label>
+
+              <div
+                *ngIf="controls().splitType === 'view_only'"
+                class="w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-xs text-slate-700 font-semibold flex items-center space-x-1.5"
+              >
+                <span>🔒 Equal Split (Set by Group Admin)</span>
+              </div>
+
+              <select
+                *ngIf="controls().splitType !== 'view_only'"
                 [(ngModel)]="splitType"
                 name="splitType"
                 class="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs font-medium focus:outline-none focus:border-indigo-500 bg-white text-slate-800 transition-all"
@@ -225,18 +291,31 @@ import {
                 <option value="PERCENTAGE">Percentages</option>
               </select>
             </div>
-          </div>
 
-          <!-- Optional UTR Number -->
-          <div class="space-y-1.5">
-            <label class="text-xs font-bold text-slate-700">UPI Ref / UTR (Optional)</label>
-            <input
-              type="text"
-              [(ngModel)]="utrNumber"
-              name="utrNumber"
-              placeholder="12-digit transaction ID"
-              class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-xs font-mono focus:outline-none focus:border-indigo-500 bg-white text-slate-800 placeholder-slate-400 transition-all"
-            />
+            <!-- Notes / Description -->
+            <div *ngIf="controls().notes !== 'hidden'" class="space-y-1.5">
+              <label class="text-xs font-bold text-slate-700 flex items-center justify-between">
+                <span>Notes / Memo</span>
+                <span
+                  *ngIf="controls().notes === 'mandatory'"
+                  class="text-[10px] text-rose-600 font-extrabold"
+                  >* Mandatory</span
+                >
+                <span
+                  *ngIf="controls().notes === 'editable'"
+                  class="text-[10px] text-slate-400 font-medium"
+                  >Optional</span
+                >
+              </label>
+              <input
+                type="text"
+                [(ngModel)]="notes"
+                name="notes"
+                [required]="controls().notes === 'mandatory'"
+                placeholder="e.g. Sunday flat lunch"
+                class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs focus:outline-none focus:border-indigo-500 bg-white text-slate-800 placeholder-slate-400 transition-all"
+              />
+            </div>
           </div>
 
           <!-- Split Preview -->
@@ -278,18 +357,35 @@ export class AddExpenseModalComponent {
   amount: number | null = null;
   date: string = new Date().toISOString().split('T')[0];
   category: ExpenseCategory = 'Food & Dining';
+  subCategory = 'Groceries & Dark Stores';
+  notes = '';
   splitType: SplitType = 'EQUAL';
-  utrNumber = '';
 
   loading = signal<boolean>(false);
   errorMessage = signal<string | null>(null);
   conflictData = signal<DuplicateConflictResponse | null>(null);
   aiSuggestion = signal<AiPrediction | null>(null);
 
+  // Group Form Controls (dynamically customized by Admin, with basic auto-defaults)
+  controls = computed(() => {
+    return this.api.activeGroup()?.formControls || DEFAULT_GROUP_FORM_CONTROLS;
+  });
+
+  availableSubcategories = computed(() => {
+    return CATEGORY_TAXONOMY[this.category] || ['General'];
+  });
+
   constructor(
     public api: ApiService,
     private aiCategoryService: AiCategoryService,
   ) {}
+
+  onCategoryChange(newCat: ExpenseCategory) {
+    const subs = CATEGORY_TAXONOMY[newCat] || [];
+    if (subs.length > 0 && !subs.includes(this.subCategory)) {
+      this.subCategory = subs[0];
+    }
+  }
 
   onTitleChange(newTitle: string) {
     if (!newTitle || !newTitle.trim()) {
@@ -301,6 +397,9 @@ export class AddExpenseModalComponent {
     if (prediction && prediction.matchedKeyword) {
       this.aiSuggestion.set(prediction);
       this.category = prediction.category;
+      if (prediction.subCategory) {
+        this.subCategory = prediction.subCategory;
+      }
     } else {
       this.aiSuggestion.set(null);
     }
@@ -309,8 +408,20 @@ export class AddExpenseModalComponent {
   submit() {
     if (!this.title || !this.amount || !this.date) return;
 
+    if (this.controls().subCategory === 'mandatory' && !this.subCategory) {
+      this.errorMessage.set('Subcategory is mandatory for this group.');
+      return;
+    }
+
+    if (this.controls().notes === 'mandatory' && (!this.notes || !this.notes.trim())) {
+      this.errorMessage.set('Notes / Memo is mandatory for this group.');
+      return;
+    }
+
     this.loading.set(true);
     this.errorMessage.set(null);
+
+    const effectiveSplit = this.controls().splitType === 'view_only' ? 'EQUAL' : this.splitType;
 
     this.api
       .addExpense({
@@ -318,8 +429,9 @@ export class AddExpenseModalComponent {
         amount: this.amount,
         date: this.date,
         category: this.category,
-        splitType: this.splitType,
-        utrNumber: this.utrNumber ? this.utrNumber.trim() : undefined,
+        subCategory: this.controls().subCategory !== 'hidden' ? this.subCategory : undefined,
+        notes: this.controls().notes !== 'hidden' ? this.notes : undefined,
+        splitType: effectiveSplit,
       })
       .subscribe({
         next: () => {
@@ -342,14 +454,17 @@ export class AddExpenseModalComponent {
     if (!conflict) return;
 
     this.loading.set(true);
+    const effectiveSplit = this.controls().splitType === 'view_only' ? 'EQUAL' : this.splitType;
+
     this.api
       .addExpense({
         title: this.title,
         amount: this.amount!,
         date: this.date,
         category: this.category,
-        splitType: this.splitType,
-        utrNumber: this.utrNumber ? this.utrNumber.trim() : undefined,
+        subCategory: this.controls().subCategory !== 'hidden' ? this.subCategory : undefined,
+        notes: this.controls().notes !== 'hidden' ? this.notes : undefined,
+        splitType: effectiveSplit,
         allowOverwrite: true,
         overwriteTargetId: conflict.existingRecord.id,
       })

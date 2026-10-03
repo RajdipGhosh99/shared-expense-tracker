@@ -58,6 +58,10 @@ export class DualSyncStore implements IDataStore {
     return this.updateFlatSync(groupId, googleSheetSync);
   }
 
+  async updateGroupFormControls(groupId: string, formControls: any): Promise<boolean> {
+    return this.turso.updateGroupFormControls(groupId, formControls);
+  }
+
   // --- Flats (Backward Compatibility) ---
   async createFlat(flat: Flat): Promise<Flat> {
     const saved = await this.turso.createFlat(flat);

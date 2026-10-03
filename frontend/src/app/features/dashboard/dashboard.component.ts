@@ -5,7 +5,11 @@ import { Router } from '@angular/router';
 import { ApiService } from '../../core/services/api.service.js';
 import { AddExpenseModalComponent } from '../expenses/add-expense-modal.component.js';
 import { BulkExpenseGridComponent } from '../expenses/bulk-expense-grid.component.js';
-import { Group } from '@shared-expense-tracker/shared';
+import {
+  Group,
+  GroupFormControls,
+  DEFAULT_GROUP_FORM_CONTROLS,
+} from '@shared-expense-tracker/shared';
 
 @Component({
   selector: 'app-dashboard',
@@ -606,6 +610,115 @@ import { Group } from '@shared-expense-tracker/shared';
           </div>
         </div>
 
+        <!-- ADMIN GROUP EXPENSE ENTRY FORM CONTROLS -->
+        <div
+          *ngIf="isAdmin()"
+          class="bg-white p-4.5 rounded-2xl border border-slate-200 shadow-xs space-y-3.5"
+        >
+          <div class="flex justify-between items-center">
+            <h3
+              class="font-bold text-slate-800 text-xs uppercase tracking-wider flex items-center space-x-1.5"
+            >
+              <span>⚙️</span>
+              <span>Entry Form Controls (Admin)</span>
+            </h3>
+            <span
+              class="text-[10px] font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded-full"
+            >
+              Group Level
+            </span>
+          </div>
+          <p class="text-xs text-slate-500 leading-relaxed">
+            Manage bill entry form behavior for this group (mandatory, editable, or view-only).
+            Basic controls are pre-assigned.
+          </p>
+
+          <div class="space-y-2 divide-y divide-slate-100 text-xs">
+            <!-- Subcategory -->
+            <div class="pt-2 flex items-center justify-between">
+              <div>
+                <p class="font-bold text-slate-800">Subcategory Field</p>
+                <p class="text-[10px] text-slate-400">
+                  Detailed spend (e.g. Groceries, OTT, Metro)
+                </p>
+              </div>
+              <select
+                [(ngModel)]="formControlsConfig.subCategory"
+                class="px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white font-medium text-xs focus:outline-none focus:border-indigo-500"
+              >
+                <option value="editable">Editable (Optional)</option>
+                <option value="mandatory">Mandatory Field</option>
+                <option value="hidden">Hidden</option>
+              </select>
+            </div>
+
+            <!-- Split Method -->
+            <div class="pt-2 flex items-center justify-between">
+              <div>
+                <p class="font-bold text-slate-800">Split Method Field</p>
+                <p class="text-[10px] text-slate-400">Lock to equal or allow custom splits</p>
+              </div>
+              <select
+                [(ngModel)]="formControlsConfig.splitType"
+                class="px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white font-medium text-xs focus:outline-none focus:border-indigo-500"
+              >
+                <option value="editable">Editable (Any Split)</option>
+                <option value="view_only">View Only (Lock to Equal)</option>
+                <option value="hidden">Hidden (Always Equal)</option>
+              </select>
+            </div>
+
+            <!-- Notes -->
+            <div class="pt-2 flex items-center justify-between">
+              <div>
+                <p class="font-bold text-slate-800">Notes / Memo Field</p>
+                <p class="text-[10px] text-slate-400">Context or item description</p>
+              </div>
+              <select
+                [(ngModel)]="formControlsConfig.notes"
+                class="px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white font-medium text-xs focus:outline-none focus:border-indigo-500"
+              >
+                <option value="editable">Editable (Optional)</option>
+                <option value="mandatory">Mandatory Field</option>
+                <option value="hidden">Hidden</option>
+              </select>
+            </div>
+
+            <!-- Date -->
+            <div class="pt-2 flex items-center justify-between">
+              <div>
+                <p class="font-bold text-slate-800">Date Field</p>
+                <p class="text-[10px] text-slate-400">Expense date</p>
+              </div>
+              <select
+                [(ngModel)]="formControlsConfig.date"
+                class="px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white font-medium text-xs focus:outline-none focus:border-indigo-500"
+              >
+                <option value="mandatory">Mandatory Field</option>
+                <option value="editable">Editable (Optional)</option>
+                <option value="view_only">View Only (Today)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="pt-1 flex items-center justify-between">
+            <span
+              *ngIf="controlsSavedMsg()"
+              class="text-[11px] font-bold text-emerald-600 animate-fade-in"
+            >
+              ✓ {{ controlsSavedMsg() }}
+            </span>
+            <span *ngIf="!controlsSavedMsg()"></span>
+            <button
+              (click)="saveFormControls()"
+              [disabled]="savingControls()"
+              class="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white font-bold text-xs rounded-xl shadow-xs cursor-pointer transition-all"
+            >
+              {{ savingControls() ? 'Saving...' : 'Save Form Controls' }}
+            </button>
+          </div>
+        </div>
+
         <!-- RECENT GROUP EXPENSES FEED -->
         <div class="bg-white p-4.5 rounded-2xl border border-slate-200 shadow-xs space-y-3">
           <div class="flex justify-between items-center">
@@ -649,7 +762,12 @@ import { Group } from '@shared-expense-tracker/shared';
                   <span class="font-semibold text-slate-700">{{
                     exp.payerEmail.split('@')[0]
                   }}</span>
-                  • {{ exp.category }} •
+                  • {{ exp.category }}
+                  <span *ngIf="exp.subCategory" class="text-indigo-600 font-medium"
+                    >› {{ exp.subCategory }}</span
+                  >
+                  <span *ngIf="exp.notes" class="text-slate-400 italic">({{ exp.notes }})</span>
+                  •
                   <span class="text-slate-500">{{ exp.date || exp.createdAt.slice(0, 10) }}</span>
                 </p>
               </div>
@@ -921,18 +1039,53 @@ export class DashboardComponent implements OnInit {
     return member?.isAway || false;
   });
 
+  formControlsConfig: GroupFormControls = { ...DEFAULT_GROUP_FORM_CONTROLS };
+  savingControls = signal<boolean>(false);
+  controlsSavedMsg = signal<string | null>(null);
+
   constructor(
     public api: ApiService,
     public router: Router,
   ) {}
 
   ngOnInit() {
-    this.api.fetchUserGroups().subscribe();
+    this.api.fetchUserGroups().subscribe({
+      next: () => {
+        const active = this.api.activeGroup();
+        if (active?.formControls) {
+          this.formControlsConfig = { ...active.formControls };
+        }
+      },
+    });
+  }
+
+  saveFormControls() {
+    const group = this.api.activeGroup();
+    if (!group) return;
+
+    this.savingControls.set(true);
+    this.controlsSavedMsg.set(null);
+
+    this.api.updateGroupFormControls(group.id, this.formControlsConfig).subscribe({
+      next: () => {
+        this.savingControls.set(false);
+        this.controlsSavedMsg.set('Controls saved!');
+        setTimeout(() => this.controlsSavedMsg.set(null), 2500);
+      },
+      error: () => {
+        this.savingControls.set(false);
+      },
+    });
   }
 
   switchGroup(group: Group) {
     this.api.setActiveGroup(group);
     this.showGroupMenu.set(false);
+    if (group.formControls) {
+      this.formControlsConfig = { ...group.formControls };
+    } else {
+      this.formControlsConfig = { ...DEFAULT_GROUP_FORM_CONTROLS };
+    }
   }
 
   openAddBill() {

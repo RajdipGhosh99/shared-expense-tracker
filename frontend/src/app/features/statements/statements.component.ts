@@ -174,10 +174,10 @@ import { MonthlyStatement } from '@shared-expense-tracker/shared';
           <!-- Category Spending Breakdown -->
           <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-4">
             <h3 class="font-bold text-slate-900 text-sm">Where the Money Went (Categories)</h3>
-            <div class="space-y-3.5">
+            <div class="space-y-4">
               <div *ngFor="let cat of statement()?.categoryBreakdown" class="space-y-1.5">
                 <div class="flex justify-between text-xs font-semibold">
-                  <span class="text-slate-700">{{ cat.category }}</span>
+                  <span class="text-slate-800 font-bold">{{ cat.category }}</span>
                   <span class="text-slate-900 font-bold"
                     >₹{{ cat.amountDisplay.toLocaleString('en-IN') }} ({{ cat.percentage }}%)</span
                   >
@@ -187,6 +187,22 @@ import { MonthlyStatement } from '@shared-expense-tracker/shared';
                     class="bg-indigo-600 h-full rounded-full transition-all duration-500"
                     [style.width.%]="cat.percentage"
                   ></div>
+                </div>
+
+                <!-- Subcategories Breakdown Chips -->
+                <div
+                  *ngIf="cat.subcategories && cat.subcategories.length > 0"
+                  class="flex flex-wrap gap-1.5 pt-1"
+                >
+                  <span
+                    *ngFor="let sub of cat.subcategories"
+                    class="inline-flex items-center space-x-1 px-2 py-0.5 rounded-lg bg-slate-50 border border-slate-200 text-[10px] text-slate-600"
+                  >
+                    <span class="font-medium text-slate-500">{{ sub.subCategory }}:</span>
+                    <span class="font-bold text-slate-800"
+                      >₹{{ sub.amountDisplay.toLocaleString('en-IN') }}</span
+                    >
+                  </span>
                 </div>
               </div>
             </div>

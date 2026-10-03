@@ -38,6 +38,31 @@ export interface UserGroupMembership {
 export type FlatMember = GroupMember;
 
 // ==========================================
+// Group Form Control Models (Admin Customization)
+// ==========================================
+export type FieldControlMode = 'mandatory' | 'editable' | 'view_only' | 'hidden';
+
+export interface GroupFormControls {
+  amount: FieldControlMode; // e.g. mandatory
+  title: FieldControlMode; // e.g. mandatory
+  date: FieldControlMode; // mandatory or editable
+  category: FieldControlMode; // mandatory or editable
+  subCategory: FieldControlMode; // editable, mandatory, or hidden
+  splitType: FieldControlMode; // editable, view_only (fixed Equal), or hidden
+  notes: FieldControlMode; // editable, mandatory, or hidden
+}
+
+export const DEFAULT_GROUP_FORM_CONTROLS: GroupFormControls = {
+  amount: 'mandatory',
+  title: 'mandatory',
+  date: 'mandatory',
+  category: 'mandatory',
+  subCategory: 'editable',
+  splitType: 'editable',
+  notes: 'editable',
+};
+
+// ==========================================
 // Group Models
 // ==========================================
 export interface Group {
@@ -46,6 +71,7 @@ export interface Group {
   inviteCode: string;
   currency: string; // e.g. 'INR'
   googleSheetSync?: boolean; // App/Group level toggle to enable or disable Google Sheets sync
+  formControls?: GroupFormControls; // Group-level entry form controls managed by Admin
   createdAt: string;
 }
 
@@ -67,6 +93,57 @@ export type ExpenseCategory =
   | 'Transfers & Settlements'
   | 'Other';
 
+export const CATEGORY_TAXONOMY: Record<ExpenseCategory, string[]> = {
+  'Food & Dining': [
+    'Groceries & Dark Stores',
+    'Delivery & Takeaway',
+    'Cafes & Restaurants',
+    'Alcohol & Nightlife',
+  ],
+  'Bills & Utilities': [
+    'Power & Grid',
+    'Water & Gas',
+    'Fiber & Telecom',
+    'Society Maintenance & Domestic Help',
+    'Rent & Housing',
+  ],
+  'Transit & Travel': [
+    'Daily Commute (Metro, Cab, Auto)',
+    'Fuel & Fastag',
+    'Flights, Trains & Intercity',
+    'Stays & Lodging',
+  ],
+  'Shopping & E-Commerce': [
+    'Fashion & Apparel',
+    'Electronics & Tech',
+    'Home Decor & Appliances',
+    'Quick Retail & Courier',
+  ],
+  'Entertainment & Leisure': [
+    'Digital OTT & Cloud Subscriptions',
+    'Movies, Concerts & Live Events',
+    'Gaming & Hobbies',
+    'Sports & Fitness (Gym/Turf)',
+  ],
+  'Health & Well-being': [
+    'Pharmacy & Diagnostics',
+    'Consultations & Hospital',
+    'Personal Grooming & Salon',
+  ],
+  'Education & Career': [
+    'Courses, Certifications & Books',
+    'Professional Tools & Subscriptions',
+    'Conferences & Upskilling',
+  ],
+  'Transfers & Settlements': [
+    'P2P Split Settlement (UPI/Cash)',
+    'Credit Card Bill Repayment',
+    'Self Account Transfer',
+    'Investments (SIP/Stocks/Gold)',
+  ],
+  Other: ['General & Miscellaneous'],
+};
+
 export interface ExpenseSplit {
   userEmail: string;
   amountMinorUnits: number; // In paise/cents (e.g., 3333 for ₹33.33)
@@ -84,6 +161,8 @@ export interface Expense {
   totalAmountMinorUnits: number; // Stored in paise/cents
   totalAmountDisplay: number; // Stored in standard unit (e.g., 100.00)
   category: ExpenseCategory;
+  subCategory?: string; // Subcategory mapped within the primary category
+  notes?: string; // Optional or mandatory custom note
   splitType: SplitType;
   splits: Record<string, number>; // { [userEmail]: amountMinorUnits }
   utrNumber?: string;
@@ -161,10 +240,17 @@ export type FlatBalanceSheet = GroupBalanceSheet;
 // ==========================================
 // Statement Models
 // ==========================================
+export interface StatementSubcategorySummary {
+  subCategory: string;
+  amountDisplay: number;
+  percentage: number; // Percentage of the parent category spend
+}
+
 export interface StatementCategorySummary {
   category: string;
   amountDisplay: number;
   percentage: number;
+  subcategories?: StatementSubcategorySummary[];
 }
 
 export interface StatementMemberSummary {

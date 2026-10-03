@@ -4,6 +4,7 @@ import { Observable, tap } from 'rxjs';
 import {
   Group,
   GroupMember,
+  GroupFormControls,
   MemberRole,
   MemberStatus,
   UserGroupMembership,
@@ -270,12 +271,28 @@ export class ApiService {
       .pipe(tap(() => this.refreshGroupData(group.id)));
   }
 
+  updateGroupFormControls(groupId: string, formControls: GroupFormControls): Observable<any> {
+    return this.http
+      .patch(`${this.baseUrl}/groups/${groupId}/form-controls`, { formControls })
+      .pipe(
+        tap((res: any) => {
+          if (this.activeGroup()?.id === groupId && res.formControls) {
+            const current = this.activeGroup()!;
+            this.setActiveGroup({ ...current, formControls: res.formControls });
+          }
+          this.refreshGroupData(groupId);
+        }),
+      );
+  }
+
   // --- Expenses ---
   addExpense(data: {
     title: string;
     amount: number;
     date?: string;
     category: string;
+    subCategory?: string;
+    notes?: string;
     splitType: string;
     splits?: Record<string, number>;
     utrNumber?: string;

@@ -42,21 +42,17 @@ test.describe('Expenses, Splits & Deduplication Protection', () => {
     await page.click('button:has-text("Create Group & Get Invite Code")');
     await expect(page).toHaveURL(/\/dashboard/);
 
-    const utr = `UTR${Date.now()}`;
-
-    // 1. Log first expense with UTR
+    // 1. Log first expense
     await page.click('button:has-text("＋")');
     await page.fill('input[name="amount"]', '500.00');
     await page.fill('input[name="title"]', 'WiFi Bill');
-    await page.fill('input[name="utrNumber"]', utr);
     await page.click('button[type="submit"]');
     await expect(page.locator('text=WiFi Bill')).toBeVisible();
 
-    // 2. Attempt logging duplicate expense with exact same UTR
+    // 2. Attempt logging duplicate expense with matching fingerprint
     await page.click('button:has-text("＋")');
     await page.fill('input[name="amount"]', '500.00');
-    await page.fill('input[name="title"]', 'WiFi Bill Duplicate');
-    await page.fill('input[name="utrNumber"]', utr);
+    await page.fill('input[name="title"]', 'WiFi Bill');
     await page.click('button[type="submit"]');
 
     // 3. Conflict modal should pop up
@@ -69,7 +65,33 @@ test.describe('Expenses, Splits & Deduplication Protection', () => {
 
     // Modal should close and overwritten title should be present
     await expect(page.locator('text=Duplicate Payment Detected')).not.toBeVisible();
-    await expect(page.locator('text=WiFi Bill Duplicate')).toBeVisible();
+    await expect(page.locator('text=WiFi Bill')).toBeVisible();
+  });
+
+  test('Admin manages group entry form controls and verifies subcategory mapping', async ({
+    page,
+  }) => {
+    const email = generateTestEmail('admincontrols');
+    await registerUser(page, 'Admin Configurer', email);
+
+    await page.fill('input[name="groupName"]', 'Controls Test Flat');
+    await page.click('button:has-text("Create Group & Get Invite Code")');
+    await expect(page).toHaveURL(/\/dashboard/);
+
+    // Form Controls card is visible for Admin
+    await expect(page.locator('text=Entry Form Controls (Admin)')).toBeVisible();
+
+    // Admin clicks Save Form Controls
+    await page.click('button:has-text("Save Form Controls")');
+    await expect(page.locator('text=Controls saved!')).toBeVisible();
+
+    // Open Add Bill Modal
+    await page.click('button:has-text("＋")');
+    await expect(page.locator('h3:has-text("Add Group Expense")')).toBeVisible();
+
+    // Verify Subcategory selector is visible and manual UPI Ref input is absent
+    await expect(page.locator('select[name="subCategory"]')).toBeVisible();
+    await expect(page.locator('input[name="utrNumber"]')).toHaveCount(0);
   });
 
   test('Real-time AI automatically detects category even when keywords are misspelled', async ({

@@ -2,6 +2,7 @@ import { ExpenseCategory } from '@shared-expense-tracker/shared';
 
 export interface CategoryPrediction {
   category: ExpenseCategory;
+  subCategory?: string;
   confidence: number; // 0.0 - 1.0
   source: 'gemini' | 'nlp_rule_engine';
   matchedKeywords?: string[];
@@ -126,16 +127,20 @@ export const BRAND_KEYWORDS = new Set([
   'groww',
 ]);
 
-export const CATEGORY_RULES: {
+export interface CategoryRule {
   category: ExpenseCategory;
+  subCategory: string;
   weight: number;
   keywords: string[];
-}[] = [
+}
+
+export const CATEGORY_RULES: CategoryRule[] = [
+  // 1. Food & Dining
   {
     category: 'Food & Dining',
+    subCategory: 'Groceries & Dark Stores',
     weight: 1.0,
     keywords: [
-      // Groceries & Dark Stores
       'blinkit',
       'zepto',
       'instamart',
@@ -177,7 +182,13 @@ export const CATEGORY_RULES: {
       'fresh to home',
       'freshtohome',
       'country delight',
-      // Delivery & Takeaway
+    ],
+  },
+  {
+    category: 'Food & Dining',
+    subCategory: 'Delivery & Takeaway',
+    weight: 1.0,
+    keywords: [
       'swiggy',
       'zomato',
       'eatsure',
@@ -194,7 +205,13 @@ export const CATEGORY_RULES: {
       'behrouz',
       'meghana',
       'burger',
-      // Cafes & Restaurants
+    ],
+  },
+  {
+    category: 'Food & Dining',
+    subCategory: 'Cafes & Restaurants',
+    weight: 0.95,
+    keywords: [
       'starbucks',
       'cafe coffee day',
       'ccd',
@@ -213,10 +230,15 @@ export const CATEGORY_RULES: {
       'restaurant',
       'dining',
       'dhaba',
-      'hotel',
       'dessert',
       'ice cream',
-      // Alcohol & Nightlife
+    ],
+  },
+  {
+    category: 'Food & Dining',
+    subCategory: 'Alcohol & Nightlife',
+    weight: 0.95,
+    keywords: [
       'beer',
       'wine',
       'alcohol',
@@ -231,11 +253,13 @@ export const CATEGORY_RULES: {
       'cocktail',
     ],
   },
+
+  // 2. Bills & Utilities
   {
     category: 'Bills & Utilities',
+    subCategory: 'Power & Grid',
     weight: 1.0,
     keywords: [
-      // Power & Grid
       'electricity',
       'power bill',
       'current bill',
@@ -251,7 +275,13 @@ export const CATEGORY_RULES: {
       'eb bill',
       'power supply',
       'electric meter',
-      // Water & Gas
+    ],
+  },
+  {
+    category: 'Bills & Utilities',
+    subCategory: 'Water & Gas',
+    weight: 1.0,
+    keywords: [
       'water',
       'bisleri',
       'water can',
@@ -272,7 +302,13 @@ export const CATEGORY_RULES: {
       'cylinder',
       'lpg',
       'tanker',
-      // Fiber & Telecom
+    ],
+  },
+  {
+    category: 'Bills & Utilities',
+    subCategory: 'Fiber & Telecom',
+    weight: 1.0,
+    keywords: [
       'wifi',
       'wi-fi',
       'internet',
@@ -290,7 +326,13 @@ export const CATEGORY_RULES: {
       'broadband',
       'router',
       'fibernet',
-      // Society Maintenance & Domestic Help
+    ],
+  },
+  {
+    category: 'Bills & Utilities',
+    subCategory: 'Society Maintenance & Domestic Help',
+    weight: 1.0,
+    keywords: [
       'maid',
       'cook',
       'maid salary',
@@ -310,7 +352,13 @@ export const CATEGORY_RULES: {
       'maintenance',
       'plumber',
       'electrician',
-      // Rent & Housing
+    ],
+  },
+  {
+    category: 'Bills & Utilities',
+    subCategory: 'Rent & Housing',
+    weight: 1.0,
+    keywords: [
       'rent',
       'flat rent',
       'room rent',
@@ -324,11 +372,13 @@ export const CATEGORY_RULES: {
       'lease',
     ],
   },
+
+  // 3. Transit & Travel
   {
     category: 'Transit & Travel',
+    subCategory: 'Daily Commute (Metro, Cab, Auto)',
     weight: 1.0,
     keywords: [
-      // Daily Commute
       'uber',
       'ola',
       'rapido',
@@ -342,16 +392,19 @@ export const CATEGORY_RULES: {
       'bmtc',
       'dtc',
       'ride',
-      // Fuel & Fastag
-      'petrol',
-      'diesel',
-      'fuel',
-      'cng',
-      'fastag',
-      'toll',
-      'parking',
-      'car wash',
-      // Flights, Trains & Intercity
+    ],
+  },
+  {
+    category: 'Transit & Travel',
+    subCategory: 'Fuel & Fastag',
+    weight: 1.0,
+    keywords: ['petrol', 'diesel', 'fuel', 'cng', 'fastag', 'toll', 'parking', 'car wash'],
+  },
+  {
+    category: 'Transit & Travel',
+    subCategory: 'Flights, Trains & Intercity',
+    weight: 1.0,
+    keywords: [
       'flight',
       'indigo',
       'air india',
@@ -364,7 +417,14 @@ export const CATEGORY_RULES: {
       'redbus',
       'abhibus',
       'zoomcar',
-      // Stays & Lodging
+    ],
+  },
+  {
+    category: 'Transit & Travel',
+    subCategory: 'Stays & Lodging',
+    weight: 0.95,
+    keywords: [
+      'hotel',
       'airbnb',
       'resort',
       'hostel',
@@ -375,11 +435,13 @@ export const CATEGORY_RULES: {
       'lodging',
     ],
   },
+
+  // 4. Shopping & E-Commerce
   {
     category: 'Shopping & E-Commerce',
+    subCategory: 'Fashion & Apparel',
     weight: 0.95,
     keywords: [
-      // Fashion & Apparel
       'myntra',
       'ajio',
       'zara',
@@ -390,7 +452,13 @@ export const CATEGORY_RULES: {
       'sneakers',
       'apparel',
       'shopping',
-      // Electronics & Tech
+    ],
+  },
+  {
+    category: 'Shopping & E-Commerce',
+    subCategory: 'Electronics & Tech',
+    weight: 0.95,
+    keywords: [
       'amazon',
       'flipkart',
       'croma',
@@ -403,7 +471,13 @@ export const CATEGORY_RULES: {
       'monitor',
       'keyboard',
       'mouse',
-      // Home Decor & Appliances
+    ],
+  },
+  {
+    category: 'Shopping & E-Commerce',
+    subCategory: 'Home Decor & Appliances',
+    weight: 0.95,
+    keywords: [
       'microwave',
       'air fryer',
       'beanbag',
@@ -414,21 +488,21 @@ export const CATEGORY_RULES: {
       'urban ladder',
       'furniture',
       'home decor',
-      // Quick Retail & Courier
-      'courier',
-      'dunzo',
-      'porter',
-      'packaging',
-      'stationary',
-      'printout',
-      'xerox',
     ],
   },
   {
+    category: 'Shopping & E-Commerce',
+    subCategory: 'Quick Retail & Courier',
+    weight: 0.95,
+    keywords: ['courier', 'dunzo', 'porter', 'packaging', 'stationary', 'printout', 'xerox'],
+  },
+
+  // 5. Entertainment & Leisure
+  {
     category: 'Entertainment & Leisure',
+    subCategory: 'Digital OTT & Cloud Subscriptions',
     weight: 0.95,
     keywords: [
-      // Digital OTT & Cloud Subscriptions
       'netflix',
       'prime video',
       'hotstar',
@@ -442,7 +516,13 @@ export const CATEGORY_RULES: {
       'midjourney',
       'google one',
       'icloud',
-      // Movies, Concerts & Live Events
+    ],
+  },
+  {
+    category: 'Entertainment & Leisure',
+    subCategory: 'Movies, Concerts & Live Events',
+    weight: 0.95,
+    keywords: [
       'bookmyshow',
       'pvr',
       'inox',
@@ -452,14 +532,19 @@ export const CATEGORY_RULES: {
       'concert',
       'standup',
       'comedy show',
-      // Gaming & Hobbies
-      'steam',
-      'playstation',
-      'xbox',
-      'nintendo',
-      'board games',
-      'kindle',
-      // Sports & Fitness
+    ],
+  },
+  {
+    category: 'Entertainment & Leisure',
+    subCategory: 'Gaming & Hobbies',
+    weight: 0.95,
+    keywords: ['steam', 'playstation', 'xbox', 'nintendo', 'board games', 'kindle'],
+  },
+  {
+    category: 'Entertainment & Leisure',
+    subCategory: 'Sports & Fitness (Gym/Turf)',
+    weight: 0.95,
+    keywords: [
       'cult',
       'cult.fit',
       'gym',
@@ -471,11 +556,13 @@ export const CATEGORY_RULES: {
       'sports',
     ],
   },
+
+  // 6. Health & Well-being
   {
     category: 'Health & Well-being',
+    subCategory: 'Pharmacy & Diagnostics',
     weight: 0.95,
     keywords: [
-      // Pharmacy & Diagnostics
       'medicine',
       'pharmacy',
       'apollo',
@@ -489,15 +576,19 @@ export const CATEGORY_RULES: {
       'blood test',
       'lal pathlabs',
       'diagnostics',
-      // Consultations & Hospital
-      'doctor',
-      'clinic',
-      'consultation',
-      'dentist',
-      'hospital',
-      'practo',
-      'therapy',
-      // Personal Grooming & Salon
+    ],
+  },
+  {
+    category: 'Health & Well-being',
+    subCategory: 'Consultations & Hospital',
+    weight: 0.95,
+    keywords: ['doctor', 'clinic', 'consultation', 'dentist', 'hospital', 'practo', 'therapy'],
+  },
+  {
+    category: 'Health & Well-being',
+    subCategory: 'Personal Grooming & Salon',
+    weight: 0.95,
+    keywords: [
       'salon',
       'haircut',
       'spa',
@@ -509,11 +600,13 @@ export const CATEGORY_RULES: {
       'grooming',
     ],
   },
+
+  // 7. Education & Career
   {
     category: 'Education & Career',
+    subCategory: 'Courses, Certifications & Books',
     weight: 0.95,
     keywords: [
-      // Courses, Certifications & Books
       'udemy',
       'coursera',
       'edx',
@@ -522,7 +615,13 @@ export const CATEGORY_RULES: {
       'aws certified',
       'exam fee',
       'textbook',
-      // Professional Tools & Subscriptions
+    ],
+  },
+  {
+    category: 'Education & Career',
+    subCategory: 'Professional Tools & Subscriptions',
+    weight: 0.95,
+    keywords: [
       'github',
       'copilot',
       'figma',
@@ -532,20 +631,21 @@ export const CATEGORY_RULES: {
       'godaddy',
       'vercel',
       'aws bill',
-      // Conferences & Upskilling
-      'conference',
-      'workshop',
-      'hackathon',
-      'seminar',
-      'webinar',
-      'upskilling',
     ],
   },
   {
+    category: 'Education & Career',
+    subCategory: 'Conferences & Upskilling',
+    weight: 0.95,
+    keywords: ['conference', 'workshop', 'hackathon', 'seminar', 'webinar', 'upskilling'],
+  },
+
+  // 8. Transfers & Settlements
+  {
     category: 'Transfers & Settlements',
+    subCategory: 'P2P Split Settlement (UPI/Cash)',
     weight: 1.0,
     keywords: [
-      // P2P Split Settlement
       'settlement',
       'settle',
       'paid back',
@@ -553,33 +653,32 @@ export const CATEGORY_RULES: {
       'upi return',
       'cash settlement',
       'split repayment',
-      // Credit Card Bill Repayment
-      'credit card',
-      'cc bill',
-      'cred',
-      'hdfc cc',
-      'icici cc',
-      'sbi card',
-      'card bill',
-      // Self Account Transfer
-      'self transfer',
-      'bank transfer',
-      'account transfer',
-      'savings',
-      // Investments
-      'mutual fund',
-      'sip',
-      'zerodha',
-      'groww',
-      'coin',
-      'stocks',
-      'gold',
-      'fd',
     ],
+  },
+  {
+    category: 'Transfers & Settlements',
+    subCategory: 'Credit Card Bill Repayment',
+    weight: 1.0,
+    keywords: ['credit card', 'cc bill', 'cred', 'hdfc cc', 'icici cc', 'sbi card', 'card bill'],
+  },
+  {
+    category: 'Transfers & Settlements',
+    subCategory: 'Self Account Transfer',
+    weight: 1.0,
+    keywords: ['self transfer', 'bank transfer', 'account transfer', 'savings'],
+  },
+  {
+    category: 'Transfers & Settlements',
+    subCategory: 'Investments (SIP/Stocks/Gold)',
+    weight: 1.0,
+    keywords: ['mutual fund', 'sip', 'zerodha', 'groww', 'coin', 'stocks', 'gold', 'fd'],
   },
 ];
 
 export class AiCategoryService {
+  /**
+   * Evaluates whether a candidate token matches a target keyword exactly or via typo tolerance.
+   */
   private static checkWordMatch(
     word: string,
     kw: string,
@@ -588,7 +687,7 @@ export class AiCategoryService {
     if (word.length < 3 || kw.length < 3) return { matched: false };
 
     if (kw.length === 4) {
-      if (word[0] === kw[0] && Math.abs(word.length - kw.length) === 1) {
+      if (word[0] === kw[0] && Math.abs(word.length - kw.length) <= 1) {
         const dist = levenshteinDistance(word, kw);
         if (dist === 1) {
           return {
@@ -621,11 +720,17 @@ export class AiCategoryService {
   }
 
   /**
-   * Predict expense category using typo-tolerant NLP heuristics + optional Gemini API
+   * Fast rule-based NLP classifier with typo tolerance and Gemini API fallback.
+   * Accurately maps both Primary Category and Subcategory.
    */
-  static async predictCategory(title: string): Promise<CategoryPrediction> {
+  static async predict(title: string): Promise<CategoryPrediction> {
     if (!title || title.trim().length === 0) {
-      return { category: 'Food & Dining', confidence: 0.5, source: 'nlp_rule_engine' };
+      return {
+        category: 'Food & Dining',
+        subCategory: 'Groceries & Dark Stores',
+        confidence: 0.5,
+        source: 'nlp_rule_engine',
+      };
     }
 
     const cleanTitle = title.toLowerCase().trim();
@@ -640,6 +745,7 @@ export class AiCategoryService {
           if (cleanTitle.includes(kw)) {
             return {
               category: rule.category,
+              subCategory: rule.subCategory,
               confidence: 0.98,
               source: 'nlp_rule_engine',
               matchedKeywords: [kw],
@@ -653,6 +759,7 @@ export class AiCategoryService {
             if (m.matched) {
               return {
                 category: rule.category,
+                subCategory: rule.subCategory,
                 confidence: m.isFuzzy ? 0.9 : 0.98,
                 source: 'nlp_rule_engine',
                 matchedKeywords: [kw],
@@ -679,6 +786,7 @@ export class AiCategoryService {
         if (isMatch) {
           return {
             category: rule.category,
+            subCategory: rule.subCategory,
             confidence: 0.95,
             source: 'nlp_rule_engine',
             matchedKeywords: [kw],
@@ -704,6 +812,7 @@ export class AiCategoryService {
                 bestFuzzyScore = score;
                 bestFuzzyMatch = {
                   category: rule.category,
+                  subCategory: rule.subCategory,
                   confidence: Math.min(Math.round((0.75 + m.sim! * 0.2) * 100) / 100, 0.95),
                   source: 'nlp_rule_engine',
                   matchedKeywords: [kw],
@@ -735,6 +844,7 @@ export class AiCategoryService {
     // Default fallback
     return {
       category: 'Food & Dining',
+      subCategory: 'Groceries & Dark Stores',
       confidence: 0.5,
       source: 'nlp_rule_engine',
     };
@@ -790,5 +900,9 @@ Return ONLY a valid JSON object in this exact format, with no markdown code fenc
       };
     }
     return null;
+  }
+
+  static async predictCategory(title: string): Promise<CategoryPrediction> {
+    return this.predict(title);
   }
 }

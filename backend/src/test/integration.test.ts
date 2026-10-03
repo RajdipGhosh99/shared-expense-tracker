@@ -334,6 +334,54 @@ describe('Backend API End-to-End Integration Suite', () => {
     assert.equal(data.members.length, 2);
   });
 
+  test('Group: Admin updates group entry form controls via PATCH /api/groups/:id/form-controls', async () => {
+    // 1. Non-admin (Amit) attempts to change controls -> 403 Forbidden
+    const unauthRes = await fetch(`${baseUrl}/api/groups/${groupId}/form-controls`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${amitToken}`,
+      },
+      body: JSON.stringify({
+        formControls: {
+          amount: 'mandatory',
+          title: 'mandatory',
+          date: 'mandatory',
+          category: 'mandatory',
+          subCategory: 'mandatory',
+          splitType: 'view_only',
+          notes: 'editable',
+        },
+      }),
+    });
+    assert.equal(unauthRes.status, 403);
+
+    // 2. Admin (Rahul) successfully updates controls -> 200 OK
+    const authRes = await fetch(`${baseUrl}/api/groups/${groupId}/form-controls`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${rahulToken}`,
+      },
+      body: JSON.stringify({
+        formControls: {
+          amount: 'mandatory',
+          title: 'mandatory',
+          date: 'mandatory',
+          category: 'mandatory',
+          subCategory: 'mandatory',
+          splitType: 'view_only',
+          notes: 'editable',
+        },
+      }),
+    });
+    assert.equal(authRes.status, 200);
+    const data = await authRes.json();
+    assert.equal(data.success, true);
+    assert.equal(data.formControls.subCategory, 'mandatory');
+    assert.equal(data.formControls.splitType, 'view_only');
+  });
+
   test('Backend 404: Returns 404 for unknown endpoints', async () => {
     const res = await fetch(`${baseUrl}/api/non-existent-route`);
     assert.equal(res.status, 404);

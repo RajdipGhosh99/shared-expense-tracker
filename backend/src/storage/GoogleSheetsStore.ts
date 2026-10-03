@@ -142,6 +142,10 @@ export class GoogleSheetsStore implements IDataStore {
     return this.updateFlatSync(groupId, googleSheetSync);
   }
 
+  async updateGroupFormControls(groupId: string, formControls: any): Promise<boolean> {
+    return true;
+  }
+
   // --- Flats (Backward Compatibility) ---
   async createFlat(flat: Flat): Promise<Flat> {
     if (!this.isConfigured) return flat;

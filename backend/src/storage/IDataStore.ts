@@ -1,6 +1,7 @@
 import {
   Group,
   GroupMember,
+  GroupFormControls,
   Flat,
   FlatMember,
   Expense,
@@ -17,6 +18,7 @@ export interface IDataStore {
   getGroupByInviteCode(code: string): Promise<Group | null>;
   getAllGroups(): Promise<Group[]>;
   updateGroupSync(groupId: string, googleSheetSync: boolean): Promise<boolean>;
+  updateGroupFormControls(groupId: string, formControls: GroupFormControls): Promise<boolean>;
 
   // Flats (Backwards compatibility)
   createFlat(flat: Flat): Promise<Flat>;
