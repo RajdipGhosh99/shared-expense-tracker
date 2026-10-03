@@ -18,17 +18,20 @@ import { Group } from '@shared-expense-tracker/shared';
     >
       <!-- Top Mature Executive Header -->
       <header
-        class="bg-white border-b border-slate-200 sticky top-0 z-30 px-4 py-3 pt-safe shadow-xs"
+        class="bg-white/95 backdrop-blur-md border-b border-slate-200/90 sticky top-0 z-30 px-3.5 py-2.5 pt-safe shadow-2xs"
       >
         <div class="flex items-center justify-between relative">
-          <!-- Group Brand & Dropdown Switcher -->
-          <div class="flex items-center space-x-3">
+          <!-- Left: Group Switcher Trigger Pill -->
+          <div
+            (click)="showGroupMenu.set(!showGroupMenu())"
+            class="flex items-center space-x-2 py-1 px-2 -ml-1 rounded-xl hover:bg-slate-100 active:scale-98 transition-all cursor-pointer select-none group"
+            title="Switch or manage groups"
+          >
+            <!-- Group Icon -->
             <div
-              (click)="showGroupMenu.set(!showGroupMenu())"
-              class="w-9 h-9 rounded-xl bg-slate-900 hover:bg-slate-800 text-white flex items-center justify-center font-bold shadow-xs flex-shrink-0 cursor-pointer transition-colors"
-              title="Switch Group"
+              class="w-7 h-7 rounded-lg bg-slate-900 group-hover:bg-indigo-600 text-white flex items-center justify-center font-bold shadow-2xs flex-shrink-0 transition-colors"
             >
-              <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path
                   stroke-linecap="round"
                   stroke-linejoin="round"
@@ -37,66 +40,70 @@ import { Group } from '@shared-expense-tracker/shared';
                 />
               </svg>
             </div>
-            <div>
-              <div
-                (click)="showGroupMenu.set(!showGroupMenu())"
-                class="flex items-center space-x-1.5 cursor-pointer group select-none"
+
+            <!-- Group Title & Chevron -->
+            <div class="flex items-center space-x-1.5 min-w-0">
+              <h1
+                class="text-sm font-bold text-slate-900 group-hover:text-indigo-600 leading-none truncate max-w-[130px] sm:max-w-[190px] transition-colors"
               >
-                <h1
-                  class="text-sm font-bold text-slate-900 group-hover:text-indigo-600 leading-tight truncate max-w-[140px] sm:max-w-[200px] transition-colors"
-                >
-                  {{ api.activeGroup()?.name || 'My Group' }}
-                </h1>
-                <span class="text-xs text-slate-400 group-hover:text-indigo-600 transition-colors"
-                  >▾</span
-                >
-                <!-- Google Sheet Sync Status -->
-                <span
-                  class="hidden sm:inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200"
-                  title="Changes mirror automatically to Google Sheets"
-                >
-                  <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1 animate-pulse"></span>
-                  Synced
-                </span>
-              </div>
-              <div class="flex items-center space-x-1.5 text-[11px] text-slate-500 mt-0.5">
-                <span class="font-medium text-slate-500">Code:</span>
-                <span
-                  class="font-mono font-bold text-slate-700 bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded text-[11px]"
-                >
-                  {{ api.activeGroup()?.inviteCode }}
-                </span>
-                <button
-                  (click)="copyCode()"
-                  class="text-slate-400 hover:text-slate-700 active:scale-90 transition-transform cursor-pointer"
-                  [title]="copiedCode() ? 'Copied!' : 'Copy Code'"
-                >
-                  <span *ngIf="!copiedCode()" class="text-xs">📋</span>
-                  <span *ngIf="copiedCode()" class="text-xs text-emerald-600 font-bold">✓</span>
-                </button>
-              </div>
+                {{ api.activeGroup()?.name || 'My Group' }}
+              </h1>
+              <span class="text-xs text-slate-400 group-hover:text-indigo-600 transition-colors"
+                >▾</span
+              >
             </div>
+
+            <!-- Google Sheet Live Indicator -->
+            <span
+              class="hidden sm:inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200"
+              title="Google Sheet live sync active"
+            >
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1 animate-pulse"></span>
+              Live
+            </span>
           </div>
 
-          <!-- User Pill & Log Out -->
-          <div class="flex items-center space-x-2.5">
-            <div class="text-right">
-              <p
-                class="text-xs font-bold text-slate-800 leading-none truncate max-w-[85px] sm:max-w-none"
+          <!-- Right: Action Bar (Invite Pill + User + Logout) -->
+          <div class="flex items-center space-x-2">
+            <!-- Compact Invite Code Pill -->
+            <button
+              type="button"
+              (click)="copyCode()"
+              class="flex items-center space-x-1.5 px-2.5 py-1 bg-slate-100 hover:bg-slate-200/80 active:scale-95 border border-slate-200/80 rounded-lg text-xs transition-all cursor-pointer select-none"
+              [title]="copiedCode() ? 'Copied!' : 'Click to copy invite code'"
+            >
+              <span
+                class="text-[10px] text-slate-400 font-bold uppercase tracking-wider hidden xs:inline"
+                >Code:</span
               >
-                {{ api.currentUser()?.name }}
-              </p>
+              <span class="font-mono font-bold text-slate-700 text-xs">{{
+                api.activeGroup()?.inviteCode
+              }}</span>
+              <span class="text-[10px] text-slate-500">{{ copiedCode() ? '✓' : '📋' }}</span>
+            </button>
+
+            <!-- User Avatar & Direct Log Out -->
+            <div class="flex items-center space-x-2 pl-1 border-l border-slate-200">
+              <div class="hidden md:block text-right leading-none">
+                <p class="text-xs font-bold text-slate-800 truncate max-w-[80px]">
+                  {{ api.currentUser()?.name }}
+                </p>
+              </div>
+
               <button
                 (click)="api.logout(); router.navigate(['/auth'])"
-                class="text-[11px] text-slate-400 font-semibold hover:text-rose-600 transition-colors cursor-pointer mt-0.5 inline-block"
+                class="text-xs font-semibold text-slate-500 hover:text-rose-600 px-2 py-1 rounded-lg hover:bg-rose-50 transition-colors cursor-pointer"
+                title="Log out"
               >
                 Log out
               </button>
-            </div>
-            <div
-              class="w-8 h-8 rounded-full bg-slate-100 border border-slate-300 text-slate-700 font-bold text-xs flex items-center justify-center shadow-xs flex-shrink-0"
-            >
-              {{ api.currentUser()?.name?.charAt(0) || 'U' }}
+
+              <div
+                class="w-7 h-7 rounded-full bg-slate-100 border border-slate-300 text-slate-700 font-bold text-xs flex items-center justify-center flex-shrink-0 select-none shadow-2xs"
+                [title]="api.currentUser()?.email || ''"
+              >
+                {{ api.currentUser()?.name?.charAt(0) || 'U' }}
+              </div>
             </div>
           </div>
 
@@ -721,6 +728,7 @@ import { Group } from '@shared-expense-tracker/shared';
       <app-bulk-expense-grid
         *ngIf="showBulkModal()"
         (close)="showBulkModal.set(false)"
+        (openSingle)="showBulkModal.set(false); showAddModal.set(true)"
       ></app-bulk-expense-grid>
 
       <!-- Create Group Modal -->

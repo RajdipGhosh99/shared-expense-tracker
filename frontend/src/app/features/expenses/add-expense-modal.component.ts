@@ -28,44 +28,43 @@ import {
         <!-- Mobile Drag Handle -->
         <div class="w-12 h-1 bg-slate-300 rounded-full mx-auto mb-1"></div>
 
-        <!-- Header -->
-        <div class="flex justify-between items-center pb-2 border-b border-slate-100">
+        <!-- Modal Header with Integrated Bulk Entry Action -->
+        <div class="flex justify-between items-center pb-3 border-b border-slate-100">
           <div class="flex items-center space-x-2.5">
             <div
-              class="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center shadow-xs text-sm font-bold"
+              class="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center shadow-xs text-sm font-bold flex-shrink-0"
             >
               ＋
             </div>
             <div>
-              <h3 class="text-base font-bold text-slate-900">Add Group Expense</h3>
-              <p class="text-[11px] text-slate-500 font-medium">
+              <h3 class="text-base font-bold text-slate-900 leading-tight">Add Group Expense</h3>
+              <p class="text-[11px] text-slate-400 font-medium">
                 Split automatically with active members
               </p>
             </div>
           </div>
-          <button
-            (click)="close.emit()"
-            class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500 hover:text-slate-800 font-bold active:scale-90 transition-all cursor-pointer"
-          >
-            ✕
-          </button>
-        </div>
 
-        <!-- Switch to Google Sheet Multiple Entry Banner -->
-        <div
-          (click)="openBulk.emit()"
-          class="p-2.5 bg-emerald-50 hover:bg-emerald-100/80 border border-emerald-200 rounded-xl flex items-center justify-between text-xs text-emerald-900 cursor-pointer transition-colors shadow-xs"
-        >
           <div class="flex items-center space-x-2">
-            <span class="text-base">📊</span>
-            <div>
-              <span class="font-bold">Multiple Bills Entry (Google Sheet Grid)</span>
-              <p class="text-[11px] text-emerald-700">
-                Enter multiple rows at once like a spreadsheet
-              </p>
-            </div>
+            <!-- Integrated Bulk Entry Button in Header -->
+            <button
+              type="button"
+              (click)="openBulk.emit()"
+              class="px-2.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 active:scale-95 border border-emerald-200 text-emerald-800 text-xs font-bold rounded-xl transition-all flex items-center space-x-1.5 cursor-pointer shadow-2xs"
+              title="Switch to Google Sheet multiple bills entry"
+            >
+              <span>📊</span>
+              <span>Bulk Entry</span>
+            </button>
+
+            <!-- Close Button -->
+            <button
+              type="button"
+              (click)="close.emit()"
+              class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500 hover:text-slate-800 font-bold active:scale-90 transition-all cursor-pointer"
+            >
+              ✕
+            </button>
           </div>
-          <span class="text-emerald-700 font-bold text-xs">Switch ↗</span>
         </div>
 
         <!-- DUPLICATE CONFLICT POPUP (If triggered) -->

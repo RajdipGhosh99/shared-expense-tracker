@@ -65,6 +65,15 @@ export interface GridRow {
           <div class="flex items-center space-x-2">
             <button
               type="button"
+              (click)="openSingle.emit()"
+              class="px-2.5 py-1.5 rounded-lg border border-indigo-200 bg-indigo-50 hover:bg-indigo-100 text-xs font-semibold text-indigo-700 flex items-center space-x-1.5 transition-colors cursor-pointer shadow-2xs"
+              title="Switch to single bill entry"
+            >
+              <span>💳</span>
+              <span class="hidden sm:inline">Single Bill</span>
+            </button>
+            <button
+              type="button"
               (click)="showPasteModal.set(!showPasteModal())"
               class="px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-100 text-xs font-semibold text-slate-700 flex items-center space-x-1.5 transition-colors cursor-pointer shadow-xs"
               title="Paste copied rows directly from Google Sheets or Excel"
@@ -75,7 +84,7 @@ export interface GridRow {
             <button
               type="button"
               (click)="addRow()"
-              class="px-2.5 py-1.5 rounded-lg bg-indigo-50 border border-indigo-200 hover:bg-indigo-100 text-xs font-semibold text-indigo-700 flex items-center space-x-1 transition-colors cursor-pointer"
+              class="px-2.5 py-1.5 rounded-lg bg-emerald-50 border border-emerald-200 hover:bg-emerald-100 text-xs font-semibold text-emerald-800 flex items-center space-x-1 transition-colors cursor-pointer"
             >
               <span>＋</span>
               <span>Add Row</span>
@@ -351,6 +360,7 @@ export interface GridRow {
 })
 export class BulkExpenseGridComponent implements OnInit {
   @Output() close = new EventEmitter<void>();
+  @Output() openSingle = new EventEmitter<void>();
 
   rows: GridRow[] = [];
   nextId = 1;
