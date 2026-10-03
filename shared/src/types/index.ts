@@ -86,62 +86,167 @@ export type ExpenseCategory =
   | 'Food & Dining'
   | 'Bills & Utilities'
   | 'Transit & Travel'
-  | 'Shopping & E-Commerce'
+  | 'Shopping & Lifestyle'
   | 'Entertainment & Leisure'
+  | 'Health & Wellness'
+  | 'Education & Work'
+  | 'Transfers & Adjustments'
+  | 'Other'
+  // Backwards-compatible aliases
+  | 'Shopping & E-Commerce'
   | 'Health & Well-being'
   | 'Education & Career'
-  | 'Transfers & Settlements'
-  | 'Other';
+  | 'Transfers & Settlements';
 
-export const CATEGORY_TAXONOMY: Record<ExpenseCategory, string[]> = {
+export const CATEGORY_TAXONOMY: Record<string, string[]> = {
   'Food & Dining': [
     'Groceries & Dark Stores',
-    'Delivery & Takeaway',
-    'Cafes & Restaurants',
-    'Alcohol & Nightlife',
+    'Food Delivery',
+    'Dine-in & Cafes',
+    'Nightlife & Social',
   ],
   'Bills & Utilities': [
-    'Power & Grid',
-    'Water & Gas',
-    'Fiber & Telecom',
-    'Society Maintenance & Domestic Help',
+    'Electricity & Power',
+    'Water & Cooking Gas',
+    'Internet & Telecom',
     'Rent & Housing',
+    'Society & Domestic Help',
   ],
   'Transit & Travel': [
-    'Daily Commute (Metro, Cab, Auto)',
-    'Fuel & Fastag',
-    'Flights, Trains & Intercity',
-    'Stays & Lodging',
+    'Daily Commute',
+    'Fuel & Tolls',
+    'Outstation & Holidays',
+    'Vehicle Maintenance',
   ],
+  'Shopping & Lifestyle': [
+    'Electronics & Hardware',
+    'Apparel & Fashion',
+    'Home & Living',
+    'Personal Care',
+  ],
+  'Entertainment & Leisure': ['Digital Subscriptions', 'Movies & Events', 'Sports & Hobbies'],
+  'Health & Wellness': ['Medicines & Pharmacy', 'Diagnostics & Doctors', 'Fitness & Gym'],
+  'Education & Work': ['Upskilling & Courses', 'Books & Work Tools'],
+  'Transfers & Adjustments': ['Split Settlement', 'Credit Card Repayment', 'Investments & Savings'],
+  Other: ['Other', 'General & Miscellaneous'],
+
+  // Backwards-compatible aliases
   'Shopping & E-Commerce': [
-    'Fashion & Apparel',
-    'Electronics & Tech',
-    'Home Decor & Appliances',
-    'Quick Retail & Courier',
+    'Electronics & Hardware',
+    'Apparel & Fashion',
+    'Home & Living',
+    'Personal Care',
   ],
-  'Entertainment & Leisure': [
-    'Digital OTT & Cloud Subscriptions',
-    'Movies, Concerts & Live Events',
-    'Gaming & Hobbies',
-    'Sports & Fitness (Gym/Turf)',
-  ],
-  'Health & Well-being': [
-    'Pharmacy & Diagnostics',
-    'Consultations & Hospital',
-    'Personal Grooming & Salon',
-  ],
-  'Education & Career': [
-    'Courses, Certifications & Books',
-    'Professional Tools & Subscriptions',
-    'Conferences & Upskilling',
-  ],
-  'Transfers & Settlements': [
-    'P2P Split Settlement (UPI/Cash)',
-    'Credit Card Bill Repayment',
-    'Self Account Transfer',
-    'Investments (SIP/Stocks/Gold)',
-  ],
-  Other: ['General & Miscellaneous'],
+  'Health & Well-being': ['Medicines & Pharmacy', 'Diagnostics & Doctors', 'Fitness & Gym'],
+  'Education & Career': ['Upskilling & Courses', 'Books & Work Tools'],
+  'Transfers & Settlements': ['Split Settlement', 'Credit Card Repayment', 'Investments & Savings'],
+};
+
+export interface SplitDynamicInfo {
+  splitDynamic: string;
+  defaultSplitType: SplitType;
+  isExpense: boolean;
+}
+
+export const CATEGORY_SPLIT_DYNAMIC: Record<string, SplitDynamicInfo> = {
+  // Food & Dining
+  'Groceries & Dark Stores': {
+    splitDynamic: 'Equal split',
+    defaultSplitType: 'EQUAL',
+    isExpense: true,
+  },
+  'Food Delivery': { splitDynamic: 'Exact / Itemized', defaultSplitType: 'EXACT', isExpense: true },
+  'Dine-in & Cafes': {
+    splitDynamic: 'Exact / Itemized',
+    defaultSplitType: 'EXACT',
+    isExpense: true,
+  },
+  'Nightlife & Social': {
+    splitDynamic: 'Itemized / Custom',
+    defaultSplitType: 'EXACT',
+    isExpense: true,
+  },
+  // Bills & Utilities
+  'Electricity & Power': {
+    splitDynamic: 'Equal split',
+    defaultSplitType: 'EQUAL',
+    isExpense: true,
+  },
+  'Water & Cooking Gas': {
+    splitDynamic: 'Equal split',
+    defaultSplitType: 'EQUAL',
+    isExpense: true,
+  },
+  'Internet & Telecom': { splitDynamic: 'Equal split', defaultSplitType: 'EQUAL', isExpense: true },
+  'Rent & Housing': {
+    splitDynamic: 'Ratio / Equal split',
+    defaultSplitType: 'EQUAL',
+    isExpense: true,
+  },
+  'Society & Domestic Help': {
+    splitDynamic: 'Equal split',
+    defaultSplitType: 'EQUAL',
+    isExpense: true,
+  },
+  // Transit & Travel
+  'Daily Commute': {
+    splitDynamic: 'Equal split (shared ride)',
+    defaultSplitType: 'EQUAL',
+    isExpense: true,
+  },
+  'Fuel & Tolls': { splitDynamic: 'Equal split', defaultSplitType: 'EQUAL', isExpense: true },
+  'Outstation & Holidays': {
+    splitDynamic: 'Group pool / Equal',
+    defaultSplitType: 'EQUAL',
+    isExpense: true,
+  },
+  'Vehicle Maintenance': { splitDynamic: 'Personal', defaultSplitType: 'EQUAL', isExpense: true },
+  // Shopping & Lifestyle
+  'Electronics & Hardware': {
+    splitDynamic: 'Personal',
+    defaultSplitType: 'EQUAL',
+    isExpense: true,
+  },
+  'Apparel & Fashion': { splitDynamic: 'Personal', defaultSplitType: 'EQUAL', isExpense: true },
+  'Home & Living': { splitDynamic: 'Equal split', defaultSplitType: 'EQUAL', isExpense: true },
+  'Personal Care': { splitDynamic: 'Personal', defaultSplitType: 'EQUAL', isExpense: true },
+  // Entertainment & Leisure
+  'Digital Subscriptions': {
+    splitDynamic: 'Equal split',
+    defaultSplitType: 'EQUAL',
+    isExpense: true,
+  },
+  'Movies & Events': {
+    splitDynamic: 'Exact / Itemized',
+    defaultSplitType: 'EXACT',
+    isExpense: true,
+  },
+  'Sports & Hobbies': { splitDynamic: 'Equal split', defaultSplitType: 'EQUAL', isExpense: true },
+  // Health & Wellness
+  'Medicines & Pharmacy': { splitDynamic: 'Personal', defaultSplitType: 'EQUAL', isExpense: true },
+  'Diagnostics & Doctors': { splitDynamic: 'Personal', defaultSplitType: 'EQUAL', isExpense: true },
+  'Fitness & Gym': { splitDynamic: 'Personal', defaultSplitType: 'EQUAL', isExpense: true },
+  // Education & Work
+  'Upskilling & Courses': { splitDynamic: 'Personal', defaultSplitType: 'EQUAL', isExpense: true },
+  'Books & Work Tools': { splitDynamic: 'Personal', defaultSplitType: 'EQUAL', isExpense: true },
+  // Transfers & Adjustments (CRITICAL: isExpense: false)
+  'Split Settlement': {
+    splitDynamic: 'System transfer',
+    defaultSplitType: 'EQUAL',
+    isExpense: false,
+  },
+  'Credit Card Repayment': {
+    splitDynamic: 'System transfer',
+    defaultSplitType: 'EQUAL',
+    isExpense: false,
+  },
+  'Investments & Savings': {
+    splitDynamic: 'System transfer',
+    defaultSplitType: 'EQUAL',
+    isExpense: false,
+  },
+  // Fallback
+  Other: { splitDynamic: 'Equal split', defaultSplitType: 'EQUAL', isExpense: true },
 };
 
 export interface ExpenseSplit {
@@ -163,6 +268,7 @@ export interface Expense {
   category: ExpenseCategory;
   subCategory?: string; // Subcategory mapped within the primary category
   notes?: string; // Optional or mandatory custom note
+  isExpense?: boolean; // Flagged false for Transfers & Adjustments (debt settlements, credit card payoffs)
   splitType: SplitType;
   splits: Record<string, number>; // { [userEmail]: amountMinorUnits }
   utrNumber?: string;

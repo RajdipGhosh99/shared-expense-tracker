@@ -1215,30 +1215,75 @@ export class DashboardComponent implements OnInit {
   }
 
   getCategoryIcon(category: string): string {
-    const cat = category.toLowerCase();
-    if (
-      cat.includes('grocer') ||
-      cat.includes('blinkit') ||
-      cat.includes('zepto') ||
-      cat.includes('instamart')
-    )
-      return '🛒';
+    const cat = (category || '').toLowerCase();
     if (
       cat.includes('food') ||
-      cat.includes('zomato') ||
+      cat.includes('dining') ||
+      cat.includes('grocer') ||
       cat.includes('swiggy') ||
-      cat.includes('dining')
+      cat.includes('zomato')
     )
-      return '🍕';
+      return '🍽️';
     if (
+      cat.includes('bill') ||
       cat.includes('util') ||
-      cat.includes('wifi') ||
+      cat.includes('power') ||
+      cat.includes('gas') ||
       cat.includes('electric') ||
-      cat.includes('gas')
+      cat.includes('water') ||
+      cat.includes('internet') ||
+      cat.includes('rent')
     )
       return '⚡';
-    if (cat.includes('rent') || cat.includes('maid') || cat.includes('cook')) return '🏠';
-    if (cat.includes('travel') || cat.includes('uber') || cat.includes('ola')) return '🚗';
-    return '🧾';
+    if (
+      cat.includes('transit') ||
+      cat.includes('travel') ||
+      cat.includes('commute') ||
+      cat.includes('cab') ||
+      cat.includes('uber') ||
+      cat.includes('flight')
+    )
+      return '🚗';
+    if (
+      cat.includes('shop') ||
+      cat.includes('lifestyle') ||
+      cat.includes('apparel') ||
+      cat.includes('fashion') ||
+      cat.includes('electronic')
+    )
+      return '🛍️';
+    if (
+      cat.includes('entertain') ||
+      cat.includes('leisure') ||
+      cat.includes('movie') ||
+      cat.includes('subscription') ||
+      cat.includes('sport')
+    )
+      return '🎬';
+    if (
+      cat.includes('health') ||
+      cat.includes('well') ||
+      cat.includes('pharmacy') ||
+      cat.includes('doctor') ||
+      cat.includes('gym')
+    )
+      return '💊';
+    if (
+      cat.includes('educat') ||
+      cat.includes('work') ||
+      cat.includes('course') ||
+      cat.includes('book') ||
+      cat.includes('tool')
+    )
+      return '📚';
+    if (
+      cat.includes('transfer') ||
+      cat.includes('adjust') ||
+      cat.includes('settle') ||
+      cat.includes('repay') ||
+      cat.includes('invest')
+    )
+      return '🔄';
+    return '📦';
   }
 }

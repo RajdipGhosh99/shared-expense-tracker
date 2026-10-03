@@ -99,6 +99,11 @@ router.post('/', authMiddleware, async (req: AuthRequest, res: Response) => {
     finalSplits = splitCalc.splits;
   }
 
+  const isExpense =
+    req.body.isExpense !== undefined
+      ? Boolean(req.body.isExpense)
+      : finalCategory !== 'Transfers & Adjustments' && finalCategory !== 'Transfers & Settlements';
+
   // 3. Overwrite vs New Insert
   if (validation.isOverwrite && validation.targetExpense) {
     const target = validation.targetExpense;
@@ -117,6 +122,7 @@ router.post('/', authMiddleware, async (req: AuthRequest, res: Response) => {
       category: finalCategory || target.category,
       subCategory: finalSubCategory || target.subCategory,
       notes: notes !== undefined ? notes : target.notes,
+      isExpense,
       splitType: (splitType as SplitType) || target.splitType,
       splits: finalSplits,
       utrNumber: utrNumber || target.utrNumber,
@@ -142,9 +148,10 @@ router.post('/', authMiddleware, async (req: AuthRequest, res: Response) => {
     date: expenseDate,
     totalAmountMinorUnits: amountMinorUnits,
     totalAmountDisplay: amountDisplay,
-    category: finalCategory || 'Food & Dining',
-    subCategory: finalSubCategory,
+    category: finalCategory || 'Other',
+    subCategory: finalSubCategory || (finalCategory === 'Other' ? 'Other' : undefined),
     notes: notes ? String(notes).trim() : undefined,
+    isExpense,
     splitType: (splitType as SplitType) || 'EQUAL',
     splits: finalSplits,
     utrNumber: utrNumber ? utrNumber.trim() : undefined,

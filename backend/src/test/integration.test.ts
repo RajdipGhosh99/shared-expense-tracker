@@ -145,11 +145,12 @@ describe('Backend API End-to-End Integration Suite', () => {
       { title: 'coock monthly salary', expected: 'Bills & Utilities' },
       { title: 'bislri 20L can', expected: 'Bills & Utilities' },
       { title: 'ubr airport ride', expected: 'Transit & Travel' },
-      { title: 'myntra clothes shopping', expected: 'Shopping & E-Commerce' },
+      { title: 'myntra clothes shopping', expected: 'Shopping & Lifestyle' },
       { title: 'netflix monthly subscription', expected: 'Entertainment & Leisure' },
-      { title: 'apollo pharmacy medicine', expected: 'Health & Well-being' },
-      { title: 'udemy python certification', expected: 'Education & Career' },
-      { title: 'settlement repayment', expected: 'Transfers & Settlements' },
+      { title: 'apollo pharmacy medicine', expected: 'Health & Wellness' },
+      { title: 'udemy python certification', expected: 'Education & Work' },
+      { title: 'settlement repayment', expected: 'Transfers & Adjustments' },
+      { title: 'unrecognizable gibberish xyz9876', expected: 'Other' },
     ];
 
     for (const tc of testCases) {
@@ -168,7 +169,7 @@ describe('Backend API End-to-End Integration Suite', () => {
         tc.expected,
         `Expected "${tc.title}" to be "${tc.expected}", got "${data.category}" (${data.matchReason})`,
       );
-      assert.ok(data.confidence >= 0.7);
+      assert.ok(tc.expected === 'Other' ? data.confidence >= 0.3 : data.confidence >= 0.7);
     }
   });
 

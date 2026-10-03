@@ -48,8 +48,12 @@ export async function generateStatement(
   });
 
   for (const exp of periodExpenses) {
-    // CRITICAL: Transfers & Settlements are P2P transfers/repayments, excluded from expense charts
-    if (exp.category === 'Transfers & Settlements') {
+    // CRITICAL: Transfers & Adjustments (isExpense: false) are P2P transfers/repayments, excluded from expense charts
+    if (
+      exp.isExpense === false ||
+      exp.category === 'Transfers & Adjustments' ||
+      exp.category === 'Transfers & Settlements'
+    ) {
       continue;
     }
 

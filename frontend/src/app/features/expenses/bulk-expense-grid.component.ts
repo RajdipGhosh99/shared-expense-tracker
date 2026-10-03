@@ -208,11 +208,12 @@ export interface GridRow {
                     <option value="Food & Dining">🍔 Food & Dining</option>
                     <option value="Bills & Utilities">⚡ Bills & Utilities</option>
                     <option value="Transit & Travel">🚗 Transit & Travel</option>
-                    <option value="Shopping & E-Commerce">🛍️ Shopping & E-Commerce</option>
+                    <option value="Shopping & Lifestyle">🛍️ Shopping & Lifestyle</option>
                     <option value="Entertainment & Leisure">🎬 Entertainment & Leisure</option>
-                    <option value="Health & Well-being">💊 Health & Well-being</option>
-                    <option value="Education & Career">📚 Education & Career</option>
-                    <option value="Transfers & Settlements">🔄 Transfers & Settlements</option>
+                    <option value="Health & Wellness">💊 Health & Wellness</option>
+                    <option value="Education & Work">📚 Education & Work</option>
+                    <option value="Transfers & Adjustments">🔄 Transfers & Adjustments</option>
+                    <option value="Other">📦 Other</option>
                   </select>
                 </td>
 
@@ -544,6 +545,8 @@ export class BulkExpenseGridComponent implements OnInit {
       amount: r.amount!,
       date: r.date,
       category: r.category,
+      isExpense:
+        r.category !== 'Transfers & Adjustments' && r.category !== 'Transfers & Settlements',
       splitType: r.splitType,
       utrNumber: r.utrNumber ? r.utrNumber.trim() : undefined,
     }));

@@ -138,6 +138,9 @@ export class TursoStore implements IDataStore {
       await this.client.execute('ALTER TABLE expenses ADD COLUMN notes TEXT;');
     } catch {}
     try {
+      await this.client.execute('ALTER TABLE expenses ADD COLUMN is_expense INTEGER DEFAULT 1;');
+    } catch {}
+    try {
       await this.client.execute(
         "ALTER TABLE group_members ADD COLUMN status TEXT DEFAULT 'ACTIVE';",
       );
@@ -432,13 +435,19 @@ export class TursoStore implements IDataStore {
   // --- Expenses ---
   async createExpense(expense: Expense): Promise<Expense> {
     const groupId = expense.groupId || expense.flatId!;
+    const isExpense =
+      expense.isExpense !== undefined
+        ? expense.isExpense
+        : expense.category !== 'Transfers & Adjustments' &&
+          expense.category !== 'Transfers & Settlements';
+
     await this.client.execute({
       sql: `INSERT INTO expenses (
         id, group_id, flat_id, payer_email, title, amount_minor_units, amount_display,
-        category, sub_category, notes, split_type, splits_json, utr_number, overwritten_flag,
+        category, sub_category, notes, is_expense, split_type, splits_json, utr_number, overwritten_flag,
         original_expense_id, duplicate_of_id, sheet_row_index, sheet_row_link,
         history_log, sheet_sync_status, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       args: [
         expense.id,
         groupId,
@@ -450,6 +459,7 @@ export class TursoStore implements IDataStore {
         expense.category,
         expense.subCategory || null,
         expense.notes || null,
+        isExpense ? 1 : 0,
         expense.splitType,
         JSON.stringify(expense.splits),
         expense.utrNumber || null,
@@ -464,7 +474,7 @@ export class TursoStore implements IDataStore {
         expense.updatedAt,
       ],
     });
-    return { ...expense, groupId, flatId: groupId };
+    return { ...expense, isExpense, groupId, flatId: groupId };
   }
 
   async updateExpense(id: string, updates: Partial<Expense>): Promise<Expense | null> {
@@ -472,10 +482,15 @@ export class TursoStore implements IDataStore {
     if (!existing) return null;
 
     const merged = { ...existing, ...updates, updatedAt: new Date().toISOString() };
+    const isExpense =
+      merged.isExpense !== undefined
+        ? merged.isExpense
+        : merged.category !== 'Transfers & Adjustments' &&
+          merged.category !== 'Transfers & Settlements';
 
     await this.client.execute({
       sql: `UPDATE expenses SET
-        title = ?, amount_minor_units = ?, amount_display = ?, category = ?, sub_category = ?, notes = ?,
+        title = ?, amount_minor_units = ?, amount_display = ?, category = ?, sub_category = ?, notes = ?, is_expense = ?,
         split_type = ?, splits_json = ?, utr_number = ?, overwritten_flag = ?,
         original_expense_id = ?, duplicate_of_id = ?, sheet_row_index = ?,
         sheet_row_link = ?, history_log = ?, sheet_sync_status = ?, updated_at = ?
@@ -487,6 +502,7 @@ export class TursoStore implements IDataStore {
         merged.category,
         merged.subCategory || null,
         merged.notes || null,
+        isExpense ? 1 : 0,
         merged.splitType,
         JSON.stringify(merged.splits),
         merged.utrNumber || null,
@@ -502,7 +518,7 @@ export class TursoStore implements IDataStore {
       ],
     });
 
-    return merged;
+    return { ...merged, isExpense };
   }
 
   async getExpenses(groupId: string): Promise<Expense[]> {
@@ -601,6 +617,12 @@ export class TursoStore implements IDataStore {
 
   private mapExpenseRow(r: any): Expense {
     const groupId = String(r.group_id || r.flat_id);
+    const category = r.category as any;
+    const isExpense =
+      r.is_expense !== null && r.is_expense !== undefined
+        ? Boolean(r.is_expense)
+        : category !== 'Transfers & Adjustments' && category !== 'Transfers & Settlements';
+
     return {
       id: String(r.id),
       groupId,
@@ -610,9 +632,10 @@ export class TursoStore implements IDataStore {
       date: String(r.created_at).slice(0, 10),
       totalAmountMinorUnits: Number(r.amount_minor_units),
       totalAmountDisplay: Number(r.amount_display),
-      category: r.category as any,
+      category,
       subCategory: r.sub_category ? String(r.sub_category) : undefined,
       notes: r.notes ? String(r.notes) : undefined,
+      isExpense,
       splitType: r.split_type as any,
       splits: JSON.parse(String(r.splits_json)),
       utrNumber: r.utr_number ? String(r.utr_number) : undefined,

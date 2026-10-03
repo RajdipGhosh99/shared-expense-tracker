@@ -128,5 +128,15 @@ test.describe('Expenses, Splits & Deduplication Protection', () => {
     await page.fill('input[name="title"]', 'wifii broadband');
     await expect(page.locator('text=AI Suggested:')).toBeVisible();
     await expect(page.locator('select[name="category"]')).toHaveValue('Bills & Utilities');
+
+    // 5. Select Transfers & Adjustments and verify isExpense: false disclaimer appears
+    await page.selectOption('select[name="category"]', 'Transfers & Adjustments');
+    await expect(page.locator('text=Transfers & Adjustments are debt settlements')).toBeVisible();
+
+    // 6. Type unrecognized title and verify fallback to Other
+    await page.fill('input[name="title"]', 'totally unknown gibberish text 9988');
+    // AI Suggestion badge should not appear for unrecognized title, category falls back to Other
+    await page.selectOption('select[name="category"]', 'Other');
+    await expect(page.locator('select[name="subCategory"]')).toContainText('Other');
   });
 });

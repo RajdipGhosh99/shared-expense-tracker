@@ -293,6 +293,7 @@ export class ApiService {
     category: string;
     subCategory?: string;
     notes?: string;
+    isExpense?: boolean;
     splitType: string;
     splits?: Record<string, number>;
     utrNumber?: string;
@@ -317,6 +318,9 @@ export class ApiService {
       amount: number;
       date?: string;
       category?: string;
+      subCategory?: string;
+      notes?: string;
+      isExpense?: boolean;
       splitType?: string;
       utrNumber?: string;
     }>,

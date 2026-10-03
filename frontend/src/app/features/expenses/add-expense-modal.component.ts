@@ -224,12 +224,28 @@ import {
                 <option value="Food & Dining">🍔 Food & Dining</option>
                 <option value="Bills & Utilities">⚡ Bills & Utilities</option>
                 <option value="Transit & Travel">🚗 Transit & Travel</option>
-                <option value="Shopping & E-Commerce">🛍️ Shopping & E-Commerce</option>
+                <option value="Shopping & Lifestyle">🛍️ Shopping & Lifestyle</option>
                 <option value="Entertainment & Leisure">🎬 Entertainment & Leisure</option>
-                <option value="Health & Well-being">💊 Health & Well-being</option>
-                <option value="Education & Career">📚 Education & Career</option>
-                <option value="Transfers & Settlements">🔄 Transfers & Settlements</option>
+                <option value="Health & Wellness">💊 Health & Wellness</option>
+                <option value="Education & Work">📚 Education & Work</option>
+                <option value="Transfers & Adjustments">🔄 Transfers & Adjustments</option>
+                <option value="Other">📦 Other</option>
               </select>
+            </div>
+
+            <!-- Notice for Transfers & Adjustments (isExpense: false) -->
+            <div
+              *ngIf="
+                category === 'Transfers & Adjustments' || category === 'Transfers & Settlements'
+              "
+              class="col-span-full p-2.5 bg-blue-50/80 border border-blue-200 rounded-xl text-[11px] text-blue-900 flex items-center space-x-2"
+            >
+              <span>ℹ️</span>
+              <span class="leading-tight">
+                <strong>Transfers & Adjustments</strong> are debt settlements / repayments (<code
+                  >isExpense: false</code
+                >) and will never inflate monthly consumption analytics.
+              </span>
             </div>
 
             <!-- Subcategory (Mapped to Main Category) -->
@@ -371,9 +387,9 @@ export class AddExpenseModalComponent {
     return this.api.activeGroup()?.formControls || DEFAULT_GROUP_FORM_CONTROLS;
   });
 
-  availableSubcategories = computed(() => {
-    return CATEGORY_TAXONOMY[this.category] || ['General'];
-  });
+  availableSubcategories(): string[] {
+    return CATEGORY_TAXONOMY[this.category] || ['Other'];
+  }
 
   constructor(
     public api: ApiService,
@@ -423,6 +439,9 @@ export class AddExpenseModalComponent {
 
     const effectiveSplit = this.controls().splitType === 'view_only' ? 'EQUAL' : this.splitType;
 
+    const isExpense =
+      this.category !== 'Transfers & Adjustments' && this.category !== 'Transfers & Settlements';
+
     this.api
       .addExpense({
         title: this.title,
@@ -431,6 +450,7 @@ export class AddExpenseModalComponent {
         category: this.category,
         subCategory: this.controls().subCategory !== 'hidden' ? this.subCategory : undefined,
         notes: this.controls().notes !== 'hidden' ? this.notes : undefined,
+        isExpense,
         splitType: effectiveSplit,
       })
       .subscribe({
