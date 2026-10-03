@@ -57,14 +57,14 @@ export type Flat = Group;
 export type SplitType = 'EQUAL' | 'EXACT' | 'PERCENTAGE' | 'SHARES';
 
 export type ExpenseCategory =
-  | 'Groceries'
-  | 'Rent'
-  | 'Electricity'
-  | 'Wi-Fi'
-  | 'Maid & Cook'
-  | 'Drinking Water'
-  | 'Household'
   | 'Food & Dining'
+  | 'Bills & Utilities'
+  | 'Transit & Travel'
+  | 'Shopping & E-Commerce'
+  | 'Entertainment & Leisure'
+  | 'Health & Well-being'
+  | 'Education & Career'
+  | 'Transfers & Settlements'
   | 'Other';
 
 export interface ExpenseSplit {

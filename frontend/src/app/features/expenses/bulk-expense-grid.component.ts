@@ -205,15 +205,14 @@ export interface GridRow {
                     [(ngModel)]="row.category"
                     class="w-full px-2 py-1.5 border border-slate-200 rounded-md text-xs bg-white text-slate-800 focus:outline-none focus:border-indigo-500 font-medium cursor-pointer"
                   >
-                    <option value="Groceries">🛒 Groceries</option>
-                    <option value="Rent">🏠 Rent</option>
-                    <option value="Electricity">⚡ Electricity</option>
-                    <option value="Wi-Fi">🌐 Wi-Fi</option>
-                    <option value="Maid & Cook">🧹 Maid & Cook</option>
-                    <option value="Drinking Water">💧 Water</option>
-                    <option value="Household">🧼 Household</option>
-                    <option value="Food & Dining">🍕 Food</option>
-                    <option value="Other">📦 Other</option>
+                    <option value="Food & Dining">🍔 Food & Dining</option>
+                    <option value="Bills & Utilities">⚡ Bills & Utilities</option>
+                    <option value="Transit & Travel">🚗 Transit & Travel</option>
+                    <option value="Shopping & E-Commerce">🛍️ Shopping & E-Commerce</option>
+                    <option value="Entertainment & Leisure">🎬 Entertainment & Leisure</option>
+                    <option value="Health & Well-being">💊 Health & Well-being</option>
+                    <option value="Education & Career">📚 Education & Career</option>
+                    <option value="Transfers & Settlements">🔄 Transfers & Settlements</option>
                   </select>
                 </td>
 
@@ -390,24 +389,6 @@ export class BulkExpenseGridComponent implements OnInit {
         id: this.nextId++,
         date: today,
         title: '',
-        category: 'Groceries',
-        amount: null,
-        splitType: 'EQUAL',
-        utrNumber: '',
-      },
-      {
-        id: this.nextId++,
-        date: today,
-        title: '',
-        category: 'Household',
-        amount: null,
-        splitType: 'EQUAL',
-        utrNumber: '',
-      },
-      {
-        id: this.nextId++,
-        date: today,
-        title: '',
         category: 'Food & Dining',
         amount: null,
         splitType: 'EQUAL',
@@ -417,7 +398,25 @@ export class BulkExpenseGridComponent implements OnInit {
         id: this.nextId++,
         date: today,
         title: '',
-        category: 'Electricity',
+        category: 'Bills & Utilities',
+        amount: null,
+        splitType: 'EQUAL',
+        utrNumber: '',
+      },
+      {
+        id: this.nextId++,
+        date: today,
+        title: '',
+        category: 'Transit & Travel',
+        amount: null,
+        splitType: 'EQUAL',
+        utrNumber: '',
+      },
+      {
+        id: this.nextId++,
+        date: today,
+        title: '',
+        category: 'Shopping & E-Commerce',
         amount: null,
         splitType: 'EQUAL',
         utrNumber: '',
@@ -431,7 +430,7 @@ export class BulkExpenseGridComponent implements OnInit {
       id: this.nextId++,
       date: today,
       title: '',
-      category: 'Groceries',
+      category: 'Food & Dining',
       amount: null,
       splitType: 'EQUAL',
       utrNumber: '',
@@ -491,18 +490,18 @@ export class BulkExpenseGridComponent implements OnInit {
       let date = today;
       let title = '';
       let amount: number | null = null;
-      let category: ExpenseCategory = 'Groceries';
+      let category: ExpenseCategory = 'Food & Dining';
 
       // Smart column detection
       if (parts[0].match(/^\d{4}-\d{2}-\d{2}$/)) {
         date = parts[0];
         title = parts[1] || '';
         amount = parts[2] ? parseFloat(parts[2].replace(/[₹,]/g, '')) : null;
-        if (parts[3]) category = (parts[3] as ExpenseCategory) || 'Groceries';
+        if (parts[3]) category = (parts[3] as ExpenseCategory) || 'Food & Dining';
       } else {
         title = parts[0];
         amount = parts[1] ? parseFloat(parts[1].replace(/[₹,]/g, '')) : null;
-        if (parts[2]) category = (parts[2] as ExpenseCategory) || 'Groceries';
+        if (parts[2]) category = (parts[2] as ExpenseCategory) || 'Food & Dining';
       }
 
       parsedRows.push({

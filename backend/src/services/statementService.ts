@@ -47,6 +47,11 @@ export async function generateStatement(
   });
 
   for (const exp of periodExpenses) {
+    // CRITICAL: Transfers & Settlements are P2P transfers/repayments, excluded from expense charts
+    if (exp.category === 'Transfers & Settlements') {
+      continue;
+    }
+
     totalSpendMinorUnits += exp.totalAmountMinorUnits;
     categoryMap[exp.category] = (categoryMap[exp.category] || 0) + exp.totalAmountMinorUnits;
 

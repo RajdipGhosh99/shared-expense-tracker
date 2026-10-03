@@ -202,15 +202,14 @@ import {
                 name="category"
                 class="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs font-medium focus:outline-none focus:border-indigo-500 bg-white text-slate-800 transition-all"
               >
-                <option value="Groceries">🛒 Groceries</option>
-                <option value="Rent">🏠 Rent</option>
-                <option value="Electricity">⚡ Electricity</option>
-                <option value="Wi-Fi">🌐 Wi-Fi</option>
-                <option value="Maid & Cook">🧹 Maid & Cook</option>
-                <option value="Drinking Water">💧 Water</option>
-                <option value="Household">🧼 Household</option>
-                <option value="Food & Dining">🍕 Food</option>
-                <option value="Other">📦 Other</option>
+                <option value="Food & Dining">🍔 Food & Dining</option>
+                <option value="Bills & Utilities">⚡ Bills & Utilities</option>
+                <option value="Transit & Travel">🚗 Transit & Travel</option>
+                <option value="Shopping & E-Commerce">🛍️ Shopping & E-Commerce</option>
+                <option value="Entertainment & Leisure">🎬 Entertainment & Leisure</option>
+                <option value="Health & Well-being">💊 Health & Well-being</option>
+                <option value="Education & Career">📚 Education & Career</option>
+                <option value="Transfers & Settlements">🔄 Transfers & Settlements</option>
               </select>
             </div>
 
@@ -278,7 +277,7 @@ export class AddExpenseModalComponent {
   title = '';
   amount: number | null = null;
   date: string = new Date().toISOString().split('T')[0];
-  category: ExpenseCategory = 'Groceries';
+  category: ExpenseCategory = 'Food & Dining';
   splitType: SplitType = 'EQUAL';
   utrNumber = '';
 

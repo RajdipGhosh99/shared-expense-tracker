@@ -225,7 +225,7 @@ export class IncomingScreenshotComponent implements OnInit {
           merchant: 'Shared Grocery',
           amountDisplay: 840.0,
           amountMinorUnits: 84000,
-          category: 'Groceries',
+          category: 'Food & Dining',
           utrNumber: '427819283719',
           extractedAt: new Date().toISOString(),
         });

@@ -57,7 +57,7 @@ test.describe('Vacation Mode, Settlements & Month-End Statements', () => {
     await page1.click('button:has-text("＋")');
     await page1.fill('input[name="amount"]', '1000.00');
     await page1.fill('input[name="title"]', 'Monthly Electricity');
-    await page1.selectOption('select[name="category"]', 'Electricity');
+    await page1.selectOption('select[name="category"]', 'Bills & Utilities');
     await page1.click('button[type="submit"]');
 
     // Ensure the modal has closed and the expense appears in the feed
@@ -92,7 +92,7 @@ test.describe('Vacation Mode, Settlements & Month-End Statements', () => {
     await page.click('button:has-text("＋")');
     await page.fill('input[name="amount"]', '600.00');
     await page.fill('input[name="title"]', 'Internet Broadband');
-    await page.selectOption('select[name="category"]', 'Wi-Fi');
+    await page.selectOption('select[name="category"]', 'Bills & Utilities');
     await page.click('button[type="submit"]');
     await expect(page.locator('text=Internet Broadband')).toBeVisible();
 

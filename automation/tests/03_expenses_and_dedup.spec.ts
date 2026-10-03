@@ -18,7 +18,7 @@ test.describe('Expenses, Splits & Deduplication Protection', () => {
     // Fill expense details
     await page.fill('input[name="amount"]', '840.00');
     await page.fill('input[name="title"]', 'Blinkit Groceries');
-    await page.selectOption('select[name="category"]', 'Groceries');
+    await page.selectOption('select[name="category"]', 'Food & Dining');
 
     // Submit expense
     await page.click('button[type="submit"]');
@@ -90,7 +90,7 @@ test.describe('Expenses, Splits & Deduplication Protection', () => {
     // 1. Type misspelled "blnkit milk and veggies"
     await page.fill('input[name="title"]', 'blnkit milk and veggies');
     await expect(page.locator('text=AI Suggested:')).toBeVisible();
-    await expect(page.locator('select[name="category"]')).toHaveValue('Groceries');
+    await expect(page.locator('select[name="category"]')).toHaveValue('Food & Dining');
 
     // 2. Type misspelled "swigy dinner meal"
     await page.fill('input[name="title"]', 'swigy dinner meal');
@@ -100,11 +100,11 @@ test.describe('Expenses, Splits & Deduplication Protection', () => {
     // 3. Type misspelled "electrcity power bill"
     await page.fill('input[name="title"]', 'electrcity power bill');
     await expect(page.locator('text=AI Suggested:')).toBeVisible();
-    await expect(page.locator('select[name="category"]')).toHaveValue('Electricity');
+    await expect(page.locator('select[name="category"]')).toHaveValue('Bills & Utilities');
 
     // 4. Type misspelled "wifii broadband"
     await page.fill('input[name="title"]', 'wifii broadband');
     await expect(page.locator('text=AI Suggested:')).toBeVisible();
-    await expect(page.locator('select[name="category"]')).toHaveValue('Wi-Fi');
+    await expect(page.locator('select[name="category"]')).toHaveValue('Bills & Utilities');
   });
 });

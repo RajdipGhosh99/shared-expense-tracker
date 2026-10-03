@@ -136,15 +136,20 @@ describe('Backend API End-to-End Integration Suite', () => {
 
   test('AI Categorization: Automatically detects category from title keywords (including misspellings & typos)', async () => {
     const testCases = [
-      { title: 'Blinkit groceries order', expected: 'Groceries' },
-      { title: 'blnkit milk and bread', expected: 'Groceries' },
-      { title: 'zeptoo snacks items', expected: 'Groceries' },
+      { title: 'Blinkit groceries order', expected: 'Food & Dining' },
+      { title: 'blnkit milk and bread', expected: 'Food & Dining' },
+      { title: 'zeptoo snacks items', expected: 'Food & Dining' },
       { title: 'swigy meal order', expected: 'Food & Dining' },
-      { title: 'electrcity power bill', expected: 'Electricity' },
-      { title: 'wifii broadband charge', expected: 'Wi-Fi' },
-      { title: 'coock monthly salary', expected: 'Maid & Cook' },
-      { title: 'bislri 20L can', expected: 'Drinking Water' },
-      { title: 'ubr airport ride', expected: 'Other' },
+      { title: 'electrcity power bill', expected: 'Bills & Utilities' },
+      { title: 'wifii broadband charge', expected: 'Bills & Utilities' },
+      { title: 'coock monthly salary', expected: 'Bills & Utilities' },
+      { title: 'bislri 20L can', expected: 'Bills & Utilities' },
+      { title: 'ubr airport ride', expected: 'Transit & Travel' },
+      { title: 'myntra clothes shopping', expected: 'Shopping & E-Commerce' },
+      { title: 'netflix monthly subscription', expected: 'Entertainment & Leisure' },
+      { title: 'apollo pharmacy medicine', expected: 'Health & Well-being' },
+      { title: 'udemy python certification', expected: 'Education & Career' },
+      { title: 'settlement repayment', expected: 'Transfers & Settlements' },
     ];
 
     for (const tc of testCases) {
@@ -178,7 +183,7 @@ describe('Backend API End-to-End Integration Suite', () => {
         groupId,
         title: 'Blinkit Groceries',
         amount: 840.0,
-        category: 'Groceries',
+        category: 'Food & Dining',
         splitType: 'EQUAL',
         utrNumber: '427819283719',
       }),

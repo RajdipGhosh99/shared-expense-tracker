@@ -34,6 +34,7 @@ export function levenshteinDistance(s1: string, s2: string): number {
 }
 
 export const BRAND_KEYWORDS = new Set([
+  // Food & Dining
   'blinkit',
   'zepto',
   'instamart',
@@ -41,36 +42,100 @@ export const BRAND_KEYWORDS = new Set([
   'bbnow',
   'dmart',
   'd-mart',
+  'nature basket',
   'swiggy',
   'zomato',
+  'eatsure',
   'mcdonald',
   'dominos',
   'kfc',
+  'burger king',
+  'subway',
   'starbucks',
+  'behrouz',
+  'meghana',
+  'chai point',
+  'chaayos',
+  // Bills & Utilities
   'bescom',
   'tata power',
   'torrent power',
   'adani electricity',
   'msedcl',
   'tneb',
+  'bses',
+  'cesc',
   'act fibernet',
   'act fiber',
+  'jio fiber',
   'jiofiber',
+  'airtel xstream',
   'airtel fiber',
   'hathway',
+  'spectra',
+  'excitel',
   'bisleri',
   'aquaguard',
   'kinley',
+  'bailley',
+  // Transit & Travel
   'uber',
   'ola',
   'rapido',
+  'namma yatri',
+  'irctc',
+  'indigo',
+  'air india',
+  'vistara',
+  'redbus',
+  'zoomcar',
+  // Shopping & E-Commerce
+  'myntra',
+  'ajio',
+  'amazon',
+  'flipkart',
+  'croma',
+  'ikea',
+  'pepperfry',
+  'urban ladder',
+  // Entertainment & Leisure
+  'netflix',
+  'hotstar',
+  'spotify',
+  'bookmyshow',
+  'pvr',
+  'inox',
+  'cult',
+  'cult.fit',
+  // Health & Well-being
+  'apollo',
+  'pharmeasy',
+  '1mg',
+  'medplus',
+  'practo',
+  // Education & Career
+  'udemy',
+  'coursera',
+  'github',
+  'figma',
+  'notion',
+  'cursor',
+  // Transfers & Settlements
+  'cred',
+  'zerodha',
+  'groww',
 ]);
 
-const CATEGORY_RULES: { category: ExpenseCategory; weight: number; keywords: string[] }[] = [
+export const CATEGORY_RULES: {
+  category: ExpenseCategory;
+  weight: number;
+  keywords: string[];
+}[] = [
   {
-    category: 'Groceries',
+    category: 'Food & Dining',
     weight: 1.0,
     keywords: [
+      // Groceries & Dark Stores
       'blinkit',
       'zepto',
       'instamart',
@@ -112,32 +177,65 @@ const CATEGORY_RULES: { category: ExpenseCategory; weight: number; keywords: str
       'fresh to home',
       'freshtohome',
       'country delight',
+      // Delivery & Takeaway
+      'swiggy',
+      'zomato',
+      'eatsure',
+      'mcdonald',
+      'mcd',
+      'kfc',
+      'burger king',
+      'dominos',
+      'domino',
+      'pizza hut',
+      'pizza',
+      'subway',
+      'biryani',
+      'behrouz',
+      'meghana',
+      'burger',
+      // Cafes & Restaurants
+      'starbucks',
+      'cafe coffee day',
+      'ccd',
+      'third wave',
+      'blue tokai',
+      'chai point',
+      'chaayos',
+      'chai',
+      'tea',
+      'coffee',
+      'lunch',
+      'dinner',
+      'breakfast',
+      'brunch',
+      'snacks',
+      'restaurant',
+      'dining',
+      'dhaba',
+      'hotel',
+      'dessert',
+      'ice cream',
+      // Alcohol & Nightlife
+      'beer',
+      'wine',
+      'alcohol',
+      'liquor',
+      'whiskey',
+      'vodka',
+      'pub',
+      'bar',
+      'brewery',
+      'party drinks',
+      'byob',
+      'cocktail',
     ],
   },
   {
-    category: 'Rent',
+    category: 'Bills & Utilities',
     weight: 1.0,
     keywords: [
-      'rent',
-      'flat rent',
-      'room rent',
-      'house rent',
-      'monthly rent',
-      'landlord',
-      'owner rent',
-      'society maintenance',
-      'maintenance charge',
-      'maintenance',
-      'security deposit',
-      'deposit',
-      'brokerage',
-      'lease',
-    ],
-  },
-  {
-    category: 'Electricity',
-    weight: 1.0,
-    keywords: [
+      // Power & Grid
       'electricity',
       'power bill',
       'current bill',
@@ -153,12 +251,28 @@ const CATEGORY_RULES: { category: ExpenseCategory; weight: number; keywords: str
       'eb bill',
       'power supply',
       'electric meter',
-    ],
-  },
-  {
-    category: 'Wi-Fi',
-    weight: 1.0,
-    keywords: [
+      // Water & Gas
+      'water',
+      'bisleri',
+      'water can',
+      'water tanker',
+      'water jar',
+      '20l can',
+      '20l',
+      '20 litre',
+      'drinking water',
+      'aquaguard',
+      'water delivery',
+      'kinley',
+      'bailley',
+      'piped gas',
+      'indane',
+      'bharat gas',
+      'hp gas',
+      'cylinder',
+      'lpg',
+      'tanker',
+      // Fiber & Telecom
       'wifi',
       'wi-fi',
       'internet',
@@ -175,14 +289,8 @@ const CATEGORY_RULES: { category: ExpenseCategory; weight: number; keywords: str
       'excitel',
       'broadband',
       'router',
-      'fiber net',
       'fibernet',
-    ],
-  },
-  {
-    category: 'Maid & Cook',
-    weight: 1.0,
-    keywords: [
+      // Society Maintenance & Domestic Help
       'maid',
       'cook',
       'maid salary',
@@ -197,164 +305,281 @@ const CATEGORY_RULES: { category: ExpenseCategory; weight: number; keywords: str
       'brooming',
       'pocha',
       'jhadu',
-      'utensil cleaning',
-      ' बर्तन',
-      'झाड़ू',
-    ],
-  },
-  {
-    category: 'Drinking Water',
-    weight: 1.0,
-    keywords: [
-      'water',
-      'bisleri',
-      'water can',
-      'water tanker',
-      'water jar',
-      '20l can',
-      '20l',
-      '20 litre',
-      'drinking water',
-      'aquaguard',
-      'water delivery',
-      'mineral water',
-      'kinley',
-      'bailley',
-      'ro water',
-      'tanker',
-    ],
-  },
-  {
-    category: 'Household',
-    weight: 0.9,
-    keywords: [
-      'detergent',
-      'surf excel',
-      'ariel',
-      'tide',
-      'vim',
-      'vim bar',
-      'dishwash',
-      'pril',
-      'harpic',
-      'colin',
-      'lizol',
-      'mop',
-      'broom',
-      'dustbin',
-      'garbage',
-      'trash bags',
-      'pest control',
-      'urban company',
-      'urbanclap',
+      'society maintenance',
+      'maintenance charge',
+      'maintenance',
       'plumber',
       'electrician',
-      'all out',
-      'goodknight',
-      'mosquito',
-      'toilet paper',
-      'tissue',
-      'handwash',
-      'dettol',
-      'savlon',
-      'bulb',
-      'faucet',
+      // Rent & Housing
+      'rent',
+      'flat rent',
+      'room rent',
+      'house rent',
+      'monthly rent',
+      'landlord',
+      'owner rent',
+      'security deposit',
+      'deposit',
+      'brokerage',
+      'lease',
     ],
   },
   {
-    category: 'Food & Dining',
-    weight: 0.95,
+    category: 'Transit & Travel',
+    weight: 1.0,
     keywords: [
-      'swiggy',
-      'zomato',
-      'eatsure',
-      'mcdonald',
-      'mcd',
-      'kfc',
-      'burger king',
-      'dominos',
-      'domino',
-      'pizza hut',
-      'pizza',
-      'subway',
-      'starbucks',
-      'cafe coffee day',
-      'ccd',
-      'third wave',
-      'blue tokai',
-      'chai point',
-      'chaayos',
-      'chai',
-      'tea',
-      'coffee',
-      'biryani',
-      'behrouz',
-      'meghana',
-      'lunch',
-      'dinner',
-      'breakfast',
-      'brunch',
-      'snacks',
-      'restaurant',
-      'dining',
-      'dhaba',
-      'hotel',
-      'beer',
-      'wine',
-      'alcohol',
-      'pub',
-      'brewery',
-      'party drinks',
-      'bar',
-      'dessert',
-      'ice cream',
-      'swiggy instamart food',
-    ],
-  },
-  {
-    category: 'Other',
-    weight: 0.7,
-    keywords: [
+      // Daily Commute
       'uber',
       'ola',
       'rapido',
-      'ride',
-      'travel',
+      'namma yatri',
       'auto',
+      'rickshaw',
       'cab',
       'taxi',
       'metro',
+      'metro card',
+      'bmtc',
+      'dtc',
+      'ride',
+      // Fuel & Fastag
       'petrol',
       'diesel',
       'fuel',
-      'parking',
-      'toll',
+      'cng',
       'fastag',
+      'toll',
+      'parking',
+      'car wash',
+      // Flights, Trains & Intercity
+      'flight',
+      'indigo',
+      'air india',
+      'vistara',
+      'akasa',
+      'train',
+      'irctc',
+      'tatkal',
+      'bus ticket',
+      'redbus',
+      'abhibus',
+      'zoomcar',
+      // Stays & Lodging
+      'airbnb',
+      'resort',
+      'hostel',
+      'homestay',
+      'oyo',
+      'makemytrip',
+      'agoda',
+      'lodging',
+    ],
+  },
+  {
+    category: 'Shopping & E-Commerce',
+    weight: 0.95,
+    keywords: [
+      // Fashion & Apparel
+      'myntra',
+      'ajio',
+      'zara',
+      'h&m',
+      'uniqlo',
+      'clothes',
+      'shoes',
+      'sneakers',
+      'apparel',
+      'shopping',
+      // Electronics & Tech
+      'amazon',
+      'flipkart',
+      'croma',
+      'reliance digital',
+      'apple',
+      'charger',
+      'cable',
+      'headphone',
+      'laptop',
+      'monitor',
+      'keyboard',
+      'mouse',
+      // Home Decor & Appliances
+      'microwave',
+      'air fryer',
+      'beanbag',
+      'mattress',
+      'curtains',
+      'ikea',
+      'pepperfry',
+      'urban ladder',
+      'furniture',
+      'home decor',
+      // Quick Retail & Courier
+      'courier',
+      'dunzo',
+      'porter',
+      'packaging',
+      'stationary',
+      'printout',
+      'xerox',
+    ],
+  },
+  {
+    category: 'Entertainment & Leisure',
+    weight: 0.95,
+    keywords: [
+      // Digital OTT & Cloud Subscriptions
+      'netflix',
+      'prime video',
+      'hotstar',
+      'disney',
+      'spotify',
+      'youtube premium',
+      'apple music',
+      'chatgpt',
+      'openai',
+      'claude',
+      'midjourney',
+      'google one',
+      'icloud',
+      // Movies, Concerts & Live Events
+      'bookmyshow',
+      'pvr',
+      'inox',
+      'cinema',
+      'movie',
+      'imax',
+      'concert',
+      'standup',
+      'comedy show',
+      // Gaming & Hobbies
+      'steam',
+      'playstation',
+      'xbox',
+      'nintendo',
+      'board games',
+      'kindle',
+      // Sports & Fitness
+      'cult',
+      'cult.fit',
+      'gym',
+      'fitness',
+      'badminton',
+      'turf',
+      'turf booking',
+      'swimming',
+      'sports',
+    ],
+  },
+  {
+    category: 'Health & Well-being',
+    weight: 0.95,
+    keywords: [
+      // Pharmacy & Diagnostics
       'medicine',
       'pharmacy',
       'apollo',
       'pharmeasy',
       '1mg',
+      'tata 1mg',
       'medplus',
-      'cinema',
-      'movie',
-      'pvr',
-      'inox',
-      'bookmyshow',
-      'netflix',
-      'prime',
-      'spotify',
-      'cult',
-      'cult.fit',
-      'gym',
+      'tablet',
+      'syrup',
+      'bandage',
+      'blood test',
+      'lal pathlabs',
+      'diagnostics',
+      // Consultations & Hospital
+      'doctor',
+      'clinic',
+      'consultation',
+      'dentist',
+      'hospital',
+      'practo',
+      'therapy',
+      // Personal Grooming & Salon
+      'salon',
+      'haircut',
+      'spa',
+      'massage',
+      'beard trim',
+      'shampoo',
+      'skincare',
+      'facewash',
+      'grooming',
+    ],
+  },
+  {
+    category: 'Education & Career',
+    weight: 0.95,
+    keywords: [
+      // Courses, Certifications & Books
+      'udemy',
+      'coursera',
+      'edx',
+      'linkedin learning',
+      'certification',
+      'aws certified',
+      'exam fee',
+      'textbook',
+      // Professional Tools & Subscriptions
+      'github',
+      'copilot',
+      'figma',
+      'cursor',
+      'jetbrains',
+      'notion',
+      'godaddy',
+      'vercel',
+      'aws bill',
+      // Conferences & Upskilling
+      'conference',
+      'workshop',
+      'hackathon',
+      'seminar',
+      'webinar',
+      'upskilling',
+    ],
+  },
+  {
+    category: 'Transfers & Settlements',
+    weight: 1.0,
+    keywords: [
+      // P2P Split Settlement
+      'settlement',
+      'settle',
+      'paid back',
+      'repayment',
+      'upi return',
+      'cash settlement',
+      'split repayment',
+      // Credit Card Bill Repayment
+      'credit card',
+      'cc bill',
+      'cred',
+      'hdfc cc',
+      'icici cc',
+      'sbi card',
+      'card bill',
+      // Self Account Transfer
+      'self transfer',
+      'bank transfer',
+      'account transfer',
+      'savings',
+      // Investments
+      'mutual fund',
+      'sip',
+      'zerodha',
+      'groww',
+      'coin',
+      'stocks',
+      'gold',
+      'fd',
     ],
   },
 ];
 
 export class AiCategoryService {
-  /**
-   * Helper to check word match with typo tolerance
-   */
   private static checkWordMatch(
     word: string,
     kw: string,
@@ -362,7 +587,6 @@ export class AiCategoryService {
     if (word === kw) return { matched: true, isFuzzy: false, sim: 1.0, dist: 0 };
     if (word.length < 3 || kw.length < 3) return { matched: false };
 
-    // 4-letter keywords (e.g. wifi, cook, maid, uber)
     if (kw.length === 4) {
       if (word[0] === kw[0] && Math.abs(word.length - kw.length) === 1) {
         const dist = levenshteinDistance(word, kw);
@@ -378,7 +602,6 @@ export class AiCategoryService {
       return { matched: false };
     }
 
-    // 5-7 letter keywords (e.g. zepto, swiggy, zomato, bescom)
     if (kw.length >= 5 && kw.length <= 7) {
       const dist = levenshteinDistance(word, kw);
       const maxLen = Math.max(word.length, kw.length);
@@ -387,7 +610,6 @@ export class AiCategoryService {
         return { matched: true, isFuzzy: true, sim, dist };
       }
     } else if (kw.length >= 8) {
-      // 8+ letter keywords (e.g. electricity, groceries, broadband, maintenance)
       const dist = levenshteinDistance(word, kw);
       const maxLen = Math.max(word.length, kw.length);
       const sim = 1 - dist / maxLen;
@@ -399,77 +621,51 @@ export class AiCategoryService {
   }
 
   /**
-   * Predict expense category using typo-tolerant NLP heuristic rules + optional Gemini API
+   * Predict expense category using typo-tolerant NLP heuristics + optional Gemini API
    */
   static async predictCategory(title: string): Promise<CategoryPrediction> {
     if (!title || title.trim().length === 0) {
-      return { category: 'Other', confidence: 0.5, source: 'nlp_rule_engine' };
+      return { category: 'Food & Dining', confidence: 0.5, source: 'nlp_rule_engine' };
     }
 
     const cleanTitle = title.toLowerCase().trim();
     const words = cleanTitle.split(/[^a-z0-9]+/).filter((w) => w.length >= 2);
 
-    // 1. Check BRAND keywords first (Brands like Blinkit, Zepto, Swiggy take absolute precedence)
-    let bestBrandMatch: CategoryPrediction | null = null;
-    let bestBrandScore = 0;
-
+    // 1. Check BRAND keywords first (Brand takes absolute precedence)
     for (const rule of CATEGORY_RULES) {
       for (const kw of rule.keywords) {
         if (!BRAND_KEYWORDS.has(kw)) continue;
 
         if (kw.includes(' ')) {
-          const kwParts = kw.split(' ');
-          for (let i = 0; i <= words.length - kwParts.length; i++) {
-            const windowPhrase = words.slice(i, i + kwParts.length).join(' ');
-            const dist = levenshteinDistance(windowPhrase, kw);
-            const maxLen = Math.max(windowPhrase.length, kw.length);
-            const sim = 1 - dist / maxLen;
-            if (dist <= 2 && sim >= 0.75) {
-              const isFuzzy = dist > 0;
-              const score = isFuzzy ? sim * 0.9 : 1.0;
-              if (score > bestBrandScore) {
-                bestBrandScore = score;
-                bestBrandMatch = {
-                  category: rule.category,
-                  confidence: isFuzzy ? 0.92 : 0.98,
-                  source: 'nlp_rule_engine',
-                  matchedKeywords: [kw],
-                  matchReason: isFuzzy ? `Matched "${windowPhrase}" ≈ "${kw}"` : `Matched "${kw}"`,
-                  isFuzzy,
-                };
-              }
-            }
+          if (cleanTitle.includes(kw)) {
+            return {
+              category: rule.category,
+              confidence: 0.98,
+              source: 'nlp_rule_engine',
+              matchedKeywords: [kw],
+              matchReason: `Matched "${kw}"`,
+              isFuzzy: false,
+            };
           }
         } else {
           for (const word of words) {
             const m = this.checkWordMatch(word, kw);
             if (m.matched) {
-              const score = m.isFuzzy ? m.sim! * 0.9 : 1.0;
-              if (score > bestBrandScore) {
-                bestBrandScore = score;
-                bestBrandMatch = {
-                  category: rule.category,
-                  confidence: m.isFuzzy ? 0.9 : 0.98,
-                  source: 'nlp_rule_engine',
-                  matchedKeywords: [kw],
-                  matchReason: m.isFuzzy ? `Matched "${word}" ≈ "${kw}"` : `Matched "${kw}"`,
-                  isFuzzy: m.isFuzzy,
-                };
-              }
+              return {
+                category: rule.category,
+                confidence: m.isFuzzy ? 0.9 : 0.98,
+                source: 'nlp_rule_engine',
+                matchedKeywords: [kw],
+                matchReason: m.isFuzzy ? `Matched "${word}" ≈ "${kw}"` : `Matched "${kw}"`,
+                isFuzzy: m.isFuzzy,
+              };
             }
           }
         }
       }
     }
 
-    if (bestBrandMatch) {
-      return bestBrandMatch;
-    }
-
-    // 2. Exact match check (word boundary) for general keywords
-    let bestExactMatch: CategoryPrediction | null = null;
-    let bestExactScore = 0;
-
+    // 2. Exact match check
     for (const rule of CATEGORY_RULES) {
       for (const kw of rule.keywords) {
         let isMatch = false;
@@ -481,24 +677,16 @@ export class AiCategoryService {
         }
 
         if (isMatch) {
-          const score = (kw.length / Math.max(cleanTitle.length, 1)) * 0.5 + rule.weight * 0.5;
-          if (score > bestExactScore) {
-            bestExactScore = score;
-            bestExactMatch = {
-              category: rule.category,
-              confidence: Math.min(Math.round((0.85 + score * 0.15) * 100) / 100, 0.99),
-              source: 'nlp_rule_engine',
-              matchedKeywords: [kw],
-              matchReason: `Matched "${kw}"`,
-              isFuzzy: false,
-            };
-          }
+          return {
+            category: rule.category,
+            confidence: 0.95,
+            source: 'nlp_rule_engine',
+            matchedKeywords: [kw],
+            matchReason: `Matched "${kw}"`,
+            isFuzzy: false,
+          };
         }
       }
-    }
-
-    if (bestExactMatch && bestExactScore >= 0.4) {
-      return bestExactMatch;
     }
 
     // 3. Typo-Tolerant & Misspelled Fuzzy Keyword Matching
@@ -507,29 +695,7 @@ export class AiCategoryService {
 
     for (const rule of CATEGORY_RULES) {
       for (const kw of rule.keywords) {
-        if (kw.includes(' ')) {
-          const kwParts = kw.split(' ');
-          for (let i = 0; i <= words.length - kwParts.length; i++) {
-            const windowPhrase = words.slice(i, i + kwParts.length).join(' ');
-            const dist = levenshteinDistance(windowPhrase, kw);
-            const maxLen = Math.max(windowPhrase.length, kw.length);
-            const sim = 1 - dist / maxLen;
-            if (dist <= 2 && sim >= 0.75) {
-              const score = sim * rule.weight;
-              if (score > bestFuzzyScore) {
-                bestFuzzyScore = score;
-                bestFuzzyMatch = {
-                  category: rule.category,
-                  confidence: Math.min(Math.round((0.75 + sim * 0.2) * 100) / 100, 0.95),
-                  source: 'nlp_rule_engine',
-                  matchedKeywords: [kw],
-                  matchReason: `Matched "${windowPhrase}" ≈ "${kw}"`,
-                  isFuzzy: true,
-                };
-              }
-            }
-          }
-        } else {
+        if (!kw.includes(' ')) {
           for (const word of words) {
             const m = this.checkWordMatch(word, kw);
             if (m.matched) {
@@ -555,7 +721,7 @@ export class AiCategoryService {
       return bestFuzzyMatch;
     }
 
-    // 4. If Gemini API key is available, call Gemini Flash API
+    // 4. Gemini API Fallback if available
     const geminiKey = process.env.GEMINI_API_KEY;
     if (geminiKey && geminiKey.trim().length > 10) {
       try {
@@ -568,7 +734,7 @@ export class AiCategoryService {
 
     // Default fallback
     return {
-      category: 'Other',
+      category: 'Food & Dining',
       confidence: 0.5,
       source: 'nlp_rule_engine',
     };
@@ -578,17 +744,16 @@ export class AiCategoryService {
     title: string,
     apiKey: string,
   ): Promise<CategoryPrediction | null> {
-    const prompt = `Classify this shared apartment / group expense title into EXACTLY one of these categories:
+    const prompt = `Classify this shared group/roommate expense title into EXACTLY one of these categories:
 Categories:
-- Groceries
-- Rent
-- Electricity
-- Wi-Fi
-- Maid & Cook
-- Drinking Water
-- Household
 - Food & Dining
-- Other
+- Bills & Utilities
+- Transit & Travel
+- Shopping & E-Commerce
+- Entertainment & Leisure
+- Health & Well-being
+- Education & Career
+- Transfers & Settlements
 
 Expense Title: "${title}"
 
