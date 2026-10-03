@@ -12,7 +12,6 @@ export interface GridRow {
   category: ExpenseCategory;
   amount: number | null;
   splitType: SplitType;
-  utrNumber: string;
 }
 
 @Component({
@@ -161,7 +160,6 @@ export interface GridRow {
                   Amount (₹) <span class="text-rose-500 font-bold">*</span>
                 </th>
                 <th class="py-2.5 px-2 min-w-[110px]">Split</th>
-                <th class="py-2.5 px-2 min-w-[110px]">UPI Ref</th>
                 <th class="py-2.5 px-2 w-10 text-center"></th>
               </tr>
             </thead>
@@ -237,23 +235,13 @@ export interface GridRow {
                 <td class="py-1.5 px-2">
                   <select
                     [(ngModel)]="row.splitType"
+                    (keydown.tab)="onLastCellTab(idx)"
                     class="w-full px-2 py-1.5 border border-slate-200 rounded-md text-xs bg-white text-slate-800 focus:outline-none focus:border-indigo-500 font-medium cursor-pointer"
                   >
                     <option value="EQUAL">Equal</option>
                     <option value="EXACT">Exact</option>
                     <option value="PERCENTAGE">%</option>
                   </select>
-                </td>
-
-                <!-- UPI Ref / UTR -->
-                <td class="py-1.5 px-2">
-                  <input
-                    type="text"
-                    [(ngModel)]="row.utrNumber"
-                    (keydown.tab)="onLastCellTab(idx)"
-                    placeholder="Ref ID"
-                    class="w-full px-2 py-1.5 border border-slate-200 rounded-md text-xs bg-white text-slate-800 placeholder-slate-400 font-mono focus:outline-none focus:border-indigo-500"
-                  />
                 </td>
 
                 <!-- Delete Action -->
@@ -393,7 +381,6 @@ export class BulkExpenseGridComponent implements OnInit {
         category: 'Food & Dining',
         amount: null,
         splitType: 'EQUAL',
-        utrNumber: '',
       },
       {
         id: this.nextId++,
@@ -402,7 +389,6 @@ export class BulkExpenseGridComponent implements OnInit {
         category: 'Bills & Utilities',
         amount: null,
         splitType: 'EQUAL',
-        utrNumber: '',
       },
       {
         id: this.nextId++,
@@ -411,7 +397,6 @@ export class BulkExpenseGridComponent implements OnInit {
         category: 'Transit & Travel',
         amount: null,
         splitType: 'EQUAL',
-        utrNumber: '',
       },
       {
         id: this.nextId++,
@@ -420,7 +405,6 @@ export class BulkExpenseGridComponent implements OnInit {
         category: 'Shopping & E-Commerce',
         amount: null,
         splitType: 'EQUAL',
-        utrNumber: '',
       },
     ];
   }
@@ -434,7 +418,6 @@ export class BulkExpenseGridComponent implements OnInit {
       category: 'Food & Dining',
       amount: null,
       splitType: 'EQUAL',
-      utrNumber: '',
     });
   }
 
@@ -512,7 +495,6 @@ export class BulkExpenseGridComponent implements OnInit {
         category,
         amount: isNaN(amount as number) ? null : amount,
         splitType: 'EQUAL',
-        utrNumber: '',
       });
     }
 
@@ -548,7 +530,6 @@ export class BulkExpenseGridComponent implements OnInit {
       isExpense:
         r.category !== 'Transfers & Adjustments' && r.category !== 'Transfers & Settlements',
       splitType: r.splitType,
-      utrNumber: r.utrNumber ? r.utrNumber.trim() : undefined,
     }));
 
     this.api.addExpensesBatch(items).subscribe({
