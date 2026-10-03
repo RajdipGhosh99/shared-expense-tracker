@@ -23,63 +23,18 @@ import {
     >
       <!-- Top Mature Executive Header -->
       <header
-        class="bg-white/95 backdrop-blur-md border-b border-slate-200/90 sticky top-0 z-30 px-3.5 py-2.5 pt-safe shadow-2xs"
+        class="bg-white/95 backdrop-blur-md border-b border-slate-200/90 sticky top-0 z-30 px-4 py-2.5 pt-safe shadow-2xs"
       >
-        <div class="flex items-center justify-between relative">
-          <!-- Left: Group Switcher Trigger Pill -->
-          <div
-            (click)="showGroupMenu.set(!showGroupMenu())"
-            class="flex items-center space-x-2 py-1 px-2 -ml-1 rounded-xl hover:bg-slate-100 active:scale-98 transition-all cursor-pointer select-none group"
-            title="Switch or manage groups"
-          >
-            <!-- Group Icon -->
-            <div
-              class="w-7 h-7 rounded-lg bg-slate-900 group-hover:bg-indigo-600 text-white flex items-center justify-center font-bold shadow-2xs flex-shrink-0 transition-colors"
-            >
-              <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
-                />
-              </svg>
-            </div>
-
-            <!-- Group Title & Chevron -->
-            <div class="flex items-center space-x-1.5 min-w-0">
-              <h1
-                class="text-sm font-bold text-slate-900 group-hover:text-indigo-600 leading-none truncate max-w-[130px] sm:max-w-[190px] transition-colors"
-              >
-                {{ api.activeGroup()?.name || 'My Group' }}
+        <div class="relative space-y-2.5">
+          <div class="flex items-center justify-between gap-3">
+            <div class="flex min-w-0 items-center gap-2.5">
+              <img src="/pwa-icon.svg" alt="" class="size-9 shrink-0 rounded-xl shadow-xs" />
+              <h1 class="max-w-[210px] truncate text-sm font-extrabold leading-tight text-slate-900">
+                Shared Expense Tracker
               </h1>
-              <span class="text-xs text-slate-400 group-hover:text-indigo-600 transition-colors"
-                >▾</span
-              >
             </div>
-          </div>
 
-          <!-- Right: Action Bar (Invite Pill + User + Logout) -->
-          <div class="flex items-center space-x-2">
-            <!-- Compact Invite Code Pill -->
-            <button
-              type="button"
-              (click)="copyCode()"
-              class="flex items-center space-x-1.5 px-2.5 py-1 bg-slate-100 hover:bg-slate-200/80 active:scale-95 border border-slate-200/80 rounded-lg text-xs transition-all cursor-pointer select-none"
-              [title]="copiedCode() ? 'Copied!' : 'Click to copy invite code'"
-            >
-              <span
-                class="text-[10px] text-slate-400 font-bold uppercase tracking-wider hidden xs:inline"
-                >Code:</span
-              >
-              <span class="font-mono font-bold text-slate-700 text-xs">{{
-                api.activeGroup()?.inviteCode
-              }}</span>
-              <span class="text-[10px] text-slate-500">{{ copiedCode() ? '✓' : '📋' }}</span>
-            </button>
-
-            <!-- User Avatar & Direct Log Out -->
-            <div class="flex items-center space-x-2 pl-1 border-l border-slate-200">
+            <div class="flex shrink-0 items-center space-x-2">
               <div class="hidden md:block text-right leading-none">
                 <p class="text-xs font-bold text-slate-800 truncate max-w-[80px]">
                   {{ api.currentUser()?.name }}
@@ -103,10 +58,47 @@ import {
             </div>
           </div>
 
+          <div class="flex items-center justify-between gap-2 border-t border-slate-100 pt-2">
+            <div
+              (click)="showGroupMenu.set(!showGroupMenu())"
+              class="flex min-w-0 items-center space-x-2 rounded-lg py-1 pr-2 text-left hover:bg-slate-100 active:scale-98 transition-all cursor-pointer select-none group"
+              title="Switch or manage groups"
+            >
+              <svg
+                class="size-4 shrink-0 text-slate-500 group-hover:text-indigo-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+                />
+              </svg>
+              <span class="truncate text-xs font-bold text-slate-700 group-hover:text-indigo-600">
+                {{ api.activeGroup()?.name || 'My Group' }}
+              </span>
+              <span class="shrink-0 text-xs text-slate-400 group-hover:text-indigo-600">▾</span>
+            </div>
+
+            <button
+              type="button"
+              (click)="copyCode()"
+              class="flex shrink-0 items-center space-x-1.5 rounded-lg border border-slate-200/80 bg-slate-100 px-2.5 py-1 text-xs transition-all cursor-pointer select-none hover:bg-slate-200/80 active:scale-95"
+              [title]="copiedCode() ? 'Copied!' : 'Click to copy invite code'"
+            >
+              <span class="font-mono font-bold text-slate-700">{{ api.activeGroup()?.inviteCode }}</span>
+              <span class="text-slate-500">{{ copiedCode() ? '✓' : '📋' }}</span>
+            </button>
+          </div>
+
           <!-- Group Switcher Dropdown Menu -->
           <div
             *ngIf="showGroupMenu()"
-            class="absolute top-12 left-0 z-50 w-72 bg-white rounded-2xl shadow-2xl border border-slate-200 p-2 space-y-1.5 animate-in fade-in zoom-in-95 duration-100"
+            class="absolute left-0 top-full z-50 mt-1 w-72 bg-white rounded-2xl shadow-2xl border border-slate-200 p-2 space-y-1.5 animate-in fade-in zoom-in-95 duration-100"
           >
             <div
               class="px-2.5 py-1.5 flex items-center justify-between text-[11px] font-bold text-slate-400 uppercase tracking-wider border-b border-slate-100"

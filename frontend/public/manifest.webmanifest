@@ -1,16 +1,17 @@
 {
   "name": "Shared Expense Tracker",
-  "short_name": "Groups",
+  "short_name": "Shared Bills",
   "description": "Smart group & roommate expense tracker with GPay receipt sharing and Min-Cash-Flow settlements",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0f172a",
-  "theme_color": "#6366f1",
+  "background_color": "#111827",
+  "theme_color": "#111827",
   "icons": [
     {
-      "src": "/favicon.ico",
-      "sizes": "64x64 32x32 24x24 16x16",
-      "type": "image/x-icon"
+      "src": "/pwa-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
     }
   ],
   "share_target": {
