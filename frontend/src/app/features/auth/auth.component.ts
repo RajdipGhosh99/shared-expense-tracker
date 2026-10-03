@@ -2,6 +2,7 @@ import { Component, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { ToastrService } from 'ngx-toastr';
 import { ApiService } from '../../core/services/api.service.js';
 
 @Component({
@@ -49,7 +50,7 @@ import { ApiService } from '../../core/services/api.service.js';
         <div class="grid grid-cols-2 p-1 bg-slate-950/70 rounded-xl border border-slate-700/50">
           <button
             type="button"
-            (click)="isRegister.set(false)"
+            (click)="setMode(false)"
             [class.bg-indigo-600]="!isRegister()"
             [class.text-white]="!isRegister()"
             [class.shadow-md]="!isRegister()"
@@ -59,7 +60,7 @@ import { ApiService } from '../../core/services/api.service.js';
           </button>
           <button
             type="button"
-            (click)="isRegister.set(true)"
+            (click)="setMode(true)"
             [class.bg-indigo-600]="isRegister()"
             [class.text-white]="isRegister()"
             [class.shadow-md]="isRegister()"
@@ -69,13 +70,23 @@ import { ApiService } from '../../core/services/api.service.js';
           </button>
         </div>
 
-        <!-- Error Alert -->
+        <!-- Error Alert with Dismiss Button -->
         <div
           *ngIf="errorMessage()"
-          class="p-3.5 bg-rose-500/20 border border-rose-500/40 rounded-xl text-rose-300 text-xs font-semibold flex items-center space-x-2"
+          class="p-3.5 bg-rose-500/20 border border-rose-500/40 rounded-xl text-rose-300 text-xs font-semibold flex items-center justify-between space-x-2 transition-all animate-fade-in"
         >
-          <span>⚠️</span>
-          <span>{{ errorMessage() }}</span>
+          <div class="flex items-center space-x-2">
+            <span>⚠️</span>
+            <span>{{ errorMessage() }}</span>
+          </div>
+          <button
+            type="button"
+            (click)="errorMessage.set(null)"
+            class="text-rose-400 hover:text-white font-bold px-1.5 py-0.5 text-xs rounded hover:bg-rose-500/20 transition-colors cursor-pointer"
+            title="Dismiss error"
+          >
+            ✕
+          </button>
         </div>
 
         <!-- Form Fields -->
@@ -153,6 +164,8 @@ export class AuthComponent {
   loading = signal<boolean>(false);
   errorMessage = signal<string | null>(null);
 
+  private errorTimeout: any = null;
+
   name = '';
   email = '';
   password = '';
@@ -161,11 +174,67 @@ export class AuthComponent {
   constructor(
     private api: ApiService,
     private router: Router,
+    private toastr: ToastrService,
   ) {}
+
+  setMode(register: boolean) {
+    this.isRegister.set(register);
+    this.clearError();
+  }
+
+  private clearError() {
+    this.errorMessage.set(null);
+    if (this.errorTimeout) {
+      clearTimeout(this.errorTimeout);
+      this.errorTimeout = null;
+    }
+  }
+
+  private extractErrorMessage(err: any): string {
+    if (!err) return 'Authentication failed. Please check your credentials.';
+
+    // Check string error response
+    if (typeof err.error === 'string') {
+      const trimmed = err.error.trim();
+      if (trimmed.startsWith('<') || trimmed.includes('FUNCTION_INVOCATION_FAILED')) {
+        return 'Backend server error (500). Please check Turso DB credentials on Vercel.';
+      }
+      return trimmed;
+    }
+
+    // Check JSON structured error: { error: "..." } or { message: "..." }
+    if (typeof err.error === 'object' && err.error !== null) {
+      if (typeof err.error.error === 'string') return err.error.error;
+      if (typeof err.error.message === 'string') return err.error.message;
+      if (err.error.error && typeof err.error.error.message === 'string') {
+        return err.error.error.message;
+      }
+    }
+
+    // Status code fallback
+    if (err.status === 0) {
+      return 'Cannot reach backend server. Please verify network or Vercel service.';
+    }
+    if (err.status === 401) {
+      return 'Invalid credentials. Please verify your email and password.';
+    }
+    if (err.status === 409) {
+      return 'Account already exists with this email. Please log in instead.';
+    }
+    if (err.status === 500) {
+      return 'Backend server error (500). Please check database configuration.';
+    }
+
+    if (typeof err.message === 'string' && err.message) {
+      return err.message;
+    }
+
+    return 'Authentication failed. Please check your inputs and try again.';
+  }
 
   submit() {
     this.loading.set(true);
-    this.errorMessage.set(null);
+    this.clearError();
 
     const obs = this.isRegister()
       ? this.api.register({
@@ -179,11 +248,32 @@ export class AuthComponent {
     obs.subscribe({
       next: () => {
         this.loading.set(false);
+        this.clearError();
+        this.toastr.success(
+          this.isRegister() ? 'Account created successfully!' : 'Logged in successfully!',
+          'Success',
+          { timeOut: 3000 },
+        );
         this.handlePostAuthNavigation();
       },
       error: (err) => {
         this.loading.set(false);
-        this.errorMessage.set(err.error?.error || 'Authentication failed.');
+        const msg = this.extractErrorMessage(err);
+        this.errorMessage.set(msg);
+
+        // Auto-dismiss inline banner after 6 seconds
+        if (this.errorTimeout) clearTimeout(this.errorTimeout);
+        this.errorTimeout = setTimeout(() => {
+          this.errorMessage.set(null);
+        }, 6000);
+
+        // Show toast notification
+        this.toastr.error(msg, this.isRegister() ? 'Registration Failed' : 'Login Failed', {
+          timeOut: 5000,
+          closeButton: true,
+          progressBar: true,
+          positionClass: 'toast-top-right',
+        });
       },
     });
   }
