@@ -182,7 +182,23 @@ import {
       </header>
 
       <!-- Scrollable Body -->
-      <main class="flex-1 p-4 space-y-4 pb-28 overflow-y-auto">
+      <main
+        class="flex-1 p-4 space-y-4 pb-28 overflow-y-auto"
+        (touchstart)="onPullStart($event)"
+        (touchmove)="onPullMove($event)"
+        (touchend)="onPullEnd()"
+        (touchcancel)="onPullEnd()"
+      >
+        <div
+          *ngIf="pullDistance() > 0 || isRefreshing()"
+          class="flex items-center justify-center gap-2 overflow-hidden text-xs font-semibold text-slate-500"
+          [style.height.px]="isRefreshing() ? 42 : pullDistance()"
+        >
+          <span [class.animate-spin]="isRefreshing()">↻</span>
+          <span *ngIf="isRefreshing()">Refreshing...</span>
+          <span *ngIf="!isRefreshing() && pullDistance() >= pullThreshold">Release to refresh</span>
+        </div>
+
         <!-- ADMIN PENDING APPROVALS ALERT BANNER -->
         <div
           *ngIf="isAdmin() && pendingMembers().length > 0"
@@ -512,7 +528,7 @@ import {
               class="font-bold text-slate-800 text-xs uppercase tracking-wider flex items-center space-x-1.5"
             >
               <span>👥</span>
-              <span>Group Members ({{ activeMembers().length }})</span>
+              <span>Members ({{ activeMembers().length }})</span>
             </h3>
             <div class="flex items-center space-x-2">
               <button
@@ -527,7 +543,7 @@ import {
                 *ngIf="isAdmin()"
                 class="text-[10px] font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded-full"
               >
-                👑 Admin
+                Admin
               </span>
             </div>
           </div>
@@ -1317,6 +1333,11 @@ import {
   `,
 })
 export class DashboardComponent implements OnInit {
+  readonly pullThreshold = 68;
+  pullDistance = signal(0);
+  isRefreshing = signal(false);
+  private pullStartY: number | null = null;
+
   showAddModal = signal<boolean>(false);
   showBulkModal = signal<boolean>(false);
   copiedCode = signal<boolean>(false);
@@ -1407,7 +1428,7 @@ export class DashboardComponent implements OnInit {
   constructor(
     public api: ApiService,
     public router: Router,
-  ) {}
+  ) { }
 
   ngOnInit() {
     this.api.fetchUserGroups().subscribe({
@@ -1417,6 +1438,56 @@ export class DashboardComponent implements OnInit {
           this.formControlsConfig = { ...active.formControls };
         }
       },
+    });
+  }
+
+  onPullStart(event: TouchEvent) {
+    const main = event.currentTarget as HTMLElement;
+    this.pullStartY = main.scrollTop <= 0 && !this.isRefreshing()
+      ? event.touches[0]?.clientY ?? null
+      : null;
+  }
+
+  onPullMove(event: TouchEvent) {
+    if (this.pullStartY === null || this.isRefreshing()) return;
+
+    const main = event.currentTarget as HTMLElement;
+    if (main.scrollTop > 0) {
+      this.pullStartY = null;
+      this.pullDistance.set(0);
+      return;
+    }
+
+    const distance = (event.touches[0]?.clientY ?? this.pullStartY) - this.pullStartY;
+    if (distance > 0) {
+      if (event.cancelable) event.preventDefault();
+      this.pullDistance.set(Math.min(distance * 0.55, this.pullThreshold + 20));
+    } else {
+      this.pullDistance.set(0);
+    }
+  }
+
+  onPullEnd() {
+    this.pullStartY = null;
+    if (this.pullDistance() < this.pullThreshold || this.isRefreshing()) {
+      this.pullDistance.set(0);
+      return;
+    }
+
+    this.isRefreshing.set(true);
+    this.pullDistance.set(0);
+    const finishRefresh = () => this.isRefreshing.set(false);
+
+    this.api.fetchUserGroups().subscribe({
+      next: () => {
+        const groupId = this.api.activeGroup()?.id;
+        if (groupId) {
+          this.api.refreshGroupData(groupId, finishRefresh);
+        } else {
+          finishRefresh();
+        }
+      },
+      error: finishRefresh,
     });
   }
 

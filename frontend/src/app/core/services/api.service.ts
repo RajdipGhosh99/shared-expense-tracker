@@ -1,6 +1,6 @@
 import { Injectable, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, tap } from 'rxjs';
+import { Observable, finalize, tap } from 'rxjs';
 import {
   Group,
   GroupMember,
@@ -181,21 +181,30 @@ export class ApiService {
     this.setActiveGroup(flat);
   }
 
-  refreshGroupData(groupId: string) {
+  refreshGroupData(groupId: string, onComplete?: () => void) {
+    let pendingRequests = 3;
+    const completeRequest = () => {
+      pendingRequests -= 1;
+      if (pendingRequests === 0) onComplete?.();
+    };
+
     this.http
       .get<{ members: GroupMember[] }>(`${this.baseUrl}/groups/${groupId}/members`)
+      .pipe(finalize(completeRequest))
       .subscribe({
         next: (res) => this.members.set(res.members),
       });
 
     this.http
       .get<{ expenses: Expense[] }>(`${this.baseUrl}/expenses?groupId=${groupId}`)
+      .pipe(finalize(completeRequest))
       .subscribe({
         next: (res) => this.expenses.set(res.expenses),
       });
 
     this.http
       .get<GroupBalanceSheet>(`${this.baseUrl}/settlements/balances?groupId=${groupId}`)
+      .pipe(finalize(completeRequest))
       .subscribe({
         next: (res) => this.balanceSheet.set(res),
       });
