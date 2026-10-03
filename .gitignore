@@ -3,6 +3,7 @@ backend/dist/
 frontend/dist/
 dist/
 !shared/dist/
+!backend/dist/server.cjs
 .angular/
 .vercel/
 .env
