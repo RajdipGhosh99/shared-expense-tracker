@@ -71,4 +71,40 @@ test.describe('Expenses, Splits & Deduplication Protection', () => {
     await expect(page.locator('text=Duplicate Payment Detected')).not.toBeVisible();
     await expect(page.locator('text=WiFi Bill Duplicate')).toBeVisible();
   });
+
+  test('Real-time AI automatically detects category even when keywords are misspelled', async ({
+    page,
+  }) => {
+    const email = generateTestEmail('typo');
+    await registerUser(page, 'Typo Tester', email);
+
+    // Create group
+    await page.fill('input[name="groupName"]', 'Typo Test Flat');
+    await page.click('button:has-text("Create Group & Get Invite Code")');
+    await expect(page).toHaveURL(/\/dashboard/);
+
+    // Open Add Expense Modal
+    await page.click('button:has-text("＋")');
+    await expect(page.locator('h3:has-text("Add Group Expense")')).toBeVisible();
+
+    // 1. Type misspelled "blnkit milk and veggies"
+    await page.fill('input[name="title"]', 'blnkit milk and veggies');
+    await expect(page.locator('text=AI Suggested:')).toBeVisible();
+    await expect(page.locator('select[name="category"]')).toHaveValue('Groceries');
+
+    // 2. Type misspelled "swigy dinner meal"
+    await page.fill('input[name="title"]', 'swigy dinner meal');
+    await expect(page.locator('text=AI Suggested:')).toBeVisible();
+    await expect(page.locator('select[name="category"]')).toHaveValue('Food & Dining');
+
+    // 3. Type misspelled "electrcity power bill"
+    await page.fill('input[name="title"]', 'electrcity power bill');
+    await expect(page.locator('text=AI Suggested:')).toBeVisible();
+    await expect(page.locator('select[name="category"]')).toHaveValue('Electricity');
+
+    // 4. Type misspelled "wifii broadband"
+    await page.fill('input[name="title"]', 'wifii broadband');
+    await expect(page.locator('text=AI Suggested:')).toBeVisible();
+    await expect(page.locator('select[name="category"]')).toHaveValue('Wi-Fi');
+  });
 });

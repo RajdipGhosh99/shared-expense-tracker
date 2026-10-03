@@ -168,7 +168,10 @@ import {
                 <span>✨ AI Suggested:</span>
                 <span class="font-bold text-indigo-900">{{ aiSuggestion()?.category }}</span>
                 <span class="text-[10px] text-indigo-500 font-normal">
-                  (Matched "{{ aiSuggestion()?.matchedKeyword }}")
+                  ({{
+                    aiSuggestion()?.matchReason ||
+                      'Matched "' + aiSuggestion()?.matchedKeyword + '"'
+                  }})
                 </span>
               </div>
             </div>

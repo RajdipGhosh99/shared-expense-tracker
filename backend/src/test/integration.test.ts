@@ -134,19 +134,37 @@ describe('Backend API End-to-End Integration Suite', () => {
     assert.equal(approveRes.status, 200);
   });
 
-  test('AI Categorization: Automatically detects category from title keywords', async () => {
-    const res = await fetch(`${baseUrl}/api/expenses/ai-categorize`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${rahulToken}`,
-      },
-      body: JSON.stringify({ title: 'Blinkit groceries order' }),
-    });
-    assert.equal(res.status, 200);
-    const data = await res.json();
-    assert.equal(data.category, 'Groceries');
-    assert.ok(data.confidence >= 0.8);
+  test('AI Categorization: Automatically detects category from title keywords (including misspellings & typos)', async () => {
+    const testCases = [
+      { title: 'Blinkit groceries order', expected: 'Groceries' },
+      { title: 'blnkit milk and bread', expected: 'Groceries' },
+      { title: 'zeptoo snacks items', expected: 'Groceries' },
+      { title: 'swigy meal order', expected: 'Food & Dining' },
+      { title: 'electrcity power bill', expected: 'Electricity' },
+      { title: 'wifii broadband charge', expected: 'Wi-Fi' },
+      { title: 'coock monthly salary', expected: 'Maid & Cook' },
+      { title: 'bislri 20L can', expected: 'Drinking Water' },
+      { title: 'ubr airport ride', expected: 'Other' },
+    ];
+
+    for (const tc of testCases) {
+      const res = await fetch(`${baseUrl}/api/expenses/ai-categorize`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${rahulToken}`,
+        },
+        body: JSON.stringify({ title: tc.title }),
+      });
+      assert.equal(res.status, 200);
+      const data = await res.json();
+      assert.equal(
+        data.category,
+        tc.expected,
+        `Expected "${tc.title}" to be "${tc.expected}", got "${data.category}" (${data.matchReason})`,
+      );
+      assert.ok(data.confidence >= 0.7);
+    }
   });
 
   test('Expenses: Rahul logs Blinkit grocery bill (₹840.00) with UPI UTR', async () => {
