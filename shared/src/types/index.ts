@@ -391,6 +391,7 @@ export interface ExtractedReceiptResult {
   amountMinorUnits: number;
   merchant: string;
   category: ExpenseCategory;
+  subCategory?: string;
   utrNumber?: string;
   rawText?: string;
   extractedAt: string;

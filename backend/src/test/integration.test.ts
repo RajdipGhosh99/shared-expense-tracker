@@ -17,6 +17,8 @@ describe('Backend API End-to-End Integration Suite', () => {
 
   test('Server boots and health check succeeds', async () => {
     await getStorage().init();
+    await getStorage().deleteUserByEmail('rahul@group.com');
+    await getStorage().deleteUserByEmail('amit@group.com');
 
     await new Promise<void>((resolve) => {
       server = app.listen(0, () => {
@@ -30,6 +32,23 @@ describe('Backend API End-to-End Integration Suite', () => {
     assert.equal(res.status, 200);
     const data = await res.json();
     assert.equal(data.status, 'ok');
+  });
+
+  test('Auth: Unregistered user login fails with 401 and descriptive error', async () => {
+    const res = await fetch(`${baseUrl}/api/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: 'unregistered_ghost_user@group.com',
+        password: 'password123',
+      }),
+    });
+    assert.equal(res.status, 401);
+    const data = await res.json();
+    assert.equal(
+      data.error,
+      'No account found with this email. Please sign up to create an account.',
+    );
   });
 
   test('Auth: Register Rahul and Amit', async () => {
@@ -68,6 +87,51 @@ describe('Backend API End-to-End Integration Suite', () => {
     assert.equal(r2.status, 201);
     const d2 = await r2.json();
     amitToken = d2.token;
+  });
+
+  test('Auth: Registering already existing email fails with 409 Conflict', async () => {
+    const res = await fetch(`${baseUrl}/api/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: 'rahul@group.com',
+        password: 'someotherpass',
+        name: 'Rahul Imposter',
+      }),
+    });
+    assert.equal(res.status, 409);
+    const data = await res.json();
+    assert.equal(data.error, 'An account with this email already exists. Please log in.');
+  });
+
+  test('Auth: Registered user cannot log in with incorrect password', async () => {
+    const res = await fetch(`${baseUrl}/api/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: 'rahul@group.com',
+        password: 'wrong_password_999',
+      }),
+    });
+    assert.equal(res.status, 401);
+    const data = await res.json();
+    assert.equal(data.error, 'Incorrect password. Please try again.');
+  });
+
+  test('Auth: Registered user logs in successfully with valid credentials', async () => {
+    const res = await fetch(`${baseUrl}/api/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: 'rahul@group.com',
+        password: 'password123',
+      }),
+    });
+    assert.equal(res.status, 200);
+    const data = await res.json();
+    assert.ok(data.token);
+    assert.equal(data.user.email, 'rahul@group.com');
+    assert.equal(data.user.name, 'Rahul Sharma');
   });
 
   test('Auth: Google sign-in generates valid 30-day JWT token', async () => {

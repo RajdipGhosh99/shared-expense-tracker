@@ -8,7 +8,7 @@ import {
   Settlement,
   MonthlyStatement,
 } from '@shared-expense-tracker/shared';
-import { IDataStore } from './IDataStore.js';
+import { IDataStore, UserRecord } from './IDataStore.js';
 
 export interface GoogleSheetsConfig {
   spreadsheetId: string;
@@ -20,6 +20,36 @@ export class GoogleSheetsStore implements IDataStore {
   private sheets: any = null;
   private spreadsheetId: string;
   private isConfigured: boolean = false;
+  private memoryUsers: Map<string, UserRecord> = new Map();
+
+  // --- Users & Auth ---
+  async createUser(user: {
+    id: string;
+    email: string;
+    passwordHash: string;
+    name: string;
+    upiId?: string;
+  }): Promise<UserRecord> {
+    const cleanEmail = user.email.toLowerCase().trim();
+    const record: UserRecord = {
+      id: user.id,
+      email: cleanEmail,
+      passwordHash: user.passwordHash,
+      name: user.name,
+      upiId: user.upiId,
+      createdAt: new Date().toISOString(),
+    };
+    this.memoryUsers.set(cleanEmail, record);
+    return record;
+  }
+
+  async getUserByEmail(email: string): Promise<UserRecord | null> {
+    return this.memoryUsers.get(email.toLowerCase().trim()) || null;
+  }
+
+  async deleteUserByEmail(email: string): Promise<boolean> {
+    return this.memoryUsers.delete(email.toLowerCase().trim());
+  }
 
   constructor(config: Partial<GoogleSheetsConfig>) {
     this.spreadsheetId = config.spreadsheetId || '';

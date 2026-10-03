@@ -13,7 +13,7 @@ import {
   Settlement,
   MonthlyStatement,
 } from '@shared-expense-tracker/shared';
-import { IDataStore } from './IDataStore.js';
+import { IDataStore, UserRecord } from './IDataStore.js';
 
 export class TursoStore implements IDataStore {
   private client: Client;
@@ -192,6 +192,62 @@ export class TursoStore implements IDataStore {
         `CREATE VIEW IF NOT EXISTS flat_members AS SELECT id, group_id AS flat_id, user_email, name, upi_id, role, is_away, away_until, joined_at FROM group_members;`,
       );
     } catch {}
+  }
+
+  // --- Users & Auth ---
+  async createUser(user: {
+    id: string;
+    email: string;
+    passwordHash: string;
+    name: string;
+    upiId?: string;
+  }): Promise<UserRecord> {
+    const cleanEmail = user.email.toLowerCase().trim();
+    const createdAt = new Date().toISOString();
+    await this.client.execute({
+      sql: `INSERT INTO users (id, email, password_hash, name, upi_id, created_at)
+            VALUES (?, ?, ?, ?, ?, ?)
+            ON CONFLICT(email) DO UPDATE SET
+              password_hash = excluded.password_hash,
+              name = excluded.name,
+              upi_id = COALESCE(excluded.upi_id, users.upi_id)`,
+      args: [user.id, cleanEmail, user.passwordHash, user.name, user.upiId || null, createdAt],
+    });
+    return {
+      id: user.id,
+      email: cleanEmail,
+      passwordHash: user.passwordHash,
+      name: user.name,
+      upiId: user.upiId,
+      createdAt,
+    };
+  }
+
+  async getUserByEmail(email: string): Promise<UserRecord | null> {
+    const cleanEmail = email.toLowerCase().trim();
+    const res = await this.client.execute({
+      sql: `SELECT id, email, password_hash, name, upi_id, created_at FROM users WHERE LOWER(email) = ? LIMIT 1`,
+      args: [cleanEmail],
+    });
+    if (res.rows.length === 0) return null;
+    const row = res.rows[0];
+    return {
+      id: String(row.id),
+      email: String(row.email),
+      passwordHash: String(row.password_hash),
+      name: String(row.name),
+      upiId: row.upi_id ? String(row.upi_id) : undefined,
+      createdAt: row.created_at ? String(row.created_at) : undefined,
+    };
+  }
+
+  async deleteUserByEmail(email: string): Promise<boolean> {
+    const cleanEmail = email.toLowerCase().trim();
+    const res = await this.client.execute({
+      sql: `DELETE FROM users WHERE LOWER(email) = ?`,
+      args: [cleanEmail],
+    });
+    return res.rowsAffected > 0;
   }
 
   // --- Groups (Primary) ---

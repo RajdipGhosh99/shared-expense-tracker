@@ -9,8 +9,28 @@ import {
   MonthlyStatement,
 } from '@shared-expense-tracker/shared';
 
+export interface UserRecord {
+  id: string;
+  email: string;
+  passwordHash: string;
+  name: string;
+  upiId?: string;
+  createdAt?: string;
+}
+
 export interface IDataStore {
   init(): Promise<void>;
+
+  // Users & Auth
+  createUser(user: {
+    id: string;
+    email: string;
+    passwordHash: string;
+    name: string;
+    upiId?: string;
+  }): Promise<UserRecord>;
+  getUserByEmail(email: string): Promise<UserRecord | null>;
+  deleteUserByEmail(email: string): Promise<boolean>;
 
   // Groups (Primary API)
   createGroup(group: Group): Promise<Group>;

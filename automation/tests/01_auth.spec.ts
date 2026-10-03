@@ -63,4 +63,39 @@ test.describe('Authentication & Session Management', () => {
     await expect(page.locator('input[type="email"]')).toBeVisible();
     await expect(page.locator('input[type="password"]')).toBeVisible();
   });
+
+  test('Attempting to log in without an account shows clear rejection message', async ({
+    page,
+  }) => {
+    await page.goto('/auth');
+    await page.click('button:has-text("Log In")');
+    await page.fill('input[name="email"]', 'completely_unregistered_ghost@test.com');
+    await page.fill('input[name="password"]', 'RandomPassword123!');
+    await page.click('button[type="submit"]');
+
+    // Verify error banner is displayed with message
+    await expect(page.locator('text=No account found with this email. Please sign up to create an account.')).toBeVisible();
+    await expect(page).toHaveURL(/\/auth/);
+  });
+
+  test('Attempting to log in with incorrect password shows clear error message', async ({
+    page,
+  }) => {
+    const email = generateTestEmail('password_test');
+    await registerUser(page, 'Security User', email, 'CorrectPass123!');
+
+    // Clear session & return to auth page
+    await page.evaluate(() => localStorage.clear());
+    await page.goto('/auth');
+
+    // Try login with wrong password
+    await page.click('button:has-text("Log In")');
+    await page.fill('input[name="email"]', email);
+    await page.fill('input[name="password"]', 'WrongPassword999!');
+    await page.click('button[type="submit"]');
+
+    // Verify error message
+    await expect(page.locator('text=Incorrect password. Please try again.')).toBeVisible();
+    await expect(page).toHaveURL(/\/auth/);
+  });
 });

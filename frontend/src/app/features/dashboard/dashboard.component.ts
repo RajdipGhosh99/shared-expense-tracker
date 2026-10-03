@@ -613,100 +613,257 @@ import {
         <!-- ADMIN GROUP EXPENSE ENTRY FORM CONTROLS -->
         <div
           *ngIf="isAdmin()"
-          class="bg-white p-4.5 rounded-2xl border border-slate-200 shadow-xs space-y-3.5"
+          class="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden"
         >
-          <div class="flex justify-between items-center">
-            <h3
-              class="font-bold text-slate-800 text-xs uppercase tracking-wider flex items-center space-x-1.5"
-            >
-              <span>⚙️</span>
-              <span>Entry Form Controls (Admin)</span>
-            </h3>
-            <span
-              class="text-[10px] font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded-full"
-            >
-              Group Level
-            </span>
-          </div>
-          <p class="text-xs text-slate-500 leading-relaxed">
-            Manage bill entry form behavior for this group (mandatory, editable, or view-only).
-            Basic controls are pre-assigned.
-          </p>
-
-          <div class="space-y-2 divide-y divide-slate-100 text-xs">
-            <!-- Subcategory -->
-            <div class="pt-2 flex items-center justify-between">
-              <div>
-                <p class="font-bold text-slate-800">Subcategory Field</p>
-                <p class="text-[10px] text-slate-400">
-                  Detailed spend (e.g. Groceries, OTT, Metro)
-                </p>
-              </div>
-              <select
-                [(ngModel)]="formControlsConfig.subCategory"
-                class="px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white font-medium text-xs focus:outline-none focus:border-indigo-500"
+          <!-- Section Header -->
+          <div class="px-4.5 pt-4.5 pb-3 border-b border-slate-100">
+            <div class="flex justify-between items-center">
+              <h3
+                class="font-bold text-slate-800 text-xs uppercase tracking-wider flex items-center space-x-1.5"
               >
-                <option value="editable">Editable (Optional)</option>
-                <option value="mandatory">Mandatory Field</option>
-                <option value="hidden">Hidden</option>
-              </select>
-            </div>
-
-            <!-- Split Method -->
-            <div class="pt-2 flex items-center justify-between">
-              <div>
-                <p class="font-bold text-slate-800">Split Method Field</p>
-                <p class="text-[10px] text-slate-400">Lock to equal or allow custom splits</p>
-              </div>
-              <select
-                [(ngModel)]="formControlsConfig.splitType"
-                class="px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white font-medium text-xs focus:outline-none focus:border-indigo-500"
+                <span>⚙️</span>
+                <span>Entry Form Controls (Admin)</span>
+              </h3>
+              <span
+                class="text-[10px] font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded-full"
               >
-                <option value="editable">Editable (Any Split)</option>
-                <option value="view_only">View Only (Lock to Equal)</option>
-                <option value="hidden">Hidden (Always Equal)</option>
-              </select>
+                Group Level
+              </span>
             </div>
-
-            <!-- Notes -->
-            <div class="pt-2 flex items-center justify-between">
-              <div>
-                <p class="font-bold text-slate-800">Notes / Memo Field</p>
-                <p class="text-[10px] text-slate-400">Context or item description</p>
-              </div>
-              <select
-                [(ngModel)]="formControlsConfig.notes"
-                class="px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white font-medium text-xs focus:outline-none focus:border-indigo-500"
-              >
-                <option value="editable">Editable (Optional)</option>
-                <option value="mandatory">Mandatory Field</option>
-                <option value="hidden">Hidden</option>
-              </select>
-            </div>
-
-            <!-- Date -->
-            <div class="pt-2 flex items-center justify-between">
-              <div>
-                <p class="font-bold text-slate-800">Date Field</p>
-                <p class="text-[10px] text-slate-400">Expense date</p>
-              </div>
-              <select
-                [(ngModel)]="formControlsConfig.date"
-                class="px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white font-medium text-xs focus:outline-none focus:border-indigo-500"
-              >
-                <option value="mandatory">Mandatory Field</option>
-                <option value="editable">Editable (Optional)</option>
-                <option value="view_only">View Only (Today)</option>
-              </select>
-            </div>
+            <p class="text-xs text-slate-500 mt-1 leading-relaxed">
+              Configure how the Add Bill form behaves for all group members. Changes preview in real-time.
+            </p>
           </div>
 
-          <div class="pt-1 flex items-center justify-between">
+          <!-- Two-pane layout: Controls left, Preview right -->
+          <div class="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-slate-100">
+
+            <!-- LEFT: Controls Table -->
+            <div class="p-4.5 space-y-2 text-xs">
+              <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Field Settings</p>
+
+              <!-- Subcategory -->
+              <div class="flex items-center justify-between py-2 border-b border-slate-50">
+                <div>
+                  <p class="font-semibold text-slate-800">Subcategory</p>
+                  <p class="text-[10px] text-slate-400">Detailed spend (e.g. Groceries, OTT, Metro)</p>
+                </div>
+                <select
+                  [(ngModel)]="formControlsConfig.subCategory"
+                  class="px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white font-medium text-xs focus:outline-none focus:border-indigo-500 text-slate-700"
+                >
+                  <option value="editable">Editable (Optional)</option>
+                  <option value="mandatory">Mandatory</option>
+                  <option value="hidden">Hidden</option>
+                </select>
+              </div>
+
+              <!-- Split Method -->
+              <div class="flex items-center justify-between py-2 border-b border-slate-50">
+                <div>
+                  <p class="font-semibold text-slate-800">Split Method</p>
+                  <p class="text-[10px] text-slate-400">Lock to equal or allow custom splits</p>
+                </div>
+                <select
+                  [(ngModel)]="formControlsConfig.splitType"
+                  class="px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white font-medium text-xs focus:outline-none focus:border-indigo-500 text-slate-700"
+                >
+                  <option value="editable">Editable (Any Split)</option>
+                  <option value="view_only">View Only (Lock Equal)</option>
+                  <option value="hidden">Hidden (Always Equal)</option>
+                </select>
+              </div>
+
+              <!-- Notes -->
+              <div class="flex items-center justify-between py-2 border-b border-slate-50">
+                <div>
+                  <p class="font-semibold text-slate-800">Notes / Memo</p>
+                  <p class="text-[10px] text-slate-400">Context or item description</p>
+                </div>
+                <select
+                  [(ngModel)]="formControlsConfig.notes"
+                  class="px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white font-medium text-xs focus:outline-none focus:border-indigo-500 text-slate-700"
+                >
+                  <option value="editable">Editable (Optional)</option>
+                  <option value="mandatory">Mandatory</option>
+                  <option value="hidden">Hidden</option>
+                </select>
+              </div>
+
+              <!-- Date -->
+              <div class="flex items-center justify-between py-2">
+                <div>
+                  <p class="font-semibold text-slate-800">Date</p>
+                  <p class="text-[10px] text-slate-400">Expense date picker</p>
+                </div>
+                <select
+                  [(ngModel)]="formControlsConfig.date"
+                  class="px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white font-medium text-xs focus:outline-none focus:border-indigo-500 text-slate-700"
+                >
+                  <option value="mandatory">Mandatory</option>
+                  <option value="editable">Editable (Optional)</option>
+                  <option value="view_only">View Only (Today)</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- RIGHT: Live Form Preview -->
+            <div class="p-4.5 bg-slate-50/60">
+              <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3 flex items-center space-x-1">
+                <span>👁</span>
+                <span>Live Preview — Add Bill Form</span>
+              </p>
+
+              <!-- Mock form preview -->
+              <div class="bg-white rounded-xl border border-slate-200 p-3.5 space-y-2.5 shadow-xs text-xs pointer-events-none select-none">
+
+                <!-- Amount — always mandatory -->
+                <div class="bg-slate-50 rounded-xl border border-slate-200 py-2 px-3 text-center">
+                  <p class="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">Amount <span class="text-rose-500">*</span></p>
+                  <p class="text-slate-300 font-black text-2xl">₹ 0.00</p>
+                </div>
+
+                <!-- Title — always mandatory -->
+                <div>
+                  <div class="flex justify-between mb-0.5">
+                    <span class="font-semibold text-slate-600 text-[10px]">What is this for?</span>
+                    <span class="text-[9px] text-rose-500 font-bold">* Mandatory</span>
+                  </div>
+                  <div class="w-full h-7 rounded-lg border border-slate-200 bg-slate-50"></div>
+                </div>
+
+                <!-- Date field preview -->
+                <div>
+                  <div class="flex justify-between mb-0.5">
+                    <span class="font-semibold text-slate-600 text-[10px]">Date</span>
+                    <span
+                      *ngIf="formControlsConfig.date === 'mandatory'"
+                      class="text-[9px] text-rose-500 font-bold"
+                    >* Mandatory</span>
+                    <span
+                      *ngIf="formControlsConfig.date === 'view_only'"
+                      class="text-[9px] text-indigo-600 bg-indigo-50 px-1.5 rounded border border-indigo-200 font-bold"
+                    >🔒 Today</span>
+                    <span
+                      *ngIf="formControlsConfig.date === 'editable'"
+                      class="text-[9px] text-slate-400"
+                    >Optional</span>
+                  </div>
+                  <div
+                    class="w-full h-7 rounded-lg border border-slate-200"
+                    [class.bg-slate-100]="formControlsConfig.date === 'view_only'"
+                    [class.bg-slate-50]="formControlsConfig.date !== 'view_only'"
+                  ></div>
+                </div>
+
+                <!-- Category — always shown, mandatory -->
+                <div class="grid grid-cols-2 gap-2">
+                  <div>
+                    <div class="flex justify-between mb-0.5">
+                      <span class="font-semibold text-slate-600 text-[10px]">Category</span>
+                      <span class="text-[9px] text-rose-500 font-bold">* Mandatory</span>
+                    </div>
+                    <div class="w-full h-7 rounded-lg border border-slate-200 bg-slate-50 flex items-center px-2">
+                      <span class="text-slate-400 text-[10px]">🍔 Food &amp; Dining</span>
+                    </div>
+                  </div>
+
+                  <!-- Subcategory preview -->
+                  <div *ngIf="formControlsConfig.subCategory !== 'hidden'">
+                    <div class="flex justify-between mb-0.5">
+                      <span class="font-semibold text-slate-600 text-[10px]">Subcategory</span>
+                      <span
+                        *ngIf="formControlsConfig.subCategory === 'mandatory'"
+                        class="text-[9px] text-rose-500 font-bold"
+                      >* Mandatory</span>
+                      <span
+                        *ngIf="formControlsConfig.subCategory === 'editable'"
+                        class="text-[9px] text-slate-400"
+                      >Optional</span>
+                    </div>
+                    <div class="w-full h-7 rounded-lg border border-slate-200 bg-slate-50 flex items-center px-2">
+                      <span class="text-slate-400 text-[10px]">• Groceries &amp; Dark Stores</span>
+                    </div>
+                  </div>
+                  <div *ngIf="formControlsConfig.subCategory === 'hidden'">
+                    <div class="w-full h-7 rounded-lg border border-dashed border-slate-200 bg-slate-50/50 flex items-center justify-center">
+                      <span class="text-[9px] text-slate-300 italic">Subcategory hidden</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Split Method preview -->
+                <div *ngIf="formControlsConfig.splitType !== 'hidden'">
+                  <div class="flex justify-between mb-0.5">
+                    <span class="font-semibold text-slate-600 text-[10px]">Split Method</span>
+                    <span
+                      *ngIf="formControlsConfig.splitType === 'view_only'"
+                      class="text-[9px] text-indigo-600 bg-indigo-50 px-1.5 rounded border border-indigo-200 font-bold"
+                    >🔒 Locked: Equal</span>
+                  </div>
+                  <div
+                    *ngIf="formControlsConfig.splitType === 'view_only'"
+                    class="w-full h-7 rounded-lg border border-slate-200 bg-slate-100 flex items-center px-2"
+                  >
+                    <span class="text-slate-500 text-[10px]">🔒 Equal Split (Set by Group Admin)</span>
+                  </div>
+                  <div
+                    *ngIf="formControlsConfig.splitType === 'editable'"
+                    class="w-full h-7 rounded-lg border border-slate-200 bg-slate-50 flex items-center px-2"
+                  >
+                    <span class="text-slate-400 text-[10px]">Equal Split ▾</span>
+                  </div>
+                </div>
+                <div *ngIf="formControlsConfig.splitType === 'hidden'">
+                  <div class="w-full h-7 rounded-lg border border-dashed border-slate-200 bg-slate-50/50 flex items-center justify-center">
+                    <span class="text-[9px] text-slate-300 italic">Split method hidden (always equal)</span>
+                  </div>
+                </div>
+
+                <!-- Notes preview -->
+                <div *ngIf="formControlsConfig.notes !== 'hidden'">
+                  <div class="flex justify-between mb-0.5">
+                    <span class="font-semibold text-slate-600 text-[10px]">Notes / Memo</span>
+                    <span
+                      *ngIf="formControlsConfig.notes === 'mandatory'"
+                      class="text-[9px] text-rose-500 font-bold"
+                    >* Mandatory</span>
+                    <span
+                      *ngIf="formControlsConfig.notes === 'editable'"
+                      class="text-[9px] text-slate-400"
+                    >Optional</span>
+                  </div>
+                  <div class="w-full h-7 rounded-lg border border-slate-200 bg-slate-50"></div>
+                </div>
+                <div *ngIf="formControlsConfig.notes === 'hidden'">
+                  <div class="w-full h-7 rounded-lg border border-dashed border-slate-200 bg-slate-50/50 flex items-center justify-center">
+                    <span class="text-[9px] text-slate-300 italic">Notes field hidden</span>
+                  </div>
+                </div>
+
+                <!-- Submit button mock -->
+                <div class="w-full py-2.5 bg-indigo-600/80 rounded-xl text-center text-white text-[10px] font-bold mt-1">
+                  Save &amp; Split Bill
+                </div>
+              </div>
+
+              <!-- Legend -->
+              <div class="flex flex-wrap gap-2 mt-2.5 text-[9px] text-slate-500">
+                <span class="flex items-center space-x-1"><span class="w-2 h-2 rounded bg-rose-100 border border-rose-300 inline-block"></span><span>Mandatory</span></span>
+                <span class="flex items-center space-x-1"><span class="w-2 h-2 rounded bg-slate-100 border border-slate-300 inline-block"></span><span>Editable / Optional</span></span>
+                <span class="flex items-center space-x-1"><span class="w-2 h-2 rounded border border-dashed border-slate-300 inline-block"></span><span>Hidden</span></span>
+                <span class="flex items-center space-x-1"><span class="w-2 h-2 rounded bg-indigo-100 border border-indigo-300 inline-block"></span><span>Locked</span></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Footer: Save button -->
+          <div class="px-4.5 py-3 border-t border-slate-100 flex items-center justify-between bg-slate-50/50">
             <span
               *ngIf="controlsSavedMsg()"
-              class="text-[11px] font-bold text-emerald-600 animate-fade-in"
+              class="text-[11px] font-bold text-emerald-600 flex items-center space-x-1"
             >
-              ✓ {{ controlsSavedMsg() }}
+              <span>✓</span><span>{{ controlsSavedMsg() }}</span>
             </span>
             <span *ngIf="!controlsSavedMsg()"></span>
             <button

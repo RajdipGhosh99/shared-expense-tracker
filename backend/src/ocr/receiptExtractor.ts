@@ -63,7 +63,8 @@ Return ONLY valid JSON.`;
     amountDisplay: 840.0,
     amountMinorUnits: 84000,
     merchant: 'Blinkit Groceries',
-    category: 'Groceries',
+    category: 'Food & Dining',
+    subCategory: 'Groceries & Dark Stores',
     utrNumber: '427819283719',
     extractedAt: new Date().toISOString(),
   };

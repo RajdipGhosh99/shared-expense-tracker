@@ -7,7 +7,7 @@ import {
   Settlement,
   MonthlyStatement,
 } from '@shared-expense-tracker/shared';
-import { IDataStore } from './IDataStore.js';
+import { IDataStore, UserRecord } from './IDataStore.js';
 import { TursoStore } from './TursoStore.js';
 import { GoogleSheetsStore } from './GoogleSheetsStore.js';
 import { appConfig } from '../config/appConfig.js';
@@ -35,6 +35,25 @@ export class DualSyncStore implements IDataStore {
         console.warn('[DualSyncStore] Google Sheets init failed (continuing with Turso):', err);
       }
     }
+  }
+
+  // --- Users & Auth ---
+  async createUser(user: {
+    id: string;
+    email: string;
+    passwordHash: string;
+    name: string;
+    upiId?: string;
+  }): Promise<UserRecord> {
+    return this.turso.createUser(user);
+  }
+
+  async getUserByEmail(email: string): Promise<UserRecord | null> {
+    return this.turso.getUserByEmail(email);
+  }
+
+  async deleteUserByEmail(email: string): Promise<boolean> {
+    return this.turso.deleteUserByEmail(email);
   }
 
   // --- Groups (Primary API) ---
