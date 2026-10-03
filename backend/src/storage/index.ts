@@ -9,8 +9,15 @@ let storeInstance: IDataStore | null = null;
 export function getStorage(): IDataStore {
   if (storeInstance) return storeInstance;
 
-  const tursoUrl = process.env.TURSO_DATABASE_URL || 'file:local.db';
+  const defaultDb = process.env.VERCEL ? 'file:/tmp/local.db' : 'file:local.db';
+  const tursoUrl = process.env.TURSO_DATABASE_URL || defaultDb;
   const tursoToken = process.env.TURSO_AUTH_TOKEN;
+
+  if (!process.env.TURSO_DATABASE_URL && process.env.VERCEL) {
+    console.warn(
+      '[Storage] WARNING: TURSO_DATABASE_URL is not set in Vercel. Using /tmp/local.db fallback',
+    );
+  }
 
   storeInstance = new TursoStore(tursoUrl, tursoToken);
   return storeInstance;
