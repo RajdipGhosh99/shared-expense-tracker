@@ -48,7 +48,7 @@ export interface GridRow {
             </div>
             <div>
               <div class="flex items-center space-x-2">
-                <h3 class="text-sm font-bold text-slate-900">Google Sheet Multiple Entry</h3>
+                <h3 class="text-sm font-bold text-slate-900">Spreadsheet Bulk Entry</h3>
                 <span
                   class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200"
                 >
@@ -75,10 +75,10 @@ export interface GridRow {
               type="button"
               (click)="showPasteModal.set(!showPasteModal())"
               class="px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-100 text-xs font-semibold text-slate-700 flex items-center space-x-1.5 transition-colors cursor-pointer shadow-xs"
-              title="Paste copied rows directly from Google Sheets or Excel"
+              title="Paste copied rows directly from spreadsheet or Excel"
             >
               <span>📋</span>
-              <span class="hidden sm:inline">Paste from Sheet</span>
+              <span class="hidden sm:inline">Paste Rows</span>
             </button>
             <button
               type="button"
@@ -104,7 +104,7 @@ export interface GridRow {
           class="p-4 bg-emerald-50/70 border-b border-emerald-200 space-y-2"
         >
           <div class="flex justify-between items-center text-xs font-bold text-emerald-900">
-            <span>📋 Paste Tab-Separated Rows from Google Sheet / Excel</span>
+            <span>📋 Paste Tab-Separated Rows from Spreadsheet / Excel</span>
             <span class="text-[11px] font-normal text-emerald-700"
               >Format: Date [tab] Title [tab] Amount [tab] Category</span
             >
@@ -328,7 +328,7 @@ export interface GridRow {
               ></span>
               <span>{{
                 loading()
-                  ? 'Saving to Google Sheet...'
+                  ? 'Saving bills...'
                   : 'Save ' + validRowCount() + ' Bills to Group'
               }}</span>
             </button>
@@ -539,7 +539,7 @@ export class BulkExpenseGridComponent implements OnInit {
       },
       error: (err) => {
         this.loading.set(false);
-        this.errorMessage.set(err.error?.error || 'Failed to save batch expenses to Google Sheet.');
+        this.errorMessage.set(err.error?.error || 'Failed to save batch expenses.');
       },
     });
   }

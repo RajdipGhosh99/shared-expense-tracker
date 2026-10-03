@@ -22,14 +22,12 @@ const port = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
-// Initialize Storage (Turso tables & Google Sheets tabs)
+// Initialize Storage (Turso / SQLite database)
 const storage = getStorage();
 storage
   .init()
   .then(() => {
-    console.log(
-      `[Storage] Initialized successfully in mode: ${process.env.STORAGE_MODE || 'dual'}`,
-    );
+    console.log('[Storage] Initialized successfully in SQLite/Turso mode');
   })
   .catch((err) => {
     console.error('[Storage] Init warning:', err);
@@ -43,11 +41,10 @@ app.get('/api/docs.json', (req, res) => {
 
 // Health check
 app.get('/api/health', (req, res) => {
-  const googleSheetSync = appConfig.googleSheetSync && process.env.STORAGE_MODE !== 'turso';
   res.json({
     status: 'ok',
-    storageMode: process.env.STORAGE_MODE || 'dual',
-    googleSheetSync,
+    storageMode: 'turso',
+    googleSheetSync: false,
     docs: '/api/docs',
     timestamp: new Date().toISOString(),
   });

@@ -57,15 +57,6 @@ import {
                 >▾</span
               >
             </div>
-
-            <!-- Google Sheet Live Indicator -->
-            <span
-              class="hidden sm:inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200"
-              title="Google Sheet live sync active"
-            >
-              <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1 animate-pulse"></span>
-              Live
-            </span>
           </div>
 
           <!-- Right: Action Bar (Invite Pill + User + Logout) -->
@@ -394,7 +385,7 @@ import {
             <span class="text-[10px] font-bold text-slate-700">Add Bill</span>
           </button>
 
-          <!-- Action: Multiple Entry (Google Sheet Mode) -->
+          <!-- Action: Multiple Entry (Spreadsheet Grid Mode) -->
           <button
             (click)="openSheetEntry()"
             class="p-3 bg-emerald-50/80 hover:bg-emerald-100/70 border border-emerald-200 rounded-2xl flex flex-col items-center justify-center space-y-1.5 shadow-xs active:scale-95 transition-all cursor-pointer group"
@@ -412,7 +403,7 @@ import {
                 />
               </svg>
             </div>
-            <span class="text-[10px] font-bold text-emerald-800">Sheet Entry</span>
+            <span class="text-[10px] font-bold text-emerald-800">Bulk Entry</span>
           </button>
 
           <!-- Action: Statements -->
@@ -925,7 +916,7 @@ import {
             class="py-8 text-center text-xs text-slate-400 space-y-1"
           >
             <p class="text-2xl">📋</p>
-            <p>No bills logged yet. Tap ＋ Add Bill or Sheet Entry above!</p>
+            <p>No bills logged yet. Tap ＋ Add Bill or Bulk Entry above!</p>
           </div>
 
           <div class="divide-y divide-slate-100">
@@ -1001,13 +992,13 @@ import {
           ＋
         </button>
 
-        <!-- Multiple Entry (Sheet View) Tab -->
+        <!-- Multiple Entry (Bulk View) Tab -->
         <button
           (click)="openSheetEntry()"
           class="flex flex-col items-center justify-center text-emerald-700 hover:text-emerald-800 active:scale-90 transition-transform cursor-pointer"
         >
           <span class="text-lg">📊</span>
-          <span class="text-[10px] font-bold">Sheet</span>
+          <span class="text-[10px] font-bold">Bulk</span>
         </button>
 
         <!-- Statements Tab -->

@@ -161,7 +161,7 @@ router.post('/', authMiddleware, async (req: AuthRequest, res: Response) => {
     splits: finalSplits,
     utrNumber: utrNumber ? utrNumber.trim() : undefined,
     overwrittenFlag: 'NO',
-    sheetSyncStatus: 'PENDING',
+    sheetSyncStatus: 'SYNCED',
     createdAt: `${expenseDate}T12:00:00.000Z`,
     updatedAt: new Date().toISOString(),
   };
@@ -170,7 +170,7 @@ router.post('/', authMiddleware, async (req: AuthRequest, res: Response) => {
   return res.status(201).json({ status: 'CREATED', expense: created });
 });
 
-// Batch / Multiple Expense Entry (Google Sheet Grid)
+// Batch / Multiple Expense Entry (Spreadsheet Grid)
 router.post('/batch', authMiddleware, async (req: AuthRequest, res: Response) => {
   const { groupId: reqGroupId, flatId: reqFlatId, items } = req.body;
   const groupId = reqGroupId || reqFlatId;
@@ -243,7 +243,7 @@ router.post('/batch', authMiddleware, async (req: AuthRequest, res: Response) =>
       splits: splitCalc.splits,
       utrNumber: item.utrNumber ? item.utrNumber.trim() : undefined,
       overwrittenFlag: 'NO',
-      sheetSyncStatus: 'PENDING',
+      sheetSyncStatus: 'SYNCED',
       createdAt: `${expenseDate}T12:00:00.000Z`,
       updatedAt: new Date().toISOString(),
     };

@@ -8,8 +8,7 @@
     "dev": "tsx watch src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js",
-    "test": "tsx src/test/integration.test.ts",
-    "migrate": "tsx src/storage/migrateSheetsToTurso.ts"
+    "test": "tsx src/test/integration.test.ts"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.0",

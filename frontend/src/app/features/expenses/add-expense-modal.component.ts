@@ -94,15 +94,6 @@ import {
                 conflictData()?.existingRecord?.amountDisplay
               }}
             </p>
-            <p *ngIf="conflictData()?.existingRecord?.sheetUrl">
-              <a
-                [href]="conflictData()?.existingRecord?.sheetUrl"
-                target="_blank"
-                class="text-indigo-600 hover:text-indigo-800 font-medium underline"
-              >
-                View in Google Sheet ↗
-              </a>
-            </p>
           </div>
 
           <div class="grid grid-cols-2 gap-2 pt-1">
