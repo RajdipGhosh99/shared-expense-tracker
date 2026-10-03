@@ -5,7 +5,18 @@ import { Group, GroupMember } from '@shared-expense-tracker/shared';
 
 const router = Router();
 
-// Create new group
+// Get all groups for authenticated user
+router.get('/', authMiddleware, async (req: AuthRequest, res: Response) => {
+  const user = req.user!;
+  const db = getStorage();
+  const memberships = await db.getUserGroups(user.email);
+  return res.json({
+    memberships,
+    groups: memberships.map((m: any) => m.group),
+  });
+});
+
+// Create new group (Creator is automatically ADMIN & ACTIVE)
 router.post('/', authMiddleware, async (req: AuthRequest, res: Response) => {
   const { name, currency } = req.body;
   const user = req.user!;
@@ -31,15 +42,16 @@ router.post('/', authMiddleware, async (req: AuthRequest, res: Response) => {
 
   await db.createGroup(group);
 
-  // Add creator as ADMIN
+  // Add creator as ADMIN with ACTIVE status
   const member: GroupMember = {
     id: `mem_${Date.now()}`,
     groupId,
     flatId: groupId,
-    userEmail: user.email,
+    userEmail: user.email.toLowerCase().trim(),
     name: (user as any).name || user.email.split('@')[0],
     upiId: (user as any).upiId,
     role: 'ADMIN',
+    status: 'ACTIVE',
     joinedAt: new Date().toISOString(),
   };
 
@@ -48,7 +60,7 @@ router.post('/', authMiddleware, async (req: AuthRequest, res: Response) => {
   return res.status(201).json({ group, flat: group, member });
 });
 
-// Join group by invite code
+// Join group by invite code (Requires Admin Approval unless first member)
 router.post('/join', authMiddleware, async (req: AuthRequest, res: Response) => {
   const { inviteCode } = req.body;
   const user = req.user!;
@@ -64,20 +76,48 @@ router.post('/join', authMiddleware, async (req: AuthRequest, res: Response) => 
     return res.status(404).json({ error: 'No group found with that invite code.' });
   }
 
+  const existing = await db.getMember(group.id, user.email);
+  if (existing) {
+    return res.json({
+      group,
+      flat: group,
+      member: existing,
+      status: existing.status,
+      pendingApproval: existing.status === 'PENDING',
+      message:
+        existing.status === 'PENDING'
+          ? 'Your join request is awaiting Admin approval.'
+          : `You are already a member of ${group.name}!`,
+    });
+  }
+
+  const existingMembers = await db.getMembers(group.id);
+  const isFirstMember = existingMembers.length === 0;
+
   const member: GroupMember = {
     id: `mem_${Date.now()}`,
     groupId: group.id,
     flatId: group.id,
-    userEmail: user.email,
+    userEmail: user.email.toLowerCase().trim(),
     name: (user as any).name || user.email.split('@')[0],
     upiId: (user as any).upiId,
-    role: 'MEMBER',
+    role: isFirstMember ? 'ADMIN' : 'MEMBER',
+    status: isFirstMember ? 'ACTIVE' : 'PENDING',
     joinedAt: new Date().toISOString(),
   };
 
   await db.addMember(member);
 
-  return res.json({ group, flat: group, member, message: `Successfully joined ${group.name}!` });
+  return res.json({
+    group,
+    flat: group,
+    member,
+    pendingApproval: member.status === 'PENDING',
+    message:
+      member.status === 'PENDING'
+        ? `Join request submitted! Group Admin must approve your membership.`
+        : `Successfully joined ${group.name}!`,
+  });
 });
 
 // Get Group Info
@@ -98,6 +138,71 @@ router.get('/:id/members', authMiddleware, async (req: AuthRequest, res: Respons
   const members = await db.getMembers(id);
   return res.json({ members });
 });
+
+// Admin Approval for Pending Member
+router.post(
+  '/:id/members/:email/approve',
+  authMiddleware,
+  async (req: AuthRequest, res: Response) => {
+    const user = req.user!;
+    const groupId = req.params.id as string;
+    const targetEmail = req.params.email as string;
+    const db = getStorage();
+
+    const caller = await db.getMember(groupId, user.email);
+    if (!caller || caller.role !== 'ADMIN') {
+      return res.status(403).json({ error: 'Only a group Admin can approve members.' });
+    }
+
+    const updated = await db.updateMemberStatus(groupId, targetEmail, 'ACTIVE');
+    return res.json({ success: updated, message: `Approved member ${targetEmail}` });
+  },
+);
+
+// Admin Rejection for Pending Member
+router.post(
+  '/:id/members/:email/reject',
+  authMiddleware,
+  async (req: AuthRequest, res: Response) => {
+    const user = req.user!;
+    const groupId = req.params.id as string;
+    const targetEmail = req.params.email as string;
+    const db = getStorage();
+
+    const caller = await db.getMember(groupId, user.email);
+    if (!caller || caller.role !== 'ADMIN') {
+      return res.status(403).json({ error: 'Only a group Admin can reject member requests.' });
+    }
+
+    const removed = await db.removeMember(groupId, targetEmail);
+    return res.json({ success: removed, message: `Rejected join request for ${targetEmail}` });
+  },
+);
+
+// Admin Promote / Demote Member Role
+router.patch(
+  '/:id/members/:email/role',
+  authMiddleware,
+  async (req: AuthRequest, res: Response) => {
+    const user = req.user!;
+    const groupId = req.params.id as string;
+    const targetEmail = req.params.email as string;
+    const { role } = req.body;
+    const db = getStorage();
+
+    if (!role || !['ADMIN', 'MEMBER'].includes(role)) {
+      return res.status(400).json({ error: 'Valid role (ADMIN or MEMBER) is required.' });
+    }
+
+    const caller = await db.getMember(groupId, user.email);
+    if (!caller || caller.role !== 'ADMIN') {
+      return res.status(403).json({ error: 'Only a group Admin can change member roles.' });
+    }
+
+    const updated = await db.updateMemberRole(groupId, targetEmail, role);
+    return res.json({ success: updated, role });
+  },
+);
 
 // Toggle Vacation / Away Mode
 router.patch('/:id/members/away', authMiddleware, async (req: AuthRequest, res: Response) => {

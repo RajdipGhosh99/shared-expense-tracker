@@ -2,6 +2,9 @@ import { createClient, Client } from '@libsql/client';
 import {
   Group,
   GroupMember,
+  MemberRole,
+  MemberStatus,
+  UserGroupMembership,
   Flat,
   FlatMember,
   Expense,
@@ -48,6 +51,7 @@ export class TursoStore implements IDataStore {
           name TEXT NOT NULL,
           upi_id TEXT,
           role TEXT DEFAULT 'MEMBER',
+          status TEXT DEFAULT 'ACTIVE',
           is_away INTEGER DEFAULT 0,
           away_until TEXT,
           joined_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -121,6 +125,11 @@ export class TursoStore implements IDataStore {
 
     try {
       await this.client.execute('ALTER TABLE expenses ADD COLUMN group_id TEXT;');
+    } catch {}
+    try {
+      await this.client.execute(
+        "ALTER TABLE group_members ADD COLUMN status TEXT DEFAULT 'ACTIVE';",
+      );
     } catch {}
     try {
       await this.client.execute('UPDATE expenses SET group_id = flat_id WHERE group_id IS NULL;');
@@ -259,24 +268,26 @@ export class TursoStore implements IDataStore {
   // --- Members ---
   async addMember(member: GroupMember): Promise<GroupMember> {
     const groupId = member.groupId || member.flatId!;
+    const status = member.status || 'ACTIVE';
     await this.client.execute({
-      sql: `INSERT INTO group_members (id, group_id, user_email, name, upi_id, role, is_away, away_until, joined_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      sql: `INSERT INTO group_members (id, group_id, user_email, name, upi_id, role, status, is_away, away_until, joined_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(group_id, user_email) DO UPDATE SET
-            name = excluded.name, upi_id = excluded.upi_id`,
+            name = excluded.name, upi_id = excluded.upi_id, role = excluded.role, status = excluded.status`,
       args: [
         member.id,
         groupId,
-        member.userEmail,
+        member.userEmail.toLowerCase().trim(),
         member.name,
         member.upiId || null,
         member.role,
+        status,
         member.isAway ? 1 : 0,
         member.awayUntil || null,
         member.joinedAt,
       ],
     });
-    return { ...member, groupId, flatId: groupId };
+    return { ...member, groupId, flatId: groupId, status };
   }
 
   async getMembers(groupId: string): Promise<GroupMember[]> {
@@ -292,6 +303,7 @@ export class TursoStore implements IDataStore {
       name: String(r.name),
       upiId: r.upi_id ? String(r.upi_id) : undefined,
       role: r.role as any,
+      status: (r.status as any) || 'ACTIVE',
       isAway: Boolean(r.is_away),
       awayUntil: r.away_until ? String(r.away_until) : undefined,
       joinedAt: String(r.joined_at),
@@ -300,8 +312,8 @@ export class TursoStore implements IDataStore {
 
   async getMember(groupId: string, userEmail: string): Promise<GroupMember | null> {
     const res = await this.client.execute({
-      sql: `SELECT * FROM group_members WHERE group_id = ? AND user_email = ?`,
-      args: [groupId, userEmail],
+      sql: `SELECT * FROM group_members WHERE group_id = ? AND LOWER(user_email) = LOWER(?)`,
+      args: [groupId, userEmail.trim()],
     });
     if (res.rows.length === 0) return null;
     const r = res.rows[0];
@@ -313,10 +325,64 @@ export class TursoStore implements IDataStore {
       name: String(r.name),
       upiId: r.upi_id ? String(r.upi_id) : undefined,
       role: r.role as any,
+      status: (r.status as any) || 'ACTIVE',
       isAway: Boolean(r.is_away),
       awayUntil: r.away_until ? String(r.away_until) : undefined,
       joinedAt: String(r.joined_at),
     };
+  }
+
+  async getUserGroups(userEmail: string): Promise<UserGroupMembership[]> {
+    const res = await this.client.execute({
+      sql: `SELECT g.*, gm.role, gm.status, gm.joined_at
+            FROM groups g
+            JOIN group_members gm ON g.id = gm.group_id
+            WHERE LOWER(gm.user_email) = LOWER(?)
+            ORDER BY gm.joined_at DESC`,
+      args: [userEmail.trim()],
+    });
+
+    return res.rows.map((r) => {
+      const group: Group = {
+        id: String(r.id),
+        name: String(r.name),
+        inviteCode: String(r.invite_code),
+        currency: String(r.currency || 'INR'),
+        googleSheetSync: r.google_sheet_sync === undefined || Number(r.google_sheet_sync) !== 0,
+        createdAt: String(r.created_at),
+      };
+      return {
+        group,
+        flat: group,
+        role: (r.role as MemberRole) || 'MEMBER',
+        status: (r.status as MemberStatus) || 'ACTIVE',
+        joinedAt: String(r.joined_at),
+      };
+    });
+  }
+
+  async updateMemberStatus(groupId: string, userEmail: string, status: string): Promise<boolean> {
+    const res = await this.client.execute({
+      sql: `UPDATE group_members SET status = ? WHERE group_id = ? AND LOWER(user_email) = LOWER(?)`,
+      args: [status, groupId, userEmail.trim()],
+    });
+    return res.rowsAffected > 0;
+  }
+
+  async updateMemberRole(groupId: string, userEmail: string, role: string): Promise<boolean> {
+    const res = await this.client.execute({
+      sql: `UPDATE group_members SET role = ? WHERE group_id = ? AND LOWER(user_email) = LOWER(?)`,
+      args: [role, groupId, userEmail.trim()],
+    });
+    return res.rowsAffected > 0;
+  }
+
+  async removeMember(groupId: string, userEmail: string): Promise<boolean> {
+    const res = await this.client.execute({
+      sql: `DELETE FROM group_members WHERE group_id = ? AND LOWER(user_email) = LOWER(?)`,
+      args: [groupId, userEmail.trim()],
+    });
+    return res.rowsAffected > 0;
   }
 
   async updateMemberAway(
@@ -326,8 +392,8 @@ export class TursoStore implements IDataStore {
     awayUntil?: string,
   ): Promise<boolean> {
     const res = await this.client.execute({
-      sql: `UPDATE group_members SET is_away = ?, away_until = ? WHERE group_id = ? AND user_email = ?`,
-      args: [isAway ? 1 : 0, awayUntil || null, groupId, userEmail],
+      sql: `UPDATE group_members SET is_away = ?, away_until = ? WHERE group_id = ? AND LOWER(user_email) = LOWER(?)`,
+      args: [isAway ? 1 : 0, awayUntil || null, groupId, userEmail.trim()],
     });
     return res.rowsAffected > 0;
   }

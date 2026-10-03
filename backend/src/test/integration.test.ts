@@ -122,6 +122,31 @@ describe('Backend API End-to-End Integration Suite', () => {
     assert.equal(res.status, 200);
     const data = await res.json();
     assert.equal(data.group.id, groupId);
+
+    // Rahul (Group Admin) approves Amit's join request
+    const approveRes = await fetch(
+      `${baseUrl}/api/groups/${groupId}/members/amit@group.com/approve`,
+      {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${rahulToken}` },
+      },
+    );
+    assert.equal(approveRes.status, 200);
+  });
+
+  test('AI Categorization: Automatically detects category from title keywords', async () => {
+    const res = await fetch(`${baseUrl}/api/expenses/ai-categorize`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${rahulToken}`,
+      },
+      body: JSON.stringify({ title: 'Blinkit groceries order' }),
+    });
+    assert.equal(res.status, 200);
+    const data = await res.json();
+    assert.equal(data.category, 'Groceries');
+    assert.ok(data.confidence >= 0.8);
   });
 
   test('Expenses: Rahul logs Blinkit grocery bill (₹840.00) with UPI UTR', async () => {

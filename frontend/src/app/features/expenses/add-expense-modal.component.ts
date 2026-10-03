@@ -2,6 +2,7 @@ import { Component, EventEmitter, Output, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../core/services/api.service.js';
+import { AiCategoryService, AiPrediction } from '../../core/services/ai-category.service.js';
 import {
   DuplicateConflictResponse,
   ExpenseCategory,
@@ -150,11 +151,27 @@ import {
             <input
               type="text"
               [(ngModel)]="title"
+              (ngModelChange)="onTitleChange($event)"
               name="title"
               required
-              placeholder="e.g. Blinkit Groceries, Wi-Fi"
+              placeholder="e.g. Blinkit Groceries, Wi-Fi, Swiggy dinner"
               class="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 bg-white text-slate-900 placeholder-slate-400 transition-all"
             />
+            <!-- Real-time AI Suggested Category Badge -->
+            <div
+              *ngIf="aiSuggestion() && aiSuggestion()?.matchedKeyword"
+              class="flex items-center space-x-2 pt-0.5"
+            >
+              <div
+                class="inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-lg bg-indigo-50 border border-indigo-200 text-indigo-700 text-xs font-semibold shadow-2xs animate-fade-in"
+              >
+                <span>✨ AI Suggested:</span>
+                <span class="font-bold text-indigo-900">{{ aiSuggestion()?.category }}</span>
+                <span class="text-[10px] text-indigo-500 font-normal">
+                  (Matched "{{ aiSuggestion()?.matchedKeyword }}")
+                </span>
+              </div>
+            </div>
           </div>
 
           <!-- Mandatory Date Input -->
@@ -266,8 +283,27 @@ export class AddExpenseModalComponent {
   loading = signal<boolean>(false);
   errorMessage = signal<string | null>(null);
   conflictData = signal<DuplicateConflictResponse | null>(null);
+  aiSuggestion = signal<AiPrediction | null>(null);
 
-  constructor(public api: ApiService) {}
+  constructor(
+    public api: ApiService,
+    private aiCategoryService: AiCategoryService,
+  ) {}
+
+  onTitleChange(newTitle: string) {
+    if (!newTitle || !newTitle.trim()) {
+      this.aiSuggestion.set(null);
+      return;
+    }
+
+    const prediction = this.aiCategoryService.predict(newTitle);
+    if (prediction && prediction.matchedKeyword) {
+      this.aiSuggestion.set(prediction);
+      this.category = prediction.category;
+    } else {
+      this.aiSuggestion.set(null);
+    }
+  }
 
   submit() {
     if (!this.title || !this.amount || !this.date) return;

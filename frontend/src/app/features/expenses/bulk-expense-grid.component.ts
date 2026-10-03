@@ -2,6 +2,7 @@ import { Component, EventEmitter, OnInit, Output, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../core/services/api.service.js';
+import { AiCategoryService } from '../../core/services/ai-category.service.js';
 import { ExpenseCategory, SplitType } from '@shared-expense-tracker/shared';
 
 export interface GridRow {
@@ -139,7 +140,14 @@ export interface GridRow {
                 <th class="py-2.5 px-2 min-w-[180px]">
                   Description / Title <span class="text-rose-500 font-bold">*</span>
                 </th>
-                <th class="py-2.5 px-2 min-w-[130px]">Category</th>
+                <th class="py-2.5 px-2 min-w-[140px]">
+                  Category
+                  <span
+                    class="text-[10px] text-indigo-600 font-bold"
+                    title="Auto-detects as you type"
+                    >✨ AI</span
+                  >
+                </th>
                 <th class="py-2.5 px-2 min-w-[110px]">
                   Amount (₹) <span class="text-rose-500 font-bold">*</span>
                 </th>
@@ -171,12 +179,13 @@ export interface GridRow {
                   />
                 </td>
 
-                <!-- Title / Description -->
+                <!-- Title / Description with Real-time AI Category Detection -->
                 <td class="py-1.5 px-2">
                   <input
                     type="text"
                     [(ngModel)]="row.title"
-                    placeholder="e.g. Groceries, WiFi"
+                    (ngModelChange)="onRowTitleChange(idx, $event)"
+                    placeholder="e.g. Blinkit, WiFi, Swiggy"
                     class="w-full px-2.5 py-1.5 border border-slate-200 rounded-md text-xs bg-white text-slate-900 placeholder-slate-400 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 font-medium"
                   />
                 </td>
@@ -350,7 +359,18 @@ export class BulkExpenseGridComponent implements OnInit {
   showPasteModal = signal<boolean>(false);
   pasteText = '';
 
-  constructor(public api: ApiService) {}
+  constructor(
+    public api: ApiService,
+    private aiService: AiCategoryService,
+  ) {}
+
+  onRowTitleChange(index: number, newTitle: string) {
+    if (!newTitle || !newTitle.trim()) return;
+    const pred = this.aiService.predict(newTitle);
+    if (pred && pred.matchedKeyword) {
+      this.rows[index].category = pred.category;
+    }
+  }
 
   ngOnInit() {
     // Initialize with 4 blank rows ready to type
@@ -455,7 +475,7 @@ export class BulkExpenseGridComponent implements OnInit {
 
     const parsedRows: GridRow[] = [];
     for (const line of lines) {
-      const parts = line.split('\t').map((p) => p.trim());
+      const parts = line.split('\t').map((p: string) => p.trim());
       if (parts.length === 0 || !parts[0]) continue;
 
       let date = today;

@@ -31,5 +31,5 @@ export function getStorage(): IDataStore {
     storeInstance = new DualSyncStore(turso, sheets);
   }
 
-  return storeInstance;
+  return storeInstance!;
 }

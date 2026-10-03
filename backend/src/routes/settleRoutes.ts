@@ -11,7 +11,8 @@ router.get('/balances', authMiddleware, async (req: AuthRequest, res: Response) 
   if (!groupId) return res.status(400).json({ error: 'groupId query param is required.' });
 
   const db = getStorage();
-  const members = await db.getMembers(groupId);
+  const allMembers = await db.getMembers(groupId);
+  const members = allMembers.filter((m) => (m.status || 'ACTIVE') === 'ACTIVE');
   const expenses = await db.getExpenses(groupId);
   const settlements = await db.getSettlements(groupId);
 

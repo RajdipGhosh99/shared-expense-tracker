@@ -4,10 +4,14 @@ import { Observable, tap } from 'rxjs';
 import {
   Group,
   GroupMember,
+  MemberRole,
+  MemberStatus,
+  UserGroupMembership,
   GroupBalanceSheet,
   Flat,
   FlatMember,
   Expense,
+  ExpenseCategory,
   Settlement,
   FlatBalanceSheet,
   MonthlyStatement,
@@ -33,6 +37,7 @@ export class ApiService {
   token = signal<string | null>(null);
   activeGroup = signal<Group | null>(null);
   activeFlat = this.activeGroup; // Backward compatibility alias
+  userGroups = signal<UserGroupMembership[]>([]);
   members = signal<GroupMember[]>([]);
   expenses = signal<Expense[]>([]);
   balanceSheet = signal<GroupBalanceSheet | null>(null);
@@ -49,6 +54,7 @@ export class ApiService {
     if (savedToken && savedUser) {
       this.token.set(savedToken);
       this.currentUser.set(JSON.parse(savedUser));
+      this.fetchUserGroups().subscribe();
     }
     if (savedGroup) {
       const parsed = JSON.parse(savedGroup);
@@ -93,6 +99,7 @@ export class ApiService {
     this.token.set(null);
     this.currentUser.set(null);
     this.activeGroup.set(null);
+    this.userGroups.set([]);
     this.members.set([]);
     this.expenses.set([]);
     this.balanceSheet.set(null);
@@ -130,6 +137,7 @@ export class ApiService {
       .pipe(
         tap((res) => {
           this.setActiveGroup(res.group);
+          this.fetchUserGroups().subscribe();
         }),
       );
   }
@@ -149,6 +157,7 @@ export class ApiService {
       .pipe(
         tap((res) => {
           this.setActiveGroup(res.group);
+          this.fetchUserGroups().subscribe();
         }),
       );
   }
@@ -190,6 +199,67 @@ export class ApiService {
 
   refreshFlatData(flatId: string) {
     this.refreshGroupData(flatId);
+  }
+
+  fetchUserGroups(): Observable<{ memberships: UserGroupMembership[]; groups: Group[] }> {
+    return this.http
+      .get<{ memberships: UserGroupMembership[]; groups: Group[] }>(`${this.baseUrl}/groups`)
+      .pipe(
+        tap((res) => {
+          this.userGroups.set(res.memberships || []);
+          if (!this.activeGroup() && res.memberships && res.memberships.length > 0) {
+            const active = res.memberships.find((m) => m.status === 'ACTIVE') || res.memberships[0];
+            this.setActiveGroup(active.group);
+          }
+        }),
+      );
+  }
+
+  approveMember(groupId: string, userEmail: string): Observable<any> {
+    return this.http
+      .post(
+        `${this.baseUrl}/groups/${groupId}/members/${encodeURIComponent(userEmail)}/approve`,
+        {},
+      )
+      .pipe(
+        tap(() => {
+          this.refreshGroupData(groupId);
+          this.fetchUserGroups().subscribe();
+        }),
+      );
+  }
+
+  rejectMember(groupId: string, userEmail: string): Observable<any> {
+    return this.http
+      .post(`${this.baseUrl}/groups/${groupId}/members/${encodeURIComponent(userEmail)}/reject`, {})
+      .pipe(
+        tap(() => {
+          this.refreshGroupData(groupId);
+          this.fetchUserGroups().subscribe();
+        }),
+      );
+  }
+
+  updateMemberRole(groupId: string, userEmail: string, role: MemberRole): Observable<any> {
+    return this.http
+      .patch(`${this.baseUrl}/groups/${groupId}/members/${encodeURIComponent(userEmail)}/role`, {
+        role,
+      })
+      .pipe(
+        tap(() => {
+          this.refreshGroupData(groupId);
+          this.fetchUserGroups().subscribe();
+        }),
+      );
+  }
+
+  categorizeWithAi(
+    title: string,
+  ): Observable<{ category: ExpenseCategory; confidence: number; source: string }> {
+    return this.http.post<{ category: ExpenseCategory; confidence: number; source: string }>(
+      `${this.baseUrl}/expenses/ai-categorize`,
+      { title },
+    );
   }
 
   toggleAway(isAway: boolean, awayUntil?: string): Observable<any> {

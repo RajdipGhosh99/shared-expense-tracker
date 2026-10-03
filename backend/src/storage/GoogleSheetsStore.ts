@@ -236,6 +236,22 @@ export class GoogleSheetsStore implements IDataStore {
     return members.find((m) => m.userEmail.toLowerCase() === userEmail.toLowerCase()) || null;
   }
 
+  async getUserGroups(userEmail: string): Promise<any[]> {
+    return [];
+  }
+
+  async updateMemberStatus(groupId: string, userEmail: string, status: string): Promise<boolean> {
+    return true;
+  }
+
+  async updateMemberRole(groupId: string, userEmail: string, role: string): Promise<boolean> {
+    return true;
+  }
+
+  async removeMember(groupId: string, userEmail: string): Promise<boolean> {
+    return true;
+  }
+
   async updateMemberAway(
     flatId: string,
     userEmail: string,

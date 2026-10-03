@@ -33,7 +33,7 @@ test.describe('Authentication & Session Management', () => {
     // Login
     await loginUser(page, email, 'Pass1234!');
     await expect(page).toHaveURL(/\/(onboarding|dashboard)/);
-    await expect(page.locator('body')).toContainText('Welcome, Amit');
+    await expect(page.locator('body')).toContainText('Amit Patel');
   });
 
   test('Navigating to unknown URL shows Page Not Found 404 fallback with return button', async ({
@@ -54,8 +54,9 @@ test.describe('Authentication & Session Management', () => {
     await page.click('button:has-text("Continue with Google")');
 
     // Google modal appears
-    await expect(page.locator('text=Sign in with Google')).toBeVisible();
-    await page.click('button:has-text("Rahul Sharma")');
+    await expect(page.locator('h3:has-text("Sign in with Google")')).toBeVisible();
+    await page.fill('input[name="googleEmail"]', 'alex.tester@gmail.com');
+    await page.click('button:has-text("Sign in with Google Account")');
 
     // Successfully navigates to onboarding or dashboard
     await expect(page).toHaveURL(/\/(onboarding|dashboard)/);

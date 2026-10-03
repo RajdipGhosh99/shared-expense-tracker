@@ -109,6 +109,22 @@ export class DualSyncStore implements IDataStore {
     return this.turso.getMember(groupId, userEmail);
   }
 
+  async getUserGroups(userEmail: string): Promise<any[]> {
+    return this.turso.getUserGroups(userEmail);
+  }
+
+  async updateMemberStatus(groupId: string, userEmail: string, status: string): Promise<boolean> {
+    return this.turso.updateMemberStatus(groupId, userEmail, status);
+  }
+
+  async updateMemberRole(groupId: string, userEmail: string, role: string): Promise<boolean> {
+    return this.turso.updateMemberRole(groupId, userEmail, role);
+  }
+
+  async removeMember(groupId: string, userEmail: string): Promise<boolean> {
+    return this.turso.removeMember(groupId, userEmail);
+  }
+
   async updateMemberAway(
     groupId: string,
     userEmail: string,

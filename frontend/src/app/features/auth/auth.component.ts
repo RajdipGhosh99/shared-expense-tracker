@@ -96,7 +96,7 @@ import { ApiService } from '../../core/services/api.service.js';
             [class.bg-indigo-600]="!isRegister()"
             [class.text-white]="!isRegister()"
             [class.shadow-md]="!isRegister()"
-            class="py-2 text-xs sm:text-sm font-bold rounded-lg text-slate-400 transition-all"
+            class="py-2 text-xs sm:text-sm font-bold rounded-lg text-slate-400 transition-all cursor-pointer"
           >
             Log In
           </button>
@@ -106,7 +106,7 @@ import { ApiService } from '../../core/services/api.service.js';
             [class.bg-indigo-600]="isRegister()"
             [class.text-white]="isRegister()"
             [class.shadow-md]="isRegister()"
-            class="py-2 text-xs sm:text-sm font-bold rounded-lg text-slate-400 transition-all"
+            class="py-2 text-xs sm:text-sm font-bold rounded-lg text-slate-400 transition-all cursor-pointer"
           >
             Sign Up
           </button>
@@ -130,7 +130,7 @@ import { ApiService } from '../../core/services/api.service.js';
               [(ngModel)]="name"
               name="name"
               required
-              placeholder="e.g. Rahul Sharma"
+              placeholder="e.g. Alex Johnson"
               class="w-full px-4 py-3 rounded-xl bg-slate-950/60 border border-slate-700/80 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
             />
           </div>
@@ -142,7 +142,7 @@ import { ApiService } from '../../core/services/api.service.js';
               [(ngModel)]="email"
               name="email"
               required
-              placeholder="rahul@group.com"
+              placeholder="alex@example.com"
               class="w-full px-4 py-3 rounded-xl bg-slate-950/60 border border-slate-700/80 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
             />
           </div>
@@ -168,7 +168,7 @@ import { ApiService } from '../../core/services/api.service.js';
               type="text"
               [(ngModel)]="upiId"
               name="upiId"
-              placeholder="rahul@okaxis"
+              placeholder="alex@okaxis"
               class="w-full px-4 py-3 rounded-xl bg-slate-950/60 border border-slate-700/80 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
             />
           </div>
@@ -187,42 +187,20 @@ import { ApiService } from '../../core/services/api.service.js';
             ></span>
           </button>
         </form>
-
-        <!-- Quick Demo Profiles -->
-        <div class="pt-3 border-t border-slate-700/60 space-y-2.5">
-          <p class="text-[11px] text-center text-slate-400 uppercase tracking-wider font-bold">
-            ⚡ Or Try Instant 1-Tap Demo
-          </p>
-          <div class="grid grid-cols-2 gap-2.5">
-            <button
-              type="button"
-              (click)="quickLogin('rahul@group.com', 'Rahul (Admin)')"
-              class="py-2.5 px-3 bg-slate-800/80 hover:bg-slate-700/80 border border-slate-600/70 rounded-xl text-xs font-bold text-slate-200 transition-all text-center active:scale-95 shadow-xs"
-            >
-              👤 Rahul (Admin)
-            </button>
-            <button
-              type="button"
-              (click)="quickLogin('amit@group.com', 'Amit (Member)')"
-              class="py-2.5 px-3 bg-slate-800/80 hover:bg-slate-700/80 border border-slate-600/70 rounded-xl text-xs font-bold text-slate-200 transition-all text-center active:scale-95 shadow-xs"
-            >
-              👤 Amit (Member)
-            </button>
-          </div>
-        </div>
       </div>
 
       <!-- Google Sign-In Modal Prompt -->
       <div
         *ngIf="showGoogleModal()"
-        class="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-center justify-center p-4"
+        class="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4"
       >
         <div
-          class="bg-white text-slate-900 rounded-3xl max-w-sm w-full p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in-95 duration-150"
+          class="bg-white text-slate-900 rounded-3xl max-w-sm w-full p-6 sm:p-7 shadow-2xl space-y-5 animate-in fade-in zoom-in-95 duration-150 border border-slate-100"
         >
+          <!-- Header -->
           <div class="flex items-center justify-between border-b border-slate-100 pb-3">
-            <div class="flex items-center space-x-2">
-              <svg class="w-5 h-5" viewBox="0 0 24 24">
+            <div class="flex items-center space-x-2.5">
+              <svg class="w-6 h-6 flex-shrink-0" viewBox="0 0 24 24">
                 <path
                   fill="#4285F4"
                   d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -240,78 +218,73 @@ import { ApiService } from '../../core/services/api.service.js';
                   d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
                 />
               </svg>
-              <h3 class="font-bold text-sm text-slate-800">Sign in with Google</h3>
+              <div>
+                <h3 class="font-bold text-sm text-slate-800 leading-tight">Sign in with Google</h3>
+                <p class="text-[10px] text-slate-500">to continue to Expense Tracker</p>
+              </div>
             </div>
             <button
               (click)="showGoogleModal.set(false)"
-              class="text-slate-400 hover:text-slate-600 text-lg font-bold"
+              class="text-slate-400 hover:text-slate-600 text-lg font-bold p-1 cursor-pointer"
             >
               ✕
             </button>
           </div>
 
-          <p class="text-xs text-slate-500">
-            Choose a Google Account to continue to Shared Expense Tracker
-          </p>
-
-          <div class="space-y-2">
-            <!-- Account option 1 -->
-            <button
-              (click)="loginWithGoogleAccount('rahul.google@gmail.com', 'Rahul Sharma')"
-              class="w-full flex items-center space-x-3 p-3 rounded-2xl hover:bg-slate-50 border border-slate-200 transition-all text-left"
-            >
-              <div
-                class="w-10 h-10 rounded-full bg-indigo-600 text-white font-bold flex items-center justify-center text-sm shadow-xs"
-              >
-                R
-              </div>
-              <div class="flex-1 truncate">
-                <p class="text-xs font-bold text-slate-900">Rahul Sharma</p>
-                <p class="text-[11px] text-slate-500 truncate">rahul.google@gmail.com</p>
-              </div>
-              <span class="text-xs text-indigo-600 font-semibold">1-Tap ↗</span>
-            </button>
-
-            <!-- Account option 2 -->
-            <button
-              (click)="loginWithGoogleAccount('priya.google@gmail.com', 'Priya Patel')"
-              class="w-full flex items-center space-x-3 p-3 rounded-2xl hover:bg-slate-50 border border-slate-200 transition-all text-left"
-            >
-              <div
-                class="w-10 h-10 rounded-full bg-purple-600 text-white font-bold flex items-center justify-center text-sm shadow-xs"
-              >
-                P
-              </div>
-              <div class="flex-1 truncate">
-                <p class="text-xs font-bold text-slate-900">Priya Patel</p>
-                <p class="text-[11px] text-slate-500 truncate">priya.google@gmail.com</p>
-              </div>
-              <span class="text-xs text-indigo-600 font-semibold">1-Tap ↗</span>
-            </button>
-          </div>
-
-          <!-- Custom Google Email input -->
-          <div class="pt-2 border-t border-slate-100 space-y-2">
-            <p class="text-[11px] font-semibold text-slate-600">Or use another Google email:</p>
-            <div class="flex space-x-2">
+          <!-- Google Account Form -->
+          <form (ngSubmit)="loginWithGoogle()" class="space-y-3.5">
+            <div class="space-y-1">
+              <label class="text-xs font-bold text-slate-700">Google Account Email</label>
               <input
                 type="email"
-                [(ngModel)]="customGoogleEmail"
+                [(ngModel)]="googleEmail"
+                name="googleEmail"
+                required
                 placeholder="your.name@gmail.com"
-                class="flex-1 px-3 py-2 text-xs border border-slate-300 rounded-xl focus:outline-none focus:border-indigo-500"
+                class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs text-slate-900 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
               />
-              <button
-                (click)="loginWithCustomGoogle()"
-                class="px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl active:scale-95 transition-all"
-              >
-                Sign In
-              </button>
             </div>
-          </div>
 
-          <div class="text-[10px] text-slate-400 text-center">
-            Secured with 30-day session token. Google OAuth simulated flow.
-          </div>
+            <div class="space-y-1">
+              <label class="text-xs font-bold text-slate-700">Full Name</label>
+              <input
+                type="text"
+                [(ngModel)]="googleName"
+                name="googleName"
+                placeholder="e.g. Alex Johnson"
+                class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs text-slate-900 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+              />
+            </div>
+
+            <div class="space-y-1">
+              <label class="text-xs font-bold text-slate-700 flex justify-between">
+                <span>UPI ID</span>
+                <span class="text-[10px] text-slate-400 font-normal">Optional</span>
+              </label>
+              <input
+                type="text"
+                [(ngModel)]="googleUpi"
+                name="googleUpi"
+                placeholder="yourname@okaxis"
+                class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs text-slate-900 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+              />
+            </div>
+
+            <button
+              type="submit"
+              [disabled]="loading() || !googleEmail.trim()"
+              class="w-full py-3 bg-slate-900 hover:bg-slate-800 disabled:opacity-50 text-white font-bold rounded-xl shadow-md transition-all text-xs flex items-center justify-center space-x-2 cursor-pointer"
+            >
+              <span>Sign in with Google Account</span>
+            </button>
+          </form>
+
+          <p
+            class="text-[10px] text-slate-400 text-center flex items-center justify-center space-x-1"
+          >
+            <span>🔒</span>
+            <span>Secured via Google Identity Protocol</span>
+          </p>
         </div>
       </div>
     </div>
@@ -327,7 +300,10 @@ export class AuthComponent {
   email = '';
   password = '';
   upiId = '';
-  customGoogleEmail = '';
+
+  googleEmail = '';
+  googleName = '';
+  googleUpi = '';
 
   constructor(
     private api: ApiService,
@@ -338,37 +314,37 @@ export class AuthComponent {
     this.showGoogleModal.set(true);
   }
 
-  loginWithGoogleAccount(googleEmail: string, googleName: string) {
-    this.showGoogleModal.set(false);
+  loginWithGoogle() {
+    if (!this.googleEmail.trim()) {
+      this.errorMessage.set('Please enter your Google account email.');
+      return;
+    }
+
     this.loading.set(true);
     this.errorMessage.set(null);
 
+    const name =
+      this.googleName.trim() ||
+      this.googleEmail.split('@')[0].charAt(0).toUpperCase() +
+        this.googleEmail.split('@')[0].slice(1);
+
     this.api
       .loginWithGoogle({
-        email: googleEmail,
-        name: googleName,
+        email: this.googleEmail.trim(),
+        name,
+        upiId: this.googleUpi.trim() || undefined,
       })
       .subscribe({
         next: () => {
           this.loading.set(false);
-          if (this.api.activeGroup()) {
-            this.router.navigate(['/dashboard']);
-          } else {
-            this.router.navigate(['/onboarding']);
-          }
+          this.showGoogleModal.set(false);
+          this.handlePostAuthNavigation();
         },
         error: (err) => {
           this.loading.set(false);
           this.errorMessage.set(err.error?.error || 'Google authentication failed.');
         },
       });
-  }
-
-  loginWithCustomGoogle() {
-    if (!this.customGoogleEmail) return;
-    const name = this.customGoogleEmail.split('@')[0];
-    const capitalized = name.charAt(0).toUpperCase() + name.slice(1);
-    this.loginWithGoogleAccount(this.customGoogleEmail, capitalized);
   }
 
   submit() {
@@ -387,11 +363,7 @@ export class AuthComponent {
     obs.subscribe({
       next: () => {
         this.loading.set(false);
-        if (this.api.activeGroup()) {
-          this.router.navigate(['/dashboard']);
-        } else {
-          this.router.navigate(['/onboarding']);
-        }
+        this.handlePostAuthNavigation();
       },
       error: (err) => {
         this.loading.set(false);
@@ -400,9 +372,18 @@ export class AuthComponent {
     });
   }
 
-  quickLogin(email: string, name: string) {
-    this.api.login({ email }).subscribe({
-      next: () => {
+  private handlePostAuthNavigation() {
+    this.api.fetchUserGroups().subscribe({
+      next: (res) => {
+        if (res.memberships && res.memberships.length > 0) {
+          const active = res.memberships.find((m) => m.status === 'ACTIVE') || res.memberships[0];
+          this.api.setActiveGroup(active.group);
+          this.router.navigate(['/dashboard']);
+        } else {
+          this.router.navigate(['/onboarding']);
+        }
+      },
+      error: () => {
         if (this.api.activeGroup()) {
           this.router.navigate(['/dashboard']);
         } else {

@@ -2,6 +2,7 @@
 // User & Member Models
 // ==========================================
 export type MemberRole = 'ADMIN' | 'MEMBER';
+export type MemberStatus = 'ACTIVE' | 'PENDING' | 'REJECTED';
 
 export interface User {
   id: string;
@@ -20,8 +21,17 @@ export interface GroupMember {
   name: string;
   upiId?: string;
   role: MemberRole;
+  status?: MemberStatus; // 'ACTIVE' | 'PENDING' | 'REJECTED'
   isAway?: boolean; // Vacation / Absence mode
   awayUntil?: string;
+  joinedAt: string;
+}
+
+export interface UserGroupMembership {
+  group: Group;
+  flat: Group;
+  role: MemberRole;
+  status: MemberStatus;
   joinedAt: string;
 }
 

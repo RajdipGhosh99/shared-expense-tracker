@@ -25,10 +25,14 @@ export interface IDataStore {
   getAllFlats(): Promise<Flat[]>;
   updateFlatSync(flatId: string, googleSheetSync: boolean): Promise<boolean>;
 
-  // Members
+  // Members & Roles
   addMember(member: GroupMember): Promise<GroupMember>;
   getMembers(groupId: string): Promise<GroupMember[]>;
   getMember(groupId: string, userEmail: string): Promise<GroupMember | null>;
+  getUserGroups(userEmail: string): Promise<any[]>;
+  updateMemberStatus(groupId: string, userEmail: string, status: string): Promise<boolean>;
+  updateMemberRole(groupId: string, userEmail: string, role: string): Promise<boolean>;
+  removeMember(groupId: string, userEmail: string): Promise<boolean>;
   updateMemberAway(
     groupId: string,
     userEmail: string,

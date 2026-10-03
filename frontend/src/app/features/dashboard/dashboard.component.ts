@@ -1,14 +1,16 @@
-import { Component, signal, computed } from '@angular/core';
+import { Component, signal, computed, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ApiService } from '../../core/services/api.service.js';
 import { AddExpenseModalComponent } from '../expenses/add-expense-modal.component.js';
 import { BulkExpenseGridComponent } from '../expenses/bulk-expense-grid.component.js';
+import { Group } from '@shared-expense-tracker/shared';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, AddExpenseModalComponent, BulkExpenseGridComponent],
+  imports: [CommonModule, FormsModule, AddExpenseModalComponent, BulkExpenseGridComponent],
   template: `
     <!-- Mobile & Desktop Responsive App Container (Standard Mature Theme) -->
     <div
@@ -18,11 +20,13 @@ import { BulkExpenseGridComponent } from '../expenses/bulk-expense-grid.componen
       <header
         class="bg-white border-b border-slate-200 sticky top-0 z-30 px-4 py-3 pt-safe shadow-xs"
       >
-        <div class="flex items-center justify-between">
-          <!-- Group Brand & Invite Code Chip -->
+        <div class="flex items-center justify-between relative">
+          <!-- Group Brand & Dropdown Switcher -->
           <div class="flex items-center space-x-3">
             <div
-              class="w-9 h-9 rounded-xl bg-slate-900 text-white flex items-center justify-center font-bold shadow-xs flex-shrink-0"
+              (click)="showGroupMenu.set(!showGroupMenu())"
+              class="w-9 h-9 rounded-xl bg-slate-900 hover:bg-slate-800 text-white flex items-center justify-center font-bold shadow-xs flex-shrink-0 cursor-pointer transition-colors"
+              title="Switch Group"
             >
               <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path
@@ -34,19 +38,25 @@ import { BulkExpenseGridComponent } from '../expenses/bulk-expense-grid.componen
               </svg>
             </div>
             <div>
-              <div class="flex items-center space-x-2">
+              <div
+                (click)="showGroupMenu.set(!showGroupMenu())"
+                class="flex items-center space-x-1.5 cursor-pointer group select-none"
+              >
                 <h1
-                  class="text-sm font-bold text-slate-900 leading-tight truncate max-w-[160px] sm:max-w-[220px]"
+                  class="text-sm font-bold text-slate-900 group-hover:text-indigo-600 leading-tight truncate max-w-[140px] sm:max-w-[200px] transition-colors"
                 >
                   {{ api.activeGroup()?.name || 'My Group' }}
                 </h1>
+                <span class="text-xs text-slate-400 group-hover:text-indigo-600 transition-colors"
+                  >▾</span
+                >
                 <!-- Google Sheet Sync Status -->
                 <span
-                  class="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200"
+                  class="hidden sm:inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200"
                   title="Changes mirror automatically to Google Sheets"
                 >
                   <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1 animate-pulse"></span>
-                  Sheets Synced
+                  Synced
                 </span>
               </div>
               <div class="flex items-center space-x-1.5 text-[11px] text-slate-500 mt-0.5">
@@ -89,11 +99,151 @@ import { BulkExpenseGridComponent } from '../expenses/bulk-expense-grid.componen
               {{ api.currentUser()?.name?.charAt(0) || 'U' }}
             </div>
           </div>
+
+          <!-- Group Switcher Dropdown Menu -->
+          <div
+            *ngIf="showGroupMenu()"
+            class="absolute top-12 left-0 z-50 w-72 bg-white rounded-2xl shadow-2xl border border-slate-200 p-2 space-y-1.5 animate-in fade-in zoom-in-95 duration-100"
+          >
+            <div
+              class="px-2.5 py-1.5 flex items-center justify-between text-[11px] font-bold text-slate-400 uppercase tracking-wider border-b border-slate-100"
+            >
+              <span>Your Groups ({{ api.userGroups().length }})</span>
+              <button
+                (click)="showGroupMenu.set(false)"
+                class="text-slate-400 hover:text-slate-700 text-xs font-bold p-1 cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            <!-- Group list -->
+            <div class="max-h-56 overflow-y-auto space-y-1">
+              <div
+                *ngFor="let ug of api.userGroups()"
+                (click)="switchGroup(ug.group)"
+                class="w-full text-left p-2.5 rounded-xl hover:bg-slate-50 transition-all flex items-center justify-between cursor-pointer border"
+                [class.bg-indigo-50]="api.activeGroup()?.id === ug.group.id"
+                [class.border-indigo-200]="api.activeGroup()?.id === ug.group.id"
+                [class.border-transparent]="api.activeGroup()?.id !== ug.group.id"
+              >
+                <div class="truncate mr-2">
+                  <div class="flex items-center space-x-1.5">
+                    <span class="text-xs font-bold text-slate-900 truncate">{{
+                      ug.group.name
+                    }}</span>
+                    <span
+                      *ngIf="ug.role === 'ADMIN'"
+                      class="px-1.5 py-0.2 bg-amber-50 text-amber-700 border border-amber-200 text-[9px] font-extrabold rounded"
+                    >
+                      Admin
+                    </span>
+                    <span
+                      *ngIf="ug.status === 'PENDING'"
+                      class="px-1.5 py-0.2 bg-rose-50 text-rose-700 border border-rose-200 text-[9px] font-bold rounded"
+                    >
+                      Pending
+                    </span>
+                  </div>
+                  <p class="text-[10px] text-slate-400 font-mono mt-0.5">
+                    Code: {{ ug.group.inviteCode }}
+                  </p>
+                </div>
+                <span
+                  *ngIf="api.activeGroup()?.id === ug.group.id"
+                  class="text-indigo-600 font-bold text-sm"
+                  >✓</span
+                >
+              </div>
+            </div>
+
+            <!-- Quick group actions -->
+            <div class="pt-1.5 border-t border-slate-100 space-y-1">
+              <button
+                (click)="showGroupMenu.set(false); showCreateModal.set(true)"
+                class="w-full py-2 px-3 text-left text-xs font-bold text-indigo-600 hover:bg-indigo-50 rounded-xl transition-colors flex items-center space-x-2 cursor-pointer"
+              >
+                <span>＋</span>
+                <span>Create New Group</span>
+              </button>
+              <button
+                (click)="showGroupMenu.set(false); showJoinModal.set(true)"
+                class="w-full py-2 px-3 text-left text-xs font-bold text-emerald-600 hover:bg-emerald-50 rounded-xl transition-colors flex items-center space-x-2 cursor-pointer"
+              >
+                <span>🔗</span>
+                <span>Join Another Group</span>
+              </button>
+            </div>
+          </div>
         </div>
       </header>
 
       <!-- Scrollable Body -->
       <main class="flex-1 p-4 space-y-4 pb-28 overflow-y-auto">
+        <!-- ADMIN PENDING APPROVALS ALERT BANNER -->
+        <div
+          *ngIf="isAdmin() && pendingMembers().length > 0"
+          class="bg-amber-50 border border-amber-300 p-4 rounded-2xl shadow-xs space-y-3"
+        >
+          <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-2 text-amber-900">
+              <span class="text-base">🔔</span>
+              <span class="text-xs font-extrabold uppercase tracking-wide">
+                Join Requests ({{ pendingMembers().length }} Pending Approval)
+              </span>
+            </div>
+            <span
+              class="text-[10px] font-bold bg-amber-200 text-amber-900 px-2 py-0.5 rounded-full"
+            >
+              Admin Action
+            </span>
+          </div>
+
+          <div class="space-y-2">
+            <div
+              *ngFor="let pm of pendingMembers()"
+              class="bg-white p-3 rounded-xl border border-amber-200 flex items-center justify-between shadow-2xs"
+            >
+              <div class="truncate mr-2">
+                <p class="text-xs font-bold text-slate-900 truncate">{{ pm.name }}</p>
+                <p class="text-[11px] text-slate-500 font-mono truncate">{{ pm.userEmail }}</p>
+              </div>
+              <div class="flex items-center space-x-1.5 flex-shrink-0">
+                <button
+                  (click)="approve(pm.userEmail)"
+                  class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white text-xs font-bold rounded-lg shadow-2xs cursor-pointer transition-all"
+                >
+                  ✓ Approve
+                </button>
+                <button
+                  (click)="reject(pm.userEmail)"
+                  class="px-2.5 py-1 bg-rose-50 hover:bg-rose-100 active:scale-95 text-rose-700 border border-rose-200 text-xs font-bold rounded-lg cursor-pointer transition-all"
+                >
+                  ✕ Reject
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- PENDING MEMBERSHIP WARNING (If logged-in user is pending) -->
+        <div
+          *ngIf="isCurrentMemberPending()"
+          class="bg-amber-500/10 border border-amber-300 p-4 rounded-2xl shadow-xs space-y-1.5 text-amber-950"
+        >
+          <div class="flex items-center space-x-2">
+            <span class="text-base">⏳</span>
+            <h4 class="text-xs font-bold uppercase tracking-wider text-amber-900">
+              Membership Pending Approval
+            </h4>
+          </div>
+          <p class="text-xs text-amber-800 leading-relaxed">
+            You joined <strong>{{ api.activeGroup()?.name }}</strong> via invite code. A group Admin
+            must approve your join request before you can log bills or participate in expense
+            splits.
+          </p>
+        </div>
+
         <!-- Month-End Settlement Banner -->
         <div
           class="bg-amber-50 border border-amber-200/80 text-amber-900 p-3.5 rounded-2xl shadow-xs flex items-center justify-between"
@@ -221,7 +371,7 @@ import { BulkExpenseGridComponent } from '../expenses/bulk-expense-grid.componen
 
           <!-- Action: Single Add Bill -->
           <button
-            (click)="showAddModal.set(true)"
+            (click)="openAddBill()"
             class="p-3 bg-white hover:bg-slate-50 border border-slate-200 rounded-2xl flex flex-col items-center justify-center space-y-1.5 shadow-xs active:scale-95 transition-all cursor-pointer group"
           >
             <div
@@ -234,7 +384,7 @@ import { BulkExpenseGridComponent } from '../expenses/bulk-expense-grid.componen
 
           <!-- Action: Multiple Entry (Google Sheet Mode) -->
           <button
-            (click)="showBulkModal.set(true)"
+            (click)="openSheetEntry()"
             class="p-3 bg-emerald-50/80 hover:bg-emerald-100/70 border border-emerald-200 rounded-2xl flex flex-col items-center justify-center space-y-1.5 shadow-xs active:scale-95 transition-all cursor-pointer group"
             title="Add multiple expenses at once in a spreadsheet table"
           >
@@ -352,6 +502,103 @@ import { BulkExpenseGridComponent } from '../expenses/bulk-expense-grid.componen
           </div>
         </div>
 
+        <!-- GROUP MEMBERS & ADMIN MANAGEMENT -->
+        <div class="bg-white p-4.5 rounded-2xl border border-slate-200 shadow-xs space-y-3">
+          <div class="flex justify-between items-center">
+            <h3
+              class="font-bold text-slate-800 text-xs uppercase tracking-wider flex items-center space-x-1.5"
+            >
+              <span>👥</span>
+              <span>Group Members ({{ activeMembers().length }})</span>
+            </h3>
+            <span
+              *ngIf="isAdmin()"
+              class="text-[10px] font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded-full"
+            >
+              👑 You are Admin
+            </span>
+          </div>
+
+          <div class="divide-y divide-slate-100">
+            <div *ngFor="let m of api.members()" class="py-2.5 flex items-center justify-between">
+              <div class="flex items-center space-x-2.5 truncate mr-2">
+                <div
+                  class="w-8 h-8 rounded-full bg-slate-100 border border-slate-200 text-slate-700 font-bold text-xs flex items-center justify-center flex-shrink-0"
+                >
+                  {{ m.name.charAt(0).toUpperCase() }}
+                </div>
+                <div class="truncate">
+                  <div class="flex items-center space-x-1.5">
+                    <p class="text-xs font-bold text-slate-900 truncate">{{ m.name }}</p>
+                    <span
+                      *ngIf="m.role === 'ADMIN'"
+                      class="px-1.5 py-0.2 bg-amber-50 text-amber-700 border border-amber-200 text-[9px] font-extrabold rounded"
+                    >
+                      Admin
+                    </span>
+                    <span
+                      *ngIf="m.status === 'PENDING'"
+                      class="px-1.5 py-0.2 bg-rose-50 text-rose-700 border border-rose-200 text-[9px] font-bold rounded"
+                    >
+                      Pending
+                    </span>
+                    <span
+                      *ngIf="m.isAway"
+                      class="px-1.5 py-0.2 bg-slate-100 text-slate-600 text-[9px] font-medium rounded"
+                    >
+                      Away
+                    </span>
+                  </div>
+                  <p class="text-[10px] text-slate-400 font-mono truncate">{{ m.userEmail }}</p>
+                </div>
+              </div>
+
+              <!-- Admin controls on members -->
+              <div class="flex items-center space-x-1.5 flex-shrink-0">
+                <!-- If member is pending and caller is admin -->
+                <ng-container *ngIf="isAdmin() && m.status === 'PENDING'">
+                  <button
+                    (click)="approve(m.userEmail)"
+                    class="px-2 py-1 bg-emerald-600 text-white text-[11px] font-bold rounded-lg hover:bg-emerald-700 cursor-pointer shadow-2xs"
+                  >
+                    ✓ Approve
+                  </button>
+                  <button
+                    (click)="reject(m.userEmail)"
+                    class="px-2 py-1 bg-rose-50 text-rose-700 border border-rose-200 text-[11px] font-bold rounded-lg hover:bg-rose-100 cursor-pointer"
+                  >
+                    ✕ Reject
+                  </button>
+                </ng-container>
+
+                <!-- If member is active and caller is admin: promote/demote -->
+                <ng-container
+                  *ngIf="
+                    isAdmin() && m.status !== 'PENDING' && m.userEmail !== api.currentUser()?.email
+                  "
+                >
+                  <button
+                    *ngIf="m.role === 'MEMBER'"
+                    (click)="setRole(m.userEmail, 'ADMIN')"
+                    class="px-2 py-1 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 text-indigo-700 text-[10px] font-bold rounded-lg cursor-pointer transition-colors"
+                    title="Make this member an Admin"
+                  >
+                    👑 Make Admin
+                  </button>
+                  <button
+                    *ngIf="m.role === 'ADMIN'"
+                    (click)="setRole(m.userEmail, 'MEMBER')"
+                    class="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-600 text-[10px] font-medium rounded-lg cursor-pointer transition-colors"
+                    title="Demote to standard Member"
+                  >
+                    Make Member
+                  </button>
+                </ng-container>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- RECENT GROUP EXPENSES FEED -->
         <div class="bg-white p-4.5 rounded-2xl border border-slate-200 shadow-xs space-y-3">
           <div class="flex justify-between items-center">
@@ -438,7 +685,7 @@ import { BulkExpenseGridComponent } from '../expenses/bulk-expense-grid.componen
 
         <!-- Center Prominent ADD EXPENSE Floating Button -->
         <button
-          (click)="showAddModal.set(true)"
+          (click)="openAddBill()"
           class="-mt-5 w-12 h-12 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white flex items-center justify-center text-2xl font-bold shadow-md active:scale-95 transition-transform cursor-pointer"
         >
           ＋
@@ -446,7 +693,7 @@ import { BulkExpenseGridComponent } from '../expenses/bulk-expense-grid.componen
 
         <!-- Multiple Entry (Sheet View) Tab -->
         <button
-          (click)="showBulkModal.set(true)"
+          (click)="openSheetEntry()"
           class="flex flex-col items-center justify-center text-emerald-700 hover:text-emerald-800 active:scale-90 transition-transform cursor-pointer"
         >
           <span class="text-lg">📊</span>
@@ -475,13 +722,169 @@ import { BulkExpenseGridComponent } from '../expenses/bulk-expense-grid.componen
         *ngIf="showBulkModal()"
         (close)="showBulkModal.set(false)"
       ></app-bulk-expense-grid>
+
+      <!-- Create Group Modal -->
+      <div
+        *ngIf="showCreateModal()"
+        class="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-center justify-center p-4"
+      >
+        <div
+          class="bg-white rounded-3xl max-w-sm w-full p-6 space-y-4 shadow-2xl border border-slate-200"
+        >
+          <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+            <h3 class="font-bold text-sm text-slate-900">Create New Group</h3>
+            <button
+              (click)="showCreateModal.set(false)"
+              class="text-slate-400 hover:text-slate-700 text-base font-bold cursor-pointer"
+            >
+              ✕
+            </button>
+          </div>
+
+          <div
+            *ngIf="modalError()"
+            class="p-2.5 bg-rose-50 border border-rose-200 text-rose-700 text-xs rounded-xl"
+          >
+            {{ modalError() }}
+          </div>
+
+          <form (ngSubmit)="createGroupSubmit()" class="space-y-3">
+            <div class="space-y-1">
+              <label class="text-xs font-bold text-slate-700">Group Name</label>
+              <input
+                type="text"
+                [(ngModel)]="newGroupName"
+                name="newGroupName"
+                required
+                placeholder="e.g. Palm Springs 402"
+                class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs focus:outline-none focus:border-indigo-500"
+              />
+            </div>
+
+            <div class="space-y-1">
+              <label class="text-xs font-bold text-slate-700">Currency</label>
+              <select
+                [(ngModel)]="newGroupCurrency"
+                name="newGroupCurrency"
+                class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs focus:outline-none focus:border-indigo-500"
+              >
+                <option value="INR">₹ INR</option>
+                <option value="USD">$ USD</option>
+                <option value="EUR">€ EUR</option>
+              </select>
+            </div>
+
+            <button
+              type="submit"
+              [disabled]="modalLoading() || !newGroupName.trim()"
+              class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-bold rounded-xl text-xs transition-all cursor-pointer shadow-xs"
+            >
+              {{ modalLoading() ? 'Creating...' : 'Create Group (You will be Admin)' }}
+            </button>
+          </form>
+        </div>
+      </div>
+
+      <!-- Join Group Modal -->
+      <div
+        *ngIf="showJoinModal()"
+        class="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-center justify-center p-4"
+      >
+        <div
+          class="bg-white rounded-3xl max-w-sm w-full p-6 space-y-4 shadow-2xl border border-slate-200"
+        >
+          <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+            <h3 class="font-bold text-sm text-slate-900">Join Another Group</h3>
+            <button
+              (click)="showJoinModal.set(false)"
+              class="text-slate-400 hover:text-slate-700 text-base font-bold cursor-pointer"
+            >
+              ✕
+            </button>
+          </div>
+
+          <div
+            *ngIf="modalError()"
+            class="p-2.5 bg-rose-50 border border-rose-200 text-rose-700 text-xs rounded-xl"
+          >
+            {{ modalError() }}
+          </div>
+
+          <div
+            *ngIf="modalSuccess()"
+            class="p-2.5 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs rounded-xl"
+          >
+            {{ modalSuccess() }}
+          </div>
+
+          <form (ngSubmit)="joinGroupSubmit()" class="space-y-3">
+            <div class="space-y-1">
+              <label class="text-xs font-bold text-slate-700">6-Character Invite Code</label>
+              <input
+                type="text"
+                [(ngModel)]="joinInviteCode"
+                name="joinInviteCode"
+                required
+                placeholder="e.g. PAL4X9"
+                class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 font-mono text-center tracking-widest uppercase text-base text-slate-900 focus:outline-none focus:border-indigo-500"
+              />
+              <p class="text-[10px] text-slate-500">
+                Note: Group Admin must approve your join request before you can split bills.
+              </p>
+            </div>
+
+            <button
+              type="submit"
+              [disabled]="modalLoading() || !joinInviteCode.trim()"
+              class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-bold rounded-xl text-xs transition-all cursor-pointer shadow-xs"
+            >
+              {{ modalLoading() ? 'Joining...' : 'Send Join Request' }}
+            </button>
+          </form>
+        </div>
+      </div>
     </div>
   `,
 })
-export class DashboardComponent {
+export class DashboardComponent implements OnInit {
   showAddModal = signal<boolean>(false);
   showBulkModal = signal<boolean>(false);
   copiedCode = signal<boolean>(false);
+
+  showGroupMenu = signal<boolean>(false);
+  showCreateModal = signal<boolean>(false);
+  showJoinModal = signal<boolean>(false);
+
+  newGroupName = '';
+  newGroupCurrency = 'INR';
+  joinInviteCode = '';
+  modalLoading = signal<boolean>(false);
+  modalError = signal<string | null>(null);
+  modalSuccess = signal<string | null>(null);
+
+  isAdmin = computed(() => {
+    const user = this.api.currentUser();
+    const mem = this.api
+      .members()
+      .find((m) => m.userEmail.toLowerCase() === user?.email.toLowerCase());
+    return mem?.role === 'ADMIN';
+  });
+
+  isCurrentMemberPending = computed(() => {
+    const user = this.api.currentUser();
+    const mem = this.api
+      .members()
+      .find((m) => m.userEmail.toLowerCase() === user?.email.toLowerCase());
+    return mem?.status === 'PENDING';
+  });
+
+  pendingMembers = computed(() => {
+    return this.api.members().filter((m) => m.status === 'PENDING');
+  });
+
+  activeMembers = computed(() => {
+    return this.api.members().filter((m) => m.status !== 'PENDING');
+  });
 
   myNetBalance = computed(() => {
     const user = this.api.currentUser();
@@ -504,7 +907,9 @@ export class DashboardComponent {
 
   isAway = computed(() => {
     const user = this.api.currentUser();
-    const member = this.api.members().find((m) => m.userEmail === user?.email);
+    const member = this.api
+      .members()
+      .find((m) => m.userEmail.toLowerCase() === user?.email.toLowerCase());
     return member?.isAway || false;
   });
 
@@ -512,6 +917,109 @@ export class DashboardComponent {
     public api: ApiService,
     public router: Router,
   ) {}
+
+  ngOnInit() {
+    this.api.fetchUserGroups().subscribe();
+  }
+
+  switchGroup(group: Group) {
+    this.api.setActiveGroup(group);
+    this.showGroupMenu.set(false);
+  }
+
+  openAddBill() {
+    if (this.isCurrentMemberPending()) {
+      alert('Your join request is awaiting Admin approval. You cannot add bills until approved.');
+      return;
+    }
+    this.showAddModal.set(true);
+  }
+
+  openSheetEntry() {
+    if (this.isCurrentMemberPending()) {
+      alert('Your join request is awaiting Admin approval. You cannot add bills until approved.');
+      return;
+    }
+    this.showBulkModal.set(true);
+  }
+
+  approve(email: string) {
+    const grp = this.api.activeGroup();
+    if (!grp) return;
+    this.api.approveMember(grp.id, email).subscribe({
+      next: () => {
+        this.api.refreshGroupData(grp.id);
+      },
+    });
+  }
+
+  reject(email: string) {
+    const grp = this.api.activeGroup();
+    if (!grp) return;
+    if (confirm(`Reject membership request for ${email}?`)) {
+      this.api.rejectMember(grp.id, email).subscribe({
+        next: () => {
+          this.api.refreshGroupData(grp.id);
+        },
+      });
+    }
+  }
+
+  setRole(email: string, role: 'ADMIN' | 'MEMBER') {
+    const grp = this.api.activeGroup();
+    if (!grp) return;
+    this.api.updateMemberRole(grp.id, email, role).subscribe({
+      next: () => {
+        this.api.refreshGroupData(grp.id);
+      },
+    });
+  }
+
+  createGroupSubmit() {
+    if (!this.newGroupName.trim()) return;
+    this.modalLoading.set(true);
+    this.modalError.set(null);
+
+    this.api.createGroup(this.newGroupName.trim(), this.newGroupCurrency).subscribe({
+      next: () => {
+        this.modalLoading.set(false);
+        this.showCreateModal.set(false);
+        this.newGroupName = '';
+      },
+      error: (err) => {
+        this.modalLoading.set(false);
+        this.modalError.set(err.error?.error || 'Failed to create group');
+      },
+    });
+  }
+
+  joinGroupSubmit() {
+    if (!this.joinInviteCode.trim()) return;
+    this.modalLoading.set(true);
+    this.modalError.set(null);
+    this.modalSuccess.set(null);
+
+    this.api.joinGroup(this.joinInviteCode.trim()).subscribe({
+      next: (res: any) => {
+        this.modalLoading.set(false);
+        if (res.pendingApproval) {
+          this.modalSuccess.set(res.message);
+          setTimeout(() => {
+            this.showJoinModal.set(false);
+            this.joinInviteCode = '';
+            this.modalSuccess.set(null);
+          }, 1800);
+        } else {
+          this.showJoinModal.set(false);
+          this.joinInviteCode = '';
+        }
+      },
+      error: (err) => {
+        this.modalLoading.set(false);
+        this.modalError.set(err.error?.error || 'Failed to join group. Check code.');
+      },
+    });
+  }
 
   copyCode() {
     const code = this.api.activeGroup()?.inviteCode;

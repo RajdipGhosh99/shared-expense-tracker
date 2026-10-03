@@ -46,6 +46,13 @@ test.describe('Vacation Mode, Settlements & Month-End Statements', () => {
     await page2.click('button:has-text("Join Group")');
     await expect(page2).toHaveURL(/\/dashboard/);
 
+    // Member 1 (Admin) approves Member 2's join request
+    await page1.reload({ waitUntil: 'networkidle' });
+    const approveBtn = page1.locator('button:has-text("✓ Approve")').first();
+    await expect(approveBtn).toBeVisible();
+    await approveBtn.click();
+    await expect(page1.locator('button:has-text("✓ Approve")')).toHaveCount(0);
+
     // Member 1 logs ₹1000 bill split equally
     await page1.click('button:has-text("＋")');
     await page1.fill('input[name="amount"]', '1000.00');

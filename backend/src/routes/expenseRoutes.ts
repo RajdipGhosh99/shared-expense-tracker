@@ -2,6 +2,7 @@ import { Router, Response } from 'express';
 import { getStorage } from '../storage/index.js';
 import { authMiddleware, AuthRequest } from '../middleware/authMiddleware.js';
 import { DuplicateValidator } from '../validators/duplicateValidator.js';
+import { AiCategoryService } from '../services/aiCategoryService.js';
 import {
   Expense,
   calculateSplits,
@@ -63,7 +64,8 @@ router.post('/', authMiddleware, async (req: AuthRequest, res: Response) => {
   }
 
   // 2. Calculate Splits
-  const members = await db.getMembers(groupId);
+  const allMembers = await db.getMembers(groupId);
+  const members = allMembers.filter((m) => (m.status || 'ACTIVE') === 'ACTIVE');
   const memberEmails = members.map((m) => m.userEmail);
   const absentEmails = members.filter((m) => m.isAway).map((m) => m.userEmail);
 
@@ -152,7 +154,8 @@ router.post('/batch', authMiddleware, async (req: AuthRequest, res: Response) =>
     return res.status(400).json({ error: 'Group ID and non-empty items array are required.' });
   }
 
-  const members = await db.getMembers(groupId);
+  const allMembers = await db.getMembers(groupId);
+  const members = allMembers.filter((m) => (m.status || 'ACTIVE') === 'ACTIVE');
   const memberEmails = members.map((m) => m.userEmail);
   const absentEmails = members.filter((m) => m.isAway).map((m) => m.userEmail);
 
@@ -238,6 +241,16 @@ router.delete('/:id', authMiddleware, async (req: AuthRequest, res: Response) =>
   const id = req.params.id as string;
   const deleted = await db.deleteExpense(id);
   return res.json({ success: deleted });
+});
+
+// AI Expense Categorization
+router.post('/ai-categorize', authMiddleware, async (req: AuthRequest, res: Response) => {
+  const { title } = req.body;
+  if (!title || typeof title !== 'string') {
+    return res.status(400).json({ error: 'Title is required' });
+  }
+  const prediction = await AiCategoryService.predictCategory(title);
+  return res.json(prediction);
 });
 
 export default router;
