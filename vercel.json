@@ -4,12 +4,14 @@
     "backend": {
       "root": "backend",
       "framework": "express",
-      "entrypoint": "server.mjs"
+      "entrypoint": "server.mjs",
+      "buildCommand": "npm run build"
     },
     "frontend": {
       "root": "frontend",
       "framework": "angular",
-      "outputDirectory": "dist/frontend/browser"
+      "outputDirectory": "dist/frontend/browser",
+      "buildCommand": "npm run build"
     }
   },
   "rewrites": [
