@@ -276,9 +276,22 @@ export class ApiService {
             this.members.set([]);
             this.expenses.set([]);
             this.balanceSheet.set(null);
-          } else if (!this.activeGroup()) {
-            const active = res.memberships.find((m) => m.status === 'ACTIVE') || res.memberships[0];
-            this.setActiveGroup(active.group);
+          } else {
+            const currentActive = this.activeGroup();
+            const matched = currentActive
+              ? res.memberships.find((m) => m.group.id === currentActive.id)
+              : null;
+            if (matched) {
+              // Update activeGroup with latest properties (e.g. formControls, name, currency, status)
+              this.activeGroup.set(matched.group);
+              localStorage.setItem('group_active', JSON.stringify(matched.group));
+              this.refreshGroupData(matched.group.id);
+            } else {
+              // Either no active group set or current active group is no longer accessible
+              const defaultActive =
+                res.memberships.find((m) => m.status === 'ACTIVE') || res.memberships[0];
+              this.setActiveGroup(defaultActive.group);
+            }
           }
         }),
       );

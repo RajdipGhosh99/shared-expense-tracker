@@ -1787,8 +1787,14 @@ export class DashboardComponent implements OnInit {
           return;
         }
         const active = this.api.activeGroup();
-        if (active?.formControls) {
-          this.formControlsConfig = { ...active.formControls };
+        if (active) {
+          if (active.formControls) {
+            this.formControlsConfig = { ...active.formControls };
+          }
+          // If members haven't loaded yet, guarantee group data refresh
+          if (this.api.members().length === 0) {
+            this.api.refreshGroupData(active.id);
+          }
         }
       },
     });
