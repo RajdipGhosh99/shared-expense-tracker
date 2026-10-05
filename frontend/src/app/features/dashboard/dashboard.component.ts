@@ -557,7 +557,7 @@ import {
         </div>
 
         <!-- QUICK ACTIONS BAR (Includes Google Sheet Multiple Entry) -->
-        <div class="grid grid-cols-4 sm:grid-cols-5 gap-2">
+        <div class="grid grid-cols-4 gap-2" [class.sm:grid-cols-5]="isAdmin()">
           <!-- Action: Scan Bill -->
           <button
             (click)="router.navigate(['/screenshot-review'])"
@@ -638,8 +638,9 @@ import {
             <span class="text-[10px] font-bold text-slate-700">Reports</span>
           </button>
 
-          <!-- Action: Share WhatsApp -->
+          <!-- Action: Share WhatsApp (Admin Only) -->
           <button
+            *ngIf="isAdmin()"
             (click)="shareInvite()"
             class="hidden sm:flex p-3 bg-white hover:bg-slate-50 border border-slate-200 rounded-2xl flex-col items-center justify-center space-y-1.5 shadow-xs active:scale-95 transition-all cursor-pointer group"
           >
