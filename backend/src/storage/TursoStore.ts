@@ -15,6 +15,9 @@ import {
   GroupInvite,
   GroupInviteStatus,
   EligibleMember,
+  SpaceInvite,
+  SpaceInviteStatus,
+  InviteOtp,
 } from '@shared-expense-tracker/shared';
 import { IDataStore, UserRecord } from './IDataStore.js';
 
@@ -122,6 +125,28 @@ export class TursoStore implements IDataStore {
           expires_at DATETIME NOT NULL,
           created_at DATETIME DEFAULT CURRENT_TIMESTAMP
         );`,
+
+        `CREATE TABLE IF NOT EXISTS space_invites (
+          id TEXT PRIMARY KEY,
+          space_id TEXT NOT NULL REFERENCES groups(id) ON DELETE CASCADE,
+          token_hash TEXT UNIQUE NOT NULL,
+          invited_email TEXT NOT NULL,
+          suggested_name TEXT,
+          created_by TEXT NOT NULL,
+          status TEXT DEFAULT 'PENDING_ACCEPTANCE' CHECK (status IN ('PENDING_ACCEPTANCE', 'ACTIVE', 'REVOKED')),
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          accepted_at DATETIME,
+          last_otp_sent_at DATETIME
+        );`,
+
+        `CREATE TABLE IF NOT EXISTS invite_otps (
+          id TEXT PRIMARY KEY,
+          invite_id TEXT NOT NULL REFERENCES space_invites(id) ON DELETE CASCADE,
+          otp_hash TEXT NOT NULL,
+          attempts_left INTEGER DEFAULT 5,
+          expires_at DATETIME NOT NULL,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        );`,
       ],
       'write',
     );
@@ -219,6 +244,9 @@ export class TursoStore implements IDataStore {
           `CREATE INDEX IF NOT EXISTS idx_expenses_utr ON expenses(group_id, utr_number);`,
           `CREATE INDEX IF NOT EXISTS idx_settlements_group ON settlements(group_id);`,
           `CREATE INDEX IF NOT EXISTS idx_settlements_flat ON settlements(flat_id);`,
+          `CREATE INDEX IF NOT EXISTS idx_space_invites_token ON space_invites(token_hash);`,
+          `CREATE INDEX IF NOT EXISTS idx_space_invites_space ON space_invites(space_id, invited_email);`,
+          `CREATE INDEX IF NOT EXISTS idx_invite_otps_inv ON invite_otps(invite_id);`,
         ],
         'write',
       );
@@ -728,6 +756,152 @@ export class TursoStore implements IDataStore {
     const res = await this.client.execute({
       sql: `UPDATE group_invites SET status = ? WHERE id = ?`,
       args: [status, inviteId],
+    });
+    return res.rowsAffected > 0;
+  }
+
+  // --- Modern Persistent Space Invites & OTPs ---
+  async createSpaceInvite(invite: SpaceInvite): Promise<SpaceInvite> {
+    await this.client.execute({
+      sql: `INSERT INTO space_invites (
+        id, space_id, token_hash, invited_email, suggested_name,
+        created_by, status, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      args: [
+        invite.id,
+        invite.spaceId,
+        invite.tokenHash,
+        invite.invitedEmail.toLowerCase().trim(),
+        invite.suggestedName?.trim() || null,
+        invite.createdBy.toLowerCase().trim(),
+        invite.status || 'PENDING_ACCEPTANCE',
+        invite.createdAt || new Date().toISOString(),
+      ],
+    });
+    return invite;
+  }
+
+  async getSpaceInviteByTokenHash(tokenHash: string): Promise<SpaceInvite | null> {
+    const res = await this.client.execute({
+      sql: `SELECT * FROM space_invites WHERE token_hash = ? LIMIT 1`,
+      args: [tokenHash.trim()],
+    });
+    if (res.rows.length === 0) return null;
+    const r = res.rows[0];
+    return {
+      id: String(r.id),
+      spaceId: String(r.space_id),
+      tokenHash: String(r.token_hash),
+      invitedEmail: String(r.invited_email),
+      suggestedName: r.suggested_name ? String(r.suggested_name) : undefined,
+      createdBy: String(r.created_by),
+      status: r.status as SpaceInviteStatus,
+      createdAt: String(r.created_at),
+      acceptedAt: r.accepted_at ? String(r.accepted_at) : undefined,
+      lastOtpSentAt: r.last_otp_sent_at ? String(r.last_otp_sent_at) : undefined,
+    };
+  }
+
+  async getSpaceInvitesBySpace(spaceId: string): Promise<SpaceInvite[]> {
+    const res = await this.client.execute({
+      sql: `SELECT * FROM space_invites WHERE space_id = ? ORDER BY created_at DESC`,
+      args: [spaceId],
+    });
+    return res.rows.map((r) => ({
+      id: String(r.id),
+      spaceId: String(r.space_id),
+      tokenHash: String(r.token_hash),
+      invitedEmail: String(r.invited_email),
+      suggestedName: r.suggested_name ? String(r.suggested_name) : undefined,
+      createdBy: String(r.created_by),
+      status: r.status as SpaceInviteStatus,
+      createdAt: String(r.created_at),
+      acceptedAt: r.accepted_at ? String(r.accepted_at) : undefined,
+      lastOtpSentAt: r.last_otp_sent_at ? String(r.last_otp_sent_at) : undefined,
+    }));
+  }
+
+  async updateSpaceInviteStatus(inviteId: string, status: SpaceInviteStatus, acceptedAt?: string): Promise<boolean> {
+    const sql = acceptedAt
+      ? `UPDATE space_invites SET status = ?, accepted_at = ? WHERE id = ?`
+      : `UPDATE space_invites SET status = ? WHERE id = ?`;
+    const args = acceptedAt ? [status, acceptedAt, inviteId] : [status, inviteId];
+    const res = await this.client.execute({ sql, args });
+    return res.rowsAffected > 0;
+  }
+
+  async updateSpaceInviteLastOtpSent(inviteId: string, sentAt: string): Promise<boolean> {
+    const res = await this.client.execute({
+      sql: `UPDATE space_invites SET last_otp_sent_at = ? WHERE id = ?`,
+      args: [sentAt, inviteId],
+    });
+    return res.rowsAffected > 0;
+  }
+
+  async revokeSpaceInvitesForMember(spaceId: string, email: string): Promise<boolean> {
+    const res = await this.client.execute({
+      sql: `UPDATE space_invites SET status = 'REVOKED' WHERE space_id = ? AND LOWER(invited_email) = LOWER(?) AND status = 'PENDING_ACCEPTANCE'`,
+      args: [spaceId, email.trim()],
+    });
+    return res.rowsAffected > 0;
+  }
+
+  // --- Invite OTP Management ---
+  async saveInviteOtp(otpRecord: InviteOtp): Promise<InviteOtp> {
+    // Invalidate existing OTPs for this invite
+    await this.client.execute({
+      sql: `DELETE FROM invite_otps WHERE invite_id = ?`,
+      args: [otpRecord.inviteId],
+    });
+
+    await this.client.execute({
+      sql: `INSERT INTO invite_otps (id, invite_id, otp_hash, attempts_left, expires_at, created_at)
+            VALUES (?, ?, ?, ?, ?, ?)`,
+      args: [
+        otpRecord.id,
+        otpRecord.inviteId,
+        otpRecord.otpHash,
+        otpRecord.attemptsLeft,
+        otpRecord.expiresAt,
+        otpRecord.createdAt || new Date().toISOString(),
+      ],
+    });
+    return otpRecord;
+  }
+
+  async getActiveInviteOtp(inviteId: string): Promise<InviteOtp | null> {
+    const res = await this.client.execute({
+      sql: `SELECT * FROM invite_otps WHERE invite_id = ? AND expires_at > datetime('now') ORDER BY created_at DESC LIMIT 1`,
+      args: [inviteId],
+    });
+    if (res.rows.length === 0) return null;
+    const r = res.rows[0];
+    return {
+      id: String(r.id),
+      inviteId: String(r.invite_id),
+      otpHash: String(r.otp_hash),
+      attemptsLeft: Number(r.attempts_left),
+      expiresAt: String(r.expires_at),
+      createdAt: String(r.created_at),
+    };
+  }
+
+  async decrementOtpAttempts(otpId: string): Promise<number> {
+    await this.client.execute({
+      sql: `UPDATE invite_otps SET attempts_left = MAX(0, attempts_left - 1) WHERE id = ?`,
+      args: [otpId],
+    });
+    const res = await this.client.execute({
+      sql: `SELECT attempts_left FROM invite_otps WHERE id = ? LIMIT 1`,
+      args: [otpId],
+    });
+    return res.rows.length > 0 ? Number(res.rows[0].attempts_left) : 0;
+  }
+
+  async deleteInviteOtps(inviteId: string): Promise<boolean> {
+    const res = await this.client.execute({
+      sql: `DELETE FROM invite_otps WHERE invite_id = ?`,
+      args: [inviteId],
     });
     return res.rowsAffected > 0;
   }

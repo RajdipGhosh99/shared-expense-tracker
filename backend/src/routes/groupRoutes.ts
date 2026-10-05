@@ -60,63 +60,10 @@ router.post('/', authMiddleware, async (req: AuthRequest, res: Response) => {
   return res.status(201).json({ group, flat: group, member });
 });
 
-// Join group by invite code (Requires Admin Approval unless first member)
-router.post('/join', authMiddleware, async (req: AuthRequest, res: Response) => {
-  const { inviteCode } = req.body;
-  const user = req.user!;
-
-  if (!inviteCode) {
-    return res.status(400).json({ error: 'Invite code is required.' });
-  }
-
-  const db = getStorage();
-  const group = await db.getGroupByInviteCode(inviteCode.trim());
-
-  if (!group) {
-    return res.status(404).json({ error: 'No group found with that invite code.' });
-  }
-
-  const existing = await db.getMember(group.id, user.email);
-  if (existing) {
-    return res.json({
-      group,
-      flat: group,
-      member: existing,
-      status: existing.status,
-      pendingApproval: existing.status === 'PENDING',
-      message:
-        existing.status === 'PENDING'
-          ? 'Your join request is awaiting Admin approval.'
-          : `You are already a member of ${group.name}!`,
-    });
-  }
-
-  const existingMembers = await db.getMembers(group.id);
-  const isFirstMember = existingMembers.length === 0;
-
-  const member: GroupMember = {
-    id: `mem_${Date.now()}`,
-    groupId: group.id,
-    flatId: group.id,
-    userEmail: user.email.toLowerCase().trim(),
-    name: (user as any).name || user.email.split('@')[0],
-    upiId: (user as any).upiId,
-    role: isFirstMember ? 'ADMIN' : 'MEMBER',
-    status: isFirstMember ? 'ACTIVE' : 'PENDING',
-    joinedAt: new Date().toISOString(),
-  };
-
-  await db.addMember(member);
-
-  return res.json({
-    group,
-    flat: group,
-    member,
-    pendingApproval: member.status === 'PENDING',
-    message:
-      member.status === 'PENDING'
-        ? `Join request submitted! Group Admin must approve your membership.`
-        : `Successfully joined ${group.name}!`,
+// DEPRECATED: Join group by 6-digit code (Decommissioned in favor of secure invite links)
+router.post('/join', authMiddleware, async (_req: AuthRequest, res: Response) => {
+  return res.status(410).json({
+    error: '6-digit space codes have been decommissioned. Please join using an invite link from your space admin.',
   });
 });
 
@@ -139,7 +86,34 @@ router.get('/:id/members', authMiddleware, async (req: AuthRequest, res: Respons
   return res.json({ members });
 });
 
-// Admin Approval for Pending Member
+// Admin Remove Member (Automatically revokes any active space invites)
+router.delete(
+  '/:id/members/:email',
+  authMiddleware,
+  async (req: AuthRequest, res: Response) => {
+    const user = req.user!;
+    const groupId = req.params.id as string;
+    const targetEmail = req.params.email as string;
+    const db = getStorage();
+
+    const caller = await db.getMember(groupId, user.email);
+    if (!caller || caller.role !== 'ADMIN') {
+      return res.status(403).json({ error: 'Only a group Admin can remove members.' });
+    }
+
+    if (caller.userEmail.toLowerCase() === targetEmail.toLowerCase()) {
+      return res.status(400).json({ error: 'Admins cannot remove themselves. Transfer admin role first.' });
+    }
+
+    const removed = await db.removeMember(groupId, targetEmail);
+    // Invalidate any pending or active invites for this member
+    await db.revokeSpaceInvitesForMember(groupId, targetEmail);
+
+    return res.json({ success: removed, message: `Removed member ${targetEmail} and revoked active invites.` });
+  },
+);
+
+// Admin Approval for Pending Member (Decommissioned/Auto-approve)
 router.post(
   '/:id/members/:email/approve',
   authMiddleware,
@@ -175,6 +149,7 @@ router.post(
     }
 
     const removed = await db.removeMember(groupId, targetEmail);
+    await db.revokeSpaceInvitesForMember(groupId, targetEmail);
     return res.json({ success: removed, message: `Rejected join request for ${targetEmail}` });
   },
 );

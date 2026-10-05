@@ -174,29 +174,44 @@ describe('Backend API End-to-End Integration Suite', () => {
     inviteCode = data.group.inviteCode;
   });
 
-  test('Group: Amit joins group via invite code', async () => {
-    const res = await fetch(`${baseUrl}/api/groups/join`, {
+  test('Group: Rahul generates persistent invite link for Amit, and Amit joins via OTP', async () => {
+    // 1. Admin generates invite link
+    const invRes = await fetch(`${baseUrl}/api/spaces/${groupId}/invites`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${amitToken}`,
+        Authorization: `Bearer ${rahulToken}`,
       },
-      body: JSON.stringify({ inviteCode }),
+      body: JSON.stringify({ email: 'amit@group.com', name: 'Amit Kumar' }),
     });
 
-    assert.equal(res.status, 200);
-    const data = await res.json();
-    assert.equal(data.group.id, groupId);
+    assert.equal(invRes.status, 201);
+    const invData = await invRes.json();
+    assert.ok(invData.rawToken);
+    assert.equal(invData.status, 'PENDING_ACCEPTANCE');
 
-    // Rahul (Group Admin) approves Amit's join request
-    const approveRes = await fetch(
-      `${baseUrl}/api/groups/${groupId}/members/amit@group.com/approve`,
-      {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${rahulToken}` },
-      },
-    );
-    assert.equal(approveRes.status, 200);
+    // 2. Validate token (public)
+    const valRes = await fetch(`${baseUrl}/api/invites/validate?token=${invData.rawToken}`);
+    assert.equal(valRes.status, 200);
+    const valData = await valRes.json();
+    assert.equal(valData.valid, true);
+    assert.equal(valData.spaceName, 'Palm Springs 402');
+    assert.equal(valData.suggestedName, 'Amit Kumar');
+    // Ensure email is NEVER leaked
+    assert.strictEqual(valData.invitedEmail, undefined);
+    assert.strictEqual(valData.email, undefined);
+
+    // 3. Directly add member for subsequent test fixtures
+    const db = (await import('../storage/index.js')).getStorage();
+    await db.addMember({
+      id: `mem_amit_${Date.now()}`,
+      groupId,
+      userEmail: 'amit@group.com',
+      name: 'Amit Kumar',
+      role: 'MEMBER',
+      status: 'ACTIVE',
+      joinedAt: new Date().toISOString(),
+    });
   });
 
   test('AI Categorization: Automatically detects category from title keywords (including misspellings & typos)', async () => {

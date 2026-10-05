@@ -97,6 +97,27 @@ export interface Expense {
     updatedAt: string;
 }
 export type GroupInviteStatus = 'PENDING' | 'ACCEPTED' | 'EXPIRED' | 'REVOKED';
+export type SpaceInviteStatus = 'PENDING_ACCEPTANCE' | 'ACTIVE' | 'REVOKED';
+export interface SpaceInvite {
+    id: string;
+    spaceId: string;
+    tokenHash: string;
+    invitedEmail: string;
+    suggestedName?: string;
+    createdBy: string;
+    status: SpaceInviteStatus;
+    createdAt: string;
+    acceptedAt?: string;
+    lastOtpSentAt?: string;
+}
+export interface InviteOtp {
+    id: string;
+    inviteId: string;
+    otpHash: string;
+    attemptsLeft: number;
+    expiresAt: string;
+    createdAt: string;
+}
 export interface GroupInvite {
     id: string;
     groupId: string;

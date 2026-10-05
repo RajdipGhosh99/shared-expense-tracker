@@ -346,25 +346,6 @@ export class ApiService {
     );
   }
 
-  acceptInvite(inviteCode: string): Observable<any> {
-    return this.http
-      .post(`${this.baseUrl}/invites/accept`, { invite_code: inviteCode })
-      .pipe(
-        tap((res: any) => {
-          if (res.group) {
-            this.setActiveGroup(res.group);
-            this.fetchUserGroups().subscribe();
-          }
-        }),
-      );
-  }
-
-  getInviteDetails(inviteCode: string): Observable<{ invite: GroupInvite; groupName: string; currency: string }> {
-    return this.http.get<{ invite: GroupInvite; groupName: string; currency: string }>(
-      `${this.baseUrl}/invites/${encodeURIComponent(inviteCode)}`,
-    );
-  }
-
   // --- Expenses ---
   addExpense(data: {
     title: string;
@@ -466,8 +447,75 @@ export class ApiService {
 
     let url = `${this.baseUrl}/statements?groupId=${group.id}&period=${period}`;
     if (startDate) url += `&startDate=${startDate}`;
-    if (endDate) url += `&endDate=${endDate}`;
-
     return this.http.get<{ statement: MonthlyStatement; whatsappLink: string }>(url);
+  }
+
+  // --- Modern Space Invites & Passwordless Join Flow ---
+  generateSpaceInvite(spaceId: string, email: string, name?: string): Observable<{
+    success: boolean;
+    inviteId: string;
+    inviteUrl: string;
+    rawToken: string;
+    invitedEmail: string;
+    suggestedName?: string;
+    spaceName: string;
+  }> {
+    return this.http.post<any>(`${this.baseUrl}/spaces/${spaceId}/invites`, { email, name });
+  }
+
+  validateInvite(token: string): Observable<{
+    valid: boolean;
+    status: string;
+    spaceId: string;
+    spaceName: string;
+    suggestedName?: string;
+    currency: string;
+  }> {
+    return this.http.get<any>(`${this.baseUrl}/invites/validate?token=${encodeURIComponent(token)}`);
+  }
+
+  sendInviteOtp(token: string): Observable<{
+    success: boolean;
+    message: string;
+    cooldownSeconds: number;
+    expiresInMinutes: number;
+  }> {
+    return this.http.post<any>(`${this.baseUrl}/invites/send-otp`, { token });
+  }
+
+  acceptInvite(payload: {
+    token: string;
+    otp: string;
+    displayName?: string;
+    upiId?: string;
+  }): Observable<{
+    success: boolean;
+    token: string;
+    user: { email: string; name: string; upiId?: string; avatar?: string };
+    space: { id: string; name: string; currency: string };
+    member: GroupMember;
+  }> {
+    return this.http.post<any>(`${this.baseUrl}/invites/accept`, payload).pipe(
+      tap((res) => {
+        if (res.token && res.user) {
+          localStorage.setItem('group_jwt', res.token);
+          localStorage.setItem('flat_jwt', res.token);
+          localStorage.setItem('group_user', JSON.stringify(res.user));
+          localStorage.setItem('flat_user', JSON.stringify(res.user));
+          this.token.set(res.token);
+          this.currentUser.set(res.user);
+        }
+        if (res.space) {
+          this.setActiveGroup(res.space as any);
+          this.fetchUserGroups().subscribe();
+        }
+      }),
+    );
+  }
+
+  removeMember(groupId: string, userEmail: string): Observable<{ success: boolean; message: string }> {
+    return this.http.delete<any>(`${this.baseUrl}/groups/${groupId}/members/${encodeURIComponent(userEmail)}`).pipe(
+      tap(() => this.refreshGroupData(groupId)),
+    );
   }
 }

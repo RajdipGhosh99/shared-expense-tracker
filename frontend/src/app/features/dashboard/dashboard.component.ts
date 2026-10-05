@@ -617,12 +617,12 @@ import {
                     👑 Make Admin
                   </button>
                   <button
-                    *ngIf="m.role === 'ADMIN' && m.userEmail !== api.currentUser()?.email"
-                    (click)="setRole(m.userEmail, 'MEMBER')"
-                    class="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-600 text-[10px] font-medium rounded-lg cursor-pointer transition-colors"
-                    title="Demote to standard Member"
+                    *ngIf="m.userEmail !== api.currentUser()?.email"
+                    (click)="removeMemberConfirm(m.userEmail, m.name)"
+                    class="px-2 py-1 bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-700 text-[10px] font-bold rounded-lg cursor-pointer transition-colors"
+                    title="Remove member and revoke their access"
                   >
-                    Make Member
+                    ✕ Remove
                   </button>
                 </ng-container>
               </div>
@@ -1147,7 +1147,7 @@ import {
         </div>
       </div>
 
-      <!-- Invite Roommate with Move-In Date Modal -->
+      <!-- Invite Roommate with Secure Link Modal -->
       <div
         *ngIf="showInviteModal()"
         class="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-center justify-center p-4"
@@ -1175,69 +1175,79 @@ import {
             {{ inviteError() }}
           </div>
 
+          <!-- SUCCESS STATE WITH WHATSAPP SHARE & COPY -->
           <div
-            *ngIf="inviteSuccessCode()"
-            class="p-3 bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs rounded-xl space-y-2"
+            *ngIf="inviteSuccessUrl()"
+            class="p-4 bg-emerald-50/80 border border-emerald-200 text-emerald-950 text-xs rounded-2xl space-y-3"
           >
-            <p class="font-bold text-emerald-800">✅ Invite Created!</p>
-            <p class="text-[11px] text-slate-600">Share this code with your flatmate:</p>
-            <div class="flex items-center justify-between bg-white px-3 py-2 rounded-lg border border-emerald-200 font-mono text-xs font-bold text-emerald-700">
-              <span>{{ inviteSuccessCode() }}</span>
+            <div class="flex items-center space-x-2">
+              <span class="text-lg">🎉</span>
+              <p class="font-bold text-emerald-900">Invite Link Ready!</p>
+            </div>
+            <p class="text-[11px] text-emerald-800 leading-relaxed">
+              This link is permanently valid until you remove this roommate. When they open it, their email stays private and they verify with a 6-digit OTP code.
+            </p>
+
+            <div class="space-y-2 pt-1">
               <button
                 type="button"
-                (click)="copyInviteLink()"
-                class="px-2 py-0.5 bg-emerald-600 text-white rounded text-[10px] cursor-pointer"
+                (click)="shareInviteOnWhatsApp()"
+                class="w-full py-2.5 bg-[#25D366] hover:bg-[#20ba5a] active:scale-98 text-white font-bold rounded-xl text-xs transition-all flex items-center justify-center space-x-2 shadow-xs cursor-pointer"
               >
-                {{ copiedInvite() ? 'Copied!' : 'Copy Code' }}
+                <span>💬</span>
+                <span>Share via WhatsApp</span>
+              </button>
+
+              <button
+                type="button"
+                (click)="copyGeneratedInviteLink()"
+                class="w-full py-2.5 bg-white hover:bg-slate-50 border border-emerald-300 text-emerald-800 font-bold rounded-xl text-xs transition-all flex items-center justify-center space-x-1.5 cursor-pointer"
+              >
+                <span>📋</span>
+                <span>{{ copiedInvite() ? 'Copied to Clipboard!' : 'Copy Invite Link' }}</span>
               </button>
             </div>
+
+            <button
+              type="button"
+              (click)="inviteSuccessUrl.set(null)"
+              class="w-full pt-1 text-[11px] text-slate-500 hover:text-slate-800 text-center font-semibold cursor-pointer block"
+            >
+              + Create Another Invite
+            </button>
           </div>
 
-          <form *ngIf="!inviteSuccessCode()" (ngSubmit)="sendInviteSubmit()" class="space-y-3">
+          <form *ngIf="!inviteSuccessUrl()" (ngSubmit)="sendInviteSubmit()" class="space-y-3">
             <div class="space-y-1">
-              <label class="text-xs font-bold text-slate-700">Roommate Name</label>
-              <input
-                type="text"
-                [(ngModel)]="inviteName"
-                name="inviteName"
-                required
-                placeholder="e.g. Priya Sharma"
-                class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs text-slate-900 focus:outline-none focus:border-indigo-500"
-              />
-            </div>
-
-            <div class="space-y-1">
-              <label class="text-xs font-bold text-slate-700">Email Address</label>
+              <label class="text-xs font-bold text-slate-700">Email Address (Required)</label>
               <input
                 type="email"
                 [(ngModel)]="inviteEmail"
                 name="inviteEmail"
                 required
-                placeholder="e.g. priya@gmail.com"
+                placeholder="e.g. roommate@gmail.com"
                 class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs text-slate-900 focus:outline-none focus:border-indigo-500"
               />
+              <p class="text-[10px] text-slate-400">The OTP will be dispatched to this email upon opening the link.</p>
             </div>
 
             <div class="space-y-1">
-              <label class="text-xs font-bold text-slate-700 flex items-center justify-between">
-                <span>Effective Move-In Date</span>
-                <span class="text-[10px] text-indigo-600 font-semibold">Liabilities start from this date</span>
-              </label>
+              <label class="text-xs font-bold text-slate-700">Display Name (Optional)</label>
               <input
-                type="date"
-                [(ngModel)]="inviteMoveInDate"
-                name="inviteMoveInDate"
-                required
+                type="text"
+                [(ngModel)]="inviteName"
+                name="inviteName"
+                placeholder="e.g. Priya Sharma"
                 class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs text-slate-900 focus:outline-none focus:border-indigo-500"
               />
             </div>
 
             <button
               type="submit"
-              [disabled]="inviteLoading() || !inviteName.trim() || !inviteEmail.trim() || !inviteMoveInDate"
+              [disabled]="inviteLoading() || !inviteEmail.trim()"
               class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-bold rounded-xl text-xs transition-all cursor-pointer shadow-xs"
             >
-              {{ inviteLoading() ? 'Generating Invite...' : 'Generate Personalized Invite' }}
+              {{ inviteLoading() ? 'Generating Link...' : 'Generate WhatsApp Invite Link' }}
             </button>
           </form>
         </div>
@@ -1346,6 +1356,7 @@ export class DashboardComponent implements OnInit {
   inviteLoading = signal<boolean>(false);
   inviteError = signal<string | null>(null);
   inviteSuccessCode = signal<string | null>(null);
+  inviteSuccessUrl = signal<string | null>(null);
   copiedInvite = signal<boolean>(false);
 
   showTenancyModal = signal<boolean>(false);
@@ -1599,6 +1610,17 @@ export class DashboardComponent implements OnInit {
     });
   }
 
+  removeMemberConfirm(email: string, name: string) {
+    const group = this.api.activeGroup();
+    if (!group) return;
+    if (confirm(`Remove ${name} (${email}) from ${group.name}? Their pending invites will also be revoked.`)) {
+      this.api.removeMember(group.id, email).subscribe({
+        next: () => alert(`Removed ${name} from this space.`),
+        error: (err) => alert(err.error?.error || 'Failed to remove member.'),
+      });
+    }
+  }
+
   copyCode() {
     const code = this.api.activeGroup()?.inviteCode;
     if (code) {
@@ -1704,13 +1726,12 @@ export class DashboardComponent implements OnInit {
     return '📦';
   }
 
-  // --- Tenancy & Invite Actions ---
+  // --- Persistent Space Invites & WhatsApp Actions ---
   openInviteModal() {
     this.inviteName = '';
     this.inviteEmail = '';
-    this.inviteMoveInDate = new Date().toISOString().slice(0, 10);
     this.inviteError.set(null);
-    this.inviteSuccessCode.set(null);
+    this.inviteSuccessUrl.set(null);
     this.copiedInvite.set(false);
     this.showInviteModal.set(true);
   }
@@ -1719,8 +1740,8 @@ export class DashboardComponent implements OnInit {
     const group = this.api.activeGroup();
     if (!group) return;
 
-    if (!this.inviteName.trim() || !this.inviteEmail.trim() || !this.inviteMoveInDate) {
-      this.inviteError.set('Please fill out all fields.');
+    if (!this.inviteEmail.trim()) {
+      this.inviteError.set('Please provide the roommate’s email address.');
       return;
     }
 
@@ -1728,29 +1749,33 @@ export class DashboardComponent implements OnInit {
     this.inviteError.set(null);
 
     this.api
-      .createGroupInvite(group.id, {
-        invitee_name: this.inviteName.trim(),
-        invitee_email: this.inviteEmail.trim(),
-        effective_move_in_date: this.inviteMoveInDate,
-      })
+      .generateSpaceInvite(group.id, this.inviteEmail.trim(), this.inviteName.trim() || undefined)
       .subscribe({
         next: (res) => {
           this.inviteLoading.set(false);
-          this.inviteSuccessCode.set(res.inviteCode);
+          this.inviteSuccessUrl.set(res.inviteUrl);
         },
         error: (err) => {
           this.inviteLoading.set(false);
-          this.inviteError.set(err.error?.error || 'Failed to create invite.');
+          this.inviteError.set(err.error?.error || 'Failed to generate invite link.');
         },
       });
   }
 
-  copyInviteLink() {
-    const code = this.inviteSuccessCode();
-    if (!code) return;
-    navigator.clipboard.writeText(code);
+  copyGeneratedInviteLink() {
+    const url = this.inviteSuccessUrl();
+    if (!url) return;
+    navigator.clipboard.writeText(url);
     this.copiedInvite.set(true);
     setTimeout(() => this.copiedInvite.set(false), 2000);
+  }
+
+  shareInviteOnWhatsApp() {
+    const url = this.inviteSuccessUrl();
+    const group = this.api.activeGroup();
+    if (!url || !group) return;
+    const msg = `Hey! Join our shared space "${group.name}" on Bhagabhagi to track and split expenses with us:\n\n${url}`;
+    window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`, '_blank');
   }
 
   openTenancyModal(m: GroupMember) {

@@ -10,6 +10,9 @@ import {
   GroupInvite,
   GroupInviteStatus,
   EligibleMember,
+  SpaceInvite,
+  SpaceInviteStatus,
+  InviteOtp,
 } from '@shared-expense-tracker/shared';
 
 export interface UserRecord {
@@ -72,12 +75,26 @@ export interface IDataStore {
   ): Promise<boolean>;
   getEligibleMembers(groupId: string, date: string): Promise<EligibleMember[]>;
 
-  // Tenancy & Group Invites
+  // Tenancy & Group Invites (Legacy)
   createGroupInvite(invite: GroupInvite): Promise<GroupInvite>;
   getGroupInviteByCode(inviteCode: string): Promise<GroupInvite | null>;
   getGroupInvitesByGroup(groupId: string): Promise<GroupInvite[]>;
   getPendingInviteByEmail(groupId: string, email: string): Promise<GroupInvite | null>;
   updateGroupInviteStatus(inviteId: string, status: GroupInviteStatus): Promise<boolean>;
+
+  // Modern Persistent Space Invites & OTPs
+  createSpaceInvite(invite: SpaceInvite): Promise<SpaceInvite>;
+  getSpaceInviteByTokenHash(tokenHash: string): Promise<SpaceInvite | null>;
+  getSpaceInvitesBySpace(spaceId: string): Promise<SpaceInvite[]>;
+  updateSpaceInviteStatus(inviteId: string, status: SpaceInviteStatus, acceptedAt?: string): Promise<boolean>;
+  updateSpaceInviteLastOtpSent(inviteId: string, sentAt: string): Promise<boolean>;
+  revokeSpaceInvitesForMember(spaceId: string, email: string): Promise<boolean>;
+
+  // Invite OTP Management
+  saveInviteOtp(otpRecord: InviteOtp): Promise<InviteOtp>;
+  getActiveInviteOtp(inviteId: string): Promise<InviteOtp | null>;
+  decrementOtpAttempts(otpId: string): Promise<number>;
+  deleteInviteOtps(inviteId: string): Promise<boolean>;
 
   // Expenses
   createExpense(expense: Expense): Promise<Expense>;

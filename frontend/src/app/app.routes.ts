@@ -9,6 +9,8 @@ import { IncomingScreenshotComponent } from './features/screenshot/incoming-scre
 import { StatementsComponent } from './features/statements/statements.component.js';
 import { NotFoundComponent } from './features/not-found/not-found.component.js';
 
+import { JoinComponent } from './features/group/join.component.js';
+
 const authGuard = () => {
   const api = inject(ApiService);
   const router = inject(Router);
@@ -20,6 +22,7 @@ const authGuard = () => {
 
 export const routes: Routes = [
   { path: 'auth', component: AuthComponent },
+  { path: 'join', component: JoinComponent },
   { path: 'onboarding', component: GroupOnboardingComponent, canActivate: [authGuard] },
   { path: 'dashboard', component: DashboardComponent, canActivate: [authGuard] },
   { path: 'screenshot-review', component: IncomingScreenshotComponent, canActivate: [authGuard] },
