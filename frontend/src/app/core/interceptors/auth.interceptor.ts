@@ -7,7 +7,7 @@ import { ApiService } from '../services/api.service.js';
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const router = inject(Router);
   const api = inject(ApiService);
-  const token = typeof localStorage !== 'undefined' ? (localStorage.getItem('group_jwt') || localStorage.getItem('flat_jwt')) : null;
+  const token = typeof localStorage !== 'undefined' ? localStorage.getItem('group_jwt') : null;
 
   if (token) {
     req = req.clone({

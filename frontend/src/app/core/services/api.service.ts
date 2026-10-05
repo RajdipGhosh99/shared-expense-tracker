@@ -51,9 +51,9 @@ export class ApiService {
   }
 
   private restoreSession() {
-    const savedToken = localStorage.getItem('group_jwt') || localStorage.getItem('flat_jwt');
-    const savedUser = localStorage.getItem('group_user') || localStorage.getItem('flat_user');
-    const savedGroup = localStorage.getItem('group_active') || localStorage.getItem('flat_active');
+    const savedToken = localStorage.getItem('group_jwt');
+    const savedUser = localStorage.getItem('group_user');
+    const savedGroup = localStorage.getItem('group_active');
 
     if (savedToken && savedUser) {
       this.token.set(savedToken);
@@ -131,8 +131,6 @@ export class ApiService {
   private setSession(res: AuthResponse) {
     localStorage.setItem('group_jwt', res.token);
     localStorage.setItem('group_user', JSON.stringify(res.user));
-    localStorage.setItem('flat_jwt', res.token);
-    localStorage.setItem('flat_user', JSON.stringify(res.user));
     this.token.set(res.token);
     this.currentUser.set(res.user);
   }
@@ -191,7 +189,6 @@ export class ApiService {
 
   setActiveGroup(group: Group) {
     localStorage.setItem('group_active', JSON.stringify(group));
-    localStorage.setItem('flat_active', JSON.stringify(group));
     this.activeGroup.set(group);
     this.refreshGroupData(group.id);
   }
@@ -215,7 +212,6 @@ export class ApiService {
         error: (err) => {
           if (err.status === 404) {
             localStorage.removeItem('group_active');
-            localStorage.removeItem('flat_active');
             this.activeGroup.set(null);
             this.members.set([]);
           }
@@ -255,7 +251,6 @@ export class ApiService {
           this.userGroups.set(res.memberships || []);
           if (!res.memberships || res.memberships.length === 0) {
             localStorage.removeItem('group_active');
-            localStorage.removeItem('flat_active');
             this.activeGroup.set(null);
             this.members.set([]);
             this.expenses.set([]);
@@ -539,9 +534,7 @@ export class ApiService {
       tap((res) => {
         if (res.token && res.user) {
           localStorage.setItem('group_jwt', res.token);
-          localStorage.setItem('flat_jwt', res.token);
           localStorage.setItem('group_user', JSON.stringify(res.user));
-          localStorage.setItem('flat_user', JSON.stringify(res.user));
           this.token.set(res.token);
           this.currentUser.set(res.user);
         }
