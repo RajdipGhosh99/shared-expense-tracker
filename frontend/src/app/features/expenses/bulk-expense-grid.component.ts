@@ -61,11 +61,11 @@ export interface GridRow {
             </div>
           </div>
 
-          <div class="flex items-center space-x-2">
+          <div class="flex items-center gap-1 sm:gap-2">
             <button
               type="button"
               (click)="openSingle.emit()"
-              class="px-2.5 py-1.5 rounded-lg border border-indigo-200 bg-indigo-50 hover:bg-indigo-100 text-xs font-semibold text-indigo-700 flex items-center space-x-1.5 transition-colors cursor-pointer shadow-2xs"
+              class="px-2 py-1.5 sm:px-2.5 rounded-xl border border-indigo-200 bg-indigo-50 hover:bg-indigo-100 text-xs font-semibold text-indigo-700 flex items-center space-x-1 transition-colors cursor-pointer shadow-2xs"
               title="Switch to single bill entry"
             >
               <span>💳</span>
@@ -74,7 +74,7 @@ export interface GridRow {
             <button
               type="button"
               (click)="showPasteModal.set(!showPasteModal())"
-              class="px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-100 text-xs font-semibold text-slate-700 flex items-center space-x-1.5 transition-colors cursor-pointer shadow-xs"
+              class="px-2 py-1.5 sm:px-2.5 rounded-xl border border-slate-300 bg-white hover:bg-slate-100 text-xs font-semibold text-slate-700 flex items-center space-x-1 transition-colors cursor-pointer shadow-2xs"
               title="Paste copied rows directly from spreadsheet or Excel"
             >
               <span>📋</span>
@@ -83,15 +83,15 @@ export interface GridRow {
             <button
               type="button"
               (click)="addRow()"
-              class="px-2.5 py-1.5 rounded-lg bg-emerald-50 border border-emerald-200 hover:bg-emerald-100 text-xs font-semibold text-emerald-800 flex items-center space-x-1 transition-colors cursor-pointer"
+              class="px-2.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-xs font-bold text-white flex items-center space-x-1 transition-colors cursor-pointer shadow-xs active:scale-95"
             >
               <span>＋</span>
-              <span>Add Row</span>
+              <span class="hidden sm:inline">Add Row</span>
             </button>
             <button
               type="button"
               (click)="close.emit()"
-              class="w-7 h-7 rounded-lg hover:bg-slate-200 text-slate-500 hover:text-slate-800 font-bold flex items-center justify-center transition-colors cursor-pointer"
+              class="size-8 rounded-xl hover:bg-slate-200 text-slate-500 hover:text-slate-800 font-bold flex items-center justify-center transition-colors cursor-pointer"
             >
               ✕
             </button>
@@ -134,74 +134,89 @@ export interface GridRow {
           </div>
         </div>
 
-        <!-- Spreadsheet Table Grid -->
-        <div class="flex-1 overflow-x-auto overflow-y-auto p-4 max-h-[60vh]">
-          <table class="w-full text-left text-xs border-collapse">
-            <thead>
-              <tr
-                class="bg-slate-100/90 text-slate-600 font-semibold border-y border-slate-200 uppercase text-[10px] tracking-wider select-none"
-              >
-                <th class="py-2.5 px-2 w-8 text-center">#</th>
-                <th class="py-2.5 px-2 min-w-[125px]">
-                  Date <span class="text-rose-500 font-bold">*</span>
-                </th>
-                <th class="py-2.5 px-2 min-w-[180px]">
-                  Description / Title <span class="text-rose-500 font-bold">*</span>
-                </th>
-                <th class="py-2.5 px-2 min-w-[140px]">
-                  Category
-                  <span
-                    class="text-[10px] text-indigo-600 font-bold"
-                    title="Auto-detects as you type"
-                    >✨ AI</span
-                  >
-                </th>
-                <th class="py-2.5 px-2 min-w-[110px]">
-                  Amount (₹) <span class="text-rose-500 font-bold">*</span>
-                </th>
-                <th class="py-2.5 px-2 min-w-[110px]">Split</th>
-                <th class="py-2.5 px-2 w-10 text-center"></th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-slate-100">
-              <tr
-                *ngFor="let row of rows; let idx = index"
-                class="hover:bg-slate-50/80 transition-colors group"
-                [class.bg-emerald-50/20]="isRowValid(row)"
-              >
-                <!-- Row Number -->
-                <td
-                  class="py-1.5 px-2 text-center text-slate-400 font-mono text-[11px] select-none"
+        <!-- Main Content: Mobile Card-List (< md) & Desktop Spreadsheet Table (>= md) -->
+        <div class="flex-1 overflow-y-auto p-3 sm:p-4 max-h-[65vh]">
+          
+          <!-- MOBILE VIEW (< md): Touch-Friendly Expense Entry Cards -->
+          <div class="block md:hidden space-y-3">
+            <div
+              *ngFor="let row of rows; let idx = index"
+              class="p-3.5 bg-slate-50/90 border border-slate-200/90 rounded-2xl space-y-2.5 transition-all shadow-2xs relative"
+              [class.border-emerald-300]="isRowValid(row)"
+              [class.bg-emerald-50/30]="isRowValid(row)"
+            >
+              <!-- Card Header: Index Badge & Delete Row -->
+              <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-2">
+                  <span class="size-6 rounded-lg bg-slate-200/80 text-slate-700 font-mono text-[11px] font-bold flex items-center justify-center">
+                    #{{ idx + 1 }}
+                  </span>
+                  <span *ngIf="isRowValid(row)" class="text-[10px] font-bold text-emerald-600 bg-emerald-100/80 px-2 py-0.5 rounded-full flex items-center gap-1">
+                    <span>✓</span> Ready
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  (click)="removeRow(idx)"
+                  [disabled]="rows.length <= 1"
+                  class="text-slate-400 hover:text-rose-600 disabled:opacity-20 p-1 rounded-lg hover:bg-rose-50 transition-colors cursor-pointer"
+                  title="Delete row"
                 >
-                  {{ idx + 1 }}
-                </td>
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                </button>
+              </div>
 
-                <!-- Date -->
-                <td class="py-1.5 px-2">
+              <!-- Title / Description -->
+              <div class="space-y-1">
+                <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Description / Title</label>
+                <input
+                  type="text"
+                  [(ngModel)]="row.title"
+                  (ngModelChange)="onRowTitleChange(idx, $event)"
+                  placeholder="e.g. Blinkit, WiFi, Swiggy, Groceries"
+                  class="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs bg-white text-slate-900 placeholder-slate-400 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 font-medium shadow-2xs"
+                />
+              </div>
+
+              <!-- Two Column: Date & Amount -->
+              <div class="grid grid-cols-2 gap-2">
+                <div class="space-y-1">
+                  <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Date</label>
                   <input
                     type="date"
                     [(ngModel)]="row.date"
                     required
-                    class="w-full px-2 py-1.5 border border-slate-200 rounded-md text-xs bg-white text-slate-900 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 font-medium"
+                    class="w-full px-2.5 py-2 border border-slate-200 rounded-xl text-xs bg-white text-slate-900 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 font-medium shadow-2xs"
                   />
-                </td>
+                </div>
 
-                <!-- Title / Description with Real-time AI Category Detection -->
-                <td class="py-1.5 px-2">
-                  <input
-                    type="text"
-                    [(ngModel)]="row.title"
-                    (ngModelChange)="onRowTitleChange(idx, $event)"
-                    placeholder="e.g. Blinkit, WiFi, Swiggy"
-                    class="w-full px-2.5 py-1.5 border border-slate-200 rounded-md text-xs bg-white text-slate-900 placeholder-slate-400 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 font-medium"
-                  />
-                </td>
+                <div class="space-y-1">
+                  <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Amount (₹)</label>
+                  <div class="relative">
+                    <span class="absolute left-2.5 top-2 text-slate-400 text-xs font-semibold">₹</span>
+                    <input
+                      type="number"
+                      step="0.01"
+                      [(ngModel)]="row.amount"
+                      placeholder="0.00"
+                      class="w-full pl-6 pr-2.5 py-2 border border-slate-200 rounded-xl text-xs bg-white text-slate-900 font-bold focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 font-mono shadow-2xs"
+                    />
+                  </div>
+                </div>
+              </div>
 
-                <!-- Category -->
-                <td class="py-1.5 px-2">
+              <!-- Two Column: Category & Split Method -->
+              <div class="grid grid-cols-2 gap-2 pt-0.5">
+                <div class="space-y-1">
+                  <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider flex items-center justify-between">
+                    <span>Category</span>
+                    <span class="text-[9px] text-indigo-600 font-bold">✨ AI</span>
+                  </label>
                   <select
                     [(ngModel)]="row.category"
-                    class="w-full px-2 py-1.5 border border-slate-200 rounded-md text-xs bg-white text-slate-800 focus:outline-none focus:border-indigo-500 font-medium cursor-pointer"
+                    class="w-full px-2 py-2 border border-slate-200 rounded-xl text-xs bg-white text-slate-800 focus:outline-none focus:border-indigo-500 font-medium cursor-pointer shadow-2xs truncate"
                   >
                     <option value="Food & Dining">🍔 Food & Dining</option>
                     <option value="Bills & Utilities">⚡ Bills & Utilities</option>
@@ -213,59 +228,166 @@ export interface GridRow {
                     <option value="Transfers & Adjustments">🔄 Transfers & Adjustments</option>
                     <option value="Other">📦 Other</option>
                   </select>
-                </td>
+                </div>
 
-                <!-- Amount (₹) -->
-                <td class="py-1.5 px-2">
-                  <div class="relative">
-                    <span class="absolute left-2 top-1.5 text-slate-400 text-xs font-semibold"
-                      >₹</span
-                    >
-                    <input
-                      type="number"
-                      step="0.01"
-                      [(ngModel)]="row.amount"
-                      placeholder="0.00"
-                      class="w-full pl-5 pr-2 py-1.5 border border-slate-200 rounded-md text-xs bg-white text-slate-900 font-bold focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 font-mono"
-                    />
-                  </div>
-                </td>
-
-                <!-- Split Method -->
-                <td class="py-1.5 px-2">
+                <div class="space-y-1">
+                  <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Split Method</label>
                   <select
                     [(ngModel)]="row.splitType"
-                    (keydown.tab)="onLastCellTab(idx)"
-                    class="w-full px-2 py-1.5 border border-slate-200 rounded-md text-xs bg-white text-slate-800 focus:outline-none focus:border-indigo-500 font-medium cursor-pointer"
+                    class="w-full px-2 py-2 border border-slate-200 rounded-xl text-xs bg-white text-slate-800 focus:outline-none focus:border-indigo-500 font-medium cursor-pointer shadow-2xs"
                   >
                     <option value="EQUAL">Equal</option>
                     <option value="EXACT">Exact</option>
-                    <option value="PERCENTAGE">%</option>
+                    <option value="PERCENTAGE">% Split</option>
                   </select>
-                </td>
+                </div>
+              </div>
+            </div>
 
-                <!-- Delete Action -->
-                <td class="py-1.5 px-2 text-center">
-                  <button
-                    type="button"
-                    (click)="removeRow(idx)"
-                    [disabled]="rows.length <= 1"
-                    class="text-slate-400 hover:text-rose-600 disabled:opacity-20 p-1 rounded transition-colors cursor-pointer"
-                    title="Delete row"
+            <!-- Mobile Add Row Action -->
+            <button
+              type="button"
+              (click)="addRow()"
+              class="w-full py-3 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-800 rounded-2xl text-xs font-bold flex items-center justify-center space-x-1.5 transition-all active:scale-98 cursor-pointer shadow-2xs"
+            >
+              <span>＋</span>
+              <span>Add Another Expense Row</span>
+            </button>
+          </div>
+
+          <!-- DESKTOP SPREADSHEET TABLE (>= md) -->
+          <div class="hidden md:block overflow-x-auto">
+            <table class="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr
+                  class="bg-slate-100/90 text-slate-600 font-semibold border-y border-slate-200 uppercase text-[10px] tracking-wider select-none"
+                >
+                  <th class="py-2.5 px-2 w-8 text-center">#</th>
+                  <th class="py-2.5 px-2 min-w-[125px]">
+                    Date <span class="text-rose-500 font-bold">*</span>
+                  </th>
+                  <th class="py-2.5 px-2 min-w-[180px]">
+                    Description / Title <span class="text-rose-500 font-bold">*</span>
+                  </th>
+                  <th class="py-2.5 px-2 min-w-[140px]">
+                    Category
+                    <span
+                      class="text-[10px] text-indigo-600 font-bold"
+                      title="Auto-detects as you type"
+                      >✨ AI</span
+                    >
+                  </th>
+                  <th class="py-2.5 px-2 min-w-[110px]">
+                    Amount (₹) <span class="text-rose-500 font-bold">*</span>
+                  </th>
+                  <th class="py-2.5 px-2 min-w-[110px]">Split</th>
+                  <th class="py-2.5 px-2 w-10 text-center"></th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-100">
+                <tr
+                  *ngFor="let row of rows; let idx = index"
+                  class="hover:bg-slate-50/80 transition-colors group"
+                  [class.bg-emerald-50/20]="isRowValid(row)"
+                >
+                  <!-- Row Number -->
+                  <td
+                    class="py-1.5 px-2 text-center text-slate-400 font-mono text-[11px] select-none"
                   >
-                    ✕
-                  </button>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+                    {{ idx + 1 }}
+                  </td>
 
-          <!-- Empty Grid Quick Add Helper -->
+                  <!-- Date -->
+                  <td class="py-1.5 px-2">
+                    <input
+                      type="date"
+                      [(ngModel)]="row.date"
+                      required
+                      class="w-full px-2 py-1.5 border border-slate-200 rounded-md text-xs bg-white text-slate-900 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 font-medium"
+                    />
+                  </td>
+
+                  <!-- Title / Description with Real-time AI Category Detection -->
+                  <td class="py-1.5 px-2">
+                    <input
+                      type="text"
+                      [(ngModel)]="row.title"
+                      (ngModelChange)="onRowTitleChange(idx, $event)"
+                      placeholder="e.g. Blinkit, WiFi, Swiggy"
+                      class="w-full px-2.5 py-1.5 border border-slate-200 rounded-md text-xs bg-white text-slate-900 placeholder-slate-400 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 font-medium"
+                    />
+                  </td>
+
+                  <!-- Category -->
+                  <td class="py-1.5 px-2">
+                    <select
+                      [(ngModel)]="row.category"
+                      class="w-full px-2 py-1.5 border border-slate-200 rounded-md text-xs bg-white text-slate-800 focus:outline-none focus:border-indigo-500 font-medium cursor-pointer"
+                    >
+                      <option value="Food & Dining">🍔 Food & Dining</option>
+                      <option value="Bills & Utilities">⚡ Bills & Utilities</option>
+                      <option value="Transit & Travel">🚗 Transit & Travel</option>
+                      <option value="Shopping & Lifestyle">🛍️ Shopping & Lifestyle</option>
+                      <option value="Entertainment & Leisure">🎬 Entertainment & Leisure</option>
+                      <option value="Health & Wellness">💊 Health & Wellness</option>
+                      <option value="Education & Work">📚 Education & Work</option>
+                      <option value="Transfers & Adjustments">🔄 Transfers & Adjustments</option>
+                      <option value="Other">📦 Other</option>
+                    </select>
+                  </td>
+
+                  <!-- Amount (₹) -->
+                  <td class="py-1.5 px-2">
+                    <div class="relative">
+                      <span class="absolute left-2 top-1.5 text-slate-400 text-xs font-semibold"
+                        >₹</span
+                      >
+                      <input
+                        type="number"
+                        step="0.01"
+                        [(ngModel)]="row.amount"
+                        placeholder="0.00"
+                        class="w-full pl-5 pr-2 py-1.5 border border-slate-200 rounded-md text-xs bg-white text-slate-900 font-bold focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 font-mono"
+                      />
+                    </div>
+                  </td>
+
+                  <!-- Split Method -->
+                  <td class="py-1.5 px-2">
+                    <select
+                      [(ngModel)]="row.splitType"
+                      (keydown.tab)="onLastCellTab(idx)"
+                      class="w-full px-2 py-1.5 border border-slate-200 rounded-md text-xs bg-white text-slate-800 focus:outline-none focus:border-indigo-500 font-medium cursor-pointer"
+                    >
+                      <option value="EQUAL">Equal</option>
+                      <option value="EXACT">Exact</option>
+                      <option value="PERCENTAGE">%</option>
+                    </select>
+                  </td>
+
+                  <!-- Delete Action -->
+                  <td class="py-1.5 px-2 text-center">
+                    <button
+                      type="button"
+                      (click)="removeRow(idx)"
+                      [disabled]="rows.length <= 1"
+                      class="text-slate-400 hover:text-rose-600 disabled:opacity-20 p-1 rounded transition-colors cursor-pointer"
+                      title="Delete row"
+                    >
+                      ✕
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Empty Grid Quick Add Helper & Clear Action -->
           <div class="pt-3 flex items-center justify-between text-xs text-slate-500">
             <button
               type="button"
               (click)="addRow()"
-              class="text-indigo-600 hover:text-indigo-800 font-semibold flex items-center space-x-1 cursor-pointer"
+              class="text-indigo-600 hover:text-indigo-800 font-semibold hidden md:flex items-center space-x-1 cursor-pointer"
             >
               <span>＋ Add another row</span>
               <span class="text-[11px] text-slate-400">(or press Tab on last cell)</span>
@@ -274,7 +396,7 @@ export interface GridRow {
             <button
               type="button"
               (click)="clearEmptyRows()"
-              class="text-slate-400 hover:text-slate-600 text-xs font-medium cursor-pointer"
+              class="text-slate-400 hover:text-slate-600 text-xs font-medium cursor-pointer ml-auto"
             >
               Clear empty rows
             </button>
