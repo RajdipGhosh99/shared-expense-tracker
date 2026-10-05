@@ -125,8 +125,17 @@ router.post('/google', async (req: Request, res: Response) => {
   });
 });
 
-router.get('/me', authMiddleware, (req: AuthRequest, res: Response) => {
-  return res.json({ user: req.user });
+router.get('/me', authMiddleware, async (req: AuthRequest, res: Response) => {
+  const email = req.user?.email;
+  if (!email) return res.status(401).json({ error: 'Unauthorized' });
+
+  const storage = getStorage();
+  const dbUser = await storage.getUserByEmail(email);
+  if (!dbUser) {
+    return res.status(401).json({ error: 'User account no longer exists in database.' });
+  }
+
+  return res.json({ user: { email: dbUser.email, name: dbUser.name, upiId: dbUser.upiId || '' } });
 });
 
 export default router;

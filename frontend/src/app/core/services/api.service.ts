@@ -193,6 +193,14 @@ export class ApiService {
       .pipe(finalize(completeRequest))
       .subscribe({
         next: (res) => this.members.set(res.members),
+        error: (err) => {
+          if (err.status === 404) {
+            localStorage.removeItem('group_active');
+            localStorage.removeItem('flat_active');
+            this.activeGroup.set(null);
+            this.members.set([]);
+          }
+        },
       });
 
     this.http
@@ -200,6 +208,9 @@ export class ApiService {
       .pipe(finalize(completeRequest))
       .subscribe({
         next: (res) => this.expenses.set(res.expenses),
+        error: (err) => {
+          if (err.status === 404) this.expenses.set([]);
+        },
       });
 
     this.http
@@ -207,6 +218,9 @@ export class ApiService {
       .pipe(finalize(completeRequest))
       .subscribe({
         next: (res) => this.balanceSheet.set(res),
+        error: (err) => {
+          if (err.status === 404) this.balanceSheet.set(null);
+        },
       });
   }
 
@@ -220,7 +234,14 @@ export class ApiService {
       .pipe(
         tap((res) => {
           this.userGroups.set(res.memberships || []);
-          if (!this.activeGroup() && res.memberships && res.memberships.length > 0) {
+          if (!res.memberships || res.memberships.length === 0) {
+            localStorage.removeItem('group_active');
+            localStorage.removeItem('flat_active');
+            this.activeGroup.set(null);
+            this.members.set([]);
+            this.expenses.set([]);
+            this.balanceSheet.set(null);
+          } else if (!this.activeGroup()) {
             const active = res.memberships.find((m) => m.status === 'ACTIVE') || res.memberships[0];
             this.setActiveGroup(active.group);
           }
