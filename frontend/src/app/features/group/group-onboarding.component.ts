@@ -13,8 +13,19 @@ import { ApiService } from '../../core/services/api.service.js';
       class="min-h-screen flex items-center justify-center p-4 bg-slate-50 text-slate-900 font-sans"
     >
       <div
-        class="max-w-lg w-full bg-white p-7 sm:p-9 rounded-2xl border border-slate-200 shadow-xs space-y-6"
+        class="max-w-lg w-full bg-white p-7 sm:p-9 rounded-2xl border border-slate-200 shadow-xs space-y-6 relative"
       >
+        <div class="flex justify-end">
+          <button
+            type="button"
+            (click)="logout()"
+            class="px-3 py-1.5 rounded-xl text-slate-500 hover:text-rose-600 hover:bg-rose-50 text-xs font-semibold flex items-center space-x-1.5 transition-colors cursor-pointer"
+          >
+            <span>Log out</span>
+            <span>🚪</span>
+          </button>
+        </div>
+
         <div class="text-center space-y-2">
           <div
             class="w-12 h-12 rounded-xl bg-slate-900 text-white flex items-center justify-center mx-auto text-xl shadow-xs"
@@ -113,6 +124,11 @@ export class GroupOnboardingComponent {
         this.error.set(err.error?.error || 'Failed to create group.');
       },
     });
+  }
+
+  logout() {
+    this.api.logout();
+    this.router.navigate(['/auth']);
   }
 }
 

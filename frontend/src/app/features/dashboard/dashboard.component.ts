@@ -161,6 +161,13 @@ import {
                 <span>🔗</span>
                 <span>Join Another Group</span>
               </button>
+              <button
+                (click)="showGroupMenu.set(false); api.logout(); router.navigate(['/auth'])"
+                class="w-full py-2 px-3 text-left text-xs font-bold text-rose-600 hover:bg-rose-50 rounded-xl transition-colors flex items-center space-x-2 cursor-pointer border-t border-slate-100 mt-1 pt-2"
+              >
+                <span>🚪</span>
+                <span>Log out</span>
+              </button>
             </div>
           </div>
         </div>

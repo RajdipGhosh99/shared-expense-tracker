@@ -23,6 +23,18 @@ const authGuard = () => {
 export const routes: Routes = [
   { path: 'auth', component: AuthComponent },
   { path: 'join', component: JoinComponent },
+  {
+    path: 'logout',
+    canActivate: [
+      () => {
+        const api = inject(ApiService);
+        const router = inject(Router);
+        api.logout();
+        return router.createUrlTree(['/auth']);
+      },
+    ],
+    children: [],
+  },
   { path: 'onboarding', component: GroupOnboardingComponent, canActivate: [authGuard] },
   { path: 'dashboard', component: DashboardComponent, canActivate: [authGuard] },
   { path: 'screenshot-review', component: IncomingScreenshotComponent, canActivate: [authGuard] },
