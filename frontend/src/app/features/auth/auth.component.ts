@@ -1,4 +1,4 @@
-import { Component, signal } from '@angular/core';
+import { Component, signal, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -40,8 +40,11 @@ import { ApiService } from '../../core/services/api.service.js';
           </div>
         </div>
 
-        <!-- Mode Toggle (Log In / Sign Up) -->
-        <div class="grid grid-cols-2 p-1.5 bg-black/40 backdrop-blur-md rounded-2xl border border-white/10">
+        <!-- Mode Toggle (Log In / Sign Up) - Only visible when on EMAIL step -->
+        <div
+          *ngIf="step() === 'EMAIL'"
+          class="grid grid-cols-2 p-1.5 bg-black/40 backdrop-blur-md rounded-2xl border border-white/10"
+        >
           <button
             type="button"
             (click)="setMode(false)"
@@ -85,15 +88,33 @@ import { ApiService } from '../../core/services/api.service.js';
           </button>
         </div>
 
-        <!-- Form Fields -->
-        <form (ngSubmit)="submit()" class="space-y-3.5">
+        <!-- Success/Info Notice -->
+        <div
+          *ngIf="infoMessage()"
+          class="p-3 bg-emerald-500/20 border border-emerald-500/40 rounded-2xl text-emerald-300 text-xs font-semibold flex items-center justify-between space-x-2 transition-all animate-fade-in"
+        >
+          <div class="flex items-center space-x-2">
+            <span>✉️</span>
+            <span>{{ infoMessage() }}</span>
+          </div>
+          <button
+            type="button"
+            (click)="infoMessage.set(null)"
+            class="text-emerald-400 hover:text-white font-bold px-1.5 py-0.5 text-xs rounded hover:bg-emerald-500/20 transition-colors cursor-pointer"
+            title="Dismiss notice"
+          >
+            ✕
+          </button>
+        </div>
+
+        <!-- STEP 1: Enter Email / Details -->
+        <form *ngIf="step() === 'EMAIL'" (ngSubmit)="sendOtp()" class="space-y-3.5">
           <div *ngIf="isRegister()" class="space-y-1">
             <label class="text-[11px] font-bold text-slate-300 ml-1">Full Name</label>
             <input
               type="text"
               [(ngModel)]="name"
               name="name"
-              required
               placeholder="e.g. Alex Johnson"
               class="w-full px-4 py-3 rounded-2xl bg-white/5 border border-white/10 text-xs sm:text-sm text-white placeholder-slate-500 focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-400 transition-all"
             />
@@ -107,18 +128,6 @@ import { ApiService } from '../../core/services/api.service.js';
               name="email"
               required
               placeholder="name@domain.com"
-              class="w-full px-4 py-3 rounded-2xl bg-white/5 border border-white/10 text-xs sm:text-sm text-white placeholder-slate-500 focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-400 transition-all"
-            />
-          </div>
-
-          <div class="space-y-1">
-            <label class="text-[11px] font-bold text-slate-300 ml-1">Password</label>
-            <input
-              type="password"
-              [(ngModel)]="password"
-              name="password"
-              required
-              placeholder="••••••••"
               class="w-full px-4 py-3 rounded-2xl bg-white/5 border border-white/10 text-xs sm:text-sm text-white placeholder-slate-500 focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-400 transition-all"
             />
           </div>
@@ -139,12 +148,10 @@ import { ApiService } from '../../core/services/api.service.js';
 
           <button
             type="submit"
-            [disabled]="loading()"
+            [disabled]="loading() || !email.trim()"
             class="w-full py-3.5 bg-gradient-to-r from-indigo-600 via-indigo-500 to-purple-600 hover:opacity-95 active:scale-[0.98] font-black rounded-2xl shadow-lg shadow-indigo-600/30 transition-all flex items-center justify-center space-x-2 cursor-pointer text-xs sm:text-sm disabled:opacity-50 mt-1"
           >
-            <span *ngIf="!loading()">{{
-              isRegister() ? 'Create Free Account' : 'Log In to Tracker'
-            }}</span>
+            <span *ngIf="!loading()">Send 6-Digit Code</span>
             <span
               *ngIf="loading()"
               class="animate-spin size-4 border-2 border-white border-t-transparent rounded-full"
@@ -152,27 +159,94 @@ import { ApiService } from '../../core/services/api.service.js';
           </button>
         </form>
 
+        <!-- STEP 2: Enter 6-Digit OTP -->
+        <form *ngIf="step() === 'OTP'" (ngSubmit)="verifyOtp()" class="space-y-4">
+          <div class="p-3 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-between">
+            <div class="truncate mr-2">
+              <span class="text-[10px] uppercase font-bold text-slate-400 block">Sent code to</span>
+              <span class="text-xs font-semibold text-white truncate block">{{ email }}</span>
+            </div>
+            <button
+              type="button"
+              (click)="backToEmail()"
+              class="text-xs text-indigo-400 hover:text-indigo-300 font-bold px-2 py-1 rounded-lg bg-indigo-500/10 hover:bg-indigo-500/20 transition-all cursor-pointer flex-shrink-0"
+            >
+              Change
+            </button>
+          </div>
+
+          <div class="space-y-2">
+            <label class="text-[11px] font-bold text-slate-300 ml-1 block text-center">
+              Enter 6-Digit Verification Code
+            </label>
+            <input
+              type="text"
+              inputmode="numeric"
+              pattern="[0-9]*"
+              maxlength="6"
+              [(ngModel)]="otp"
+              name="otp"
+              required
+              autofocus
+              placeholder="••••••"
+              class="w-full px-4 py-3.5 rounded-2xl bg-black/40 border border-white/20 text-center text-2xl font-mono font-bold tracking-[0.5em] text-white placeholder-slate-600 focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/40 transition-all"
+            />
+          </div>
+
+          <button
+            type="submit"
+            [disabled]="loading() || otp.trim().length !== 6"
+            class="w-full py-3.5 bg-gradient-to-r from-indigo-600 via-indigo-500 to-purple-600 hover:opacity-95 active:scale-[0.98] font-black rounded-2xl shadow-lg shadow-indigo-600/30 transition-all flex items-center justify-center space-x-2 cursor-pointer text-xs sm:text-sm disabled:opacity-50"
+          >
+            <span *ngIf="!loading()">Verify & Log In</span>
+            <span
+              *ngIf="loading()"
+              class="animate-spin size-4 border-2 border-white border-t-transparent rounded-full"
+            ></span>
+          </button>
+
+          <!-- Resend Code Cooldown -->
+          <div class="text-center pt-1">
+            <button
+              *ngIf="resendCooldown() === 0"
+              type="button"
+              (click)="resendOtp()"
+              [disabled]="loading()"
+              class="text-xs text-indigo-400 hover:text-indigo-300 font-bold hover:underline cursor-pointer transition-colors"
+            >
+              Didn't receive code? Resend Code
+            </button>
+            <p *ngIf="resendCooldown() > 0" class="text-xs text-slate-400 font-medium">
+              Resend code in <span class="font-bold text-white">{{ resendCooldown() }}s</span>
+            </p>
+          </div>
+        </form>
+
         <!-- Roommate WhatsApp Invite Prompt -->
         <div class="pt-2 text-center border-t border-white/5">
           <p class="text-[11px] text-slate-400">
             Joining a roommate's space? <br />
-            <span class="text-indigo-400 font-bold">Use the WhatsApp invite link to enter without password</span>
+            <span class="text-indigo-400 font-bold">Use the WhatsApp invite link to enter directly</span>
           </p>
         </div>
       </div>
     </div>
   `,
 })
-export class AuthComponent {
+export class AuthComponent implements OnDestroy {
+  step = signal<'EMAIL' | 'OTP'>('EMAIL');
   isRegister = signal<boolean>(false);
   loading = signal<boolean>(false);
   errorMessage = signal<string | null>(null);
+  infoMessage = signal<string | null>(null);
+  resendCooldown = signal<number>(0);
 
   private errorTimeout: any = null;
+  private cooldownTimer: any = null;
 
   name = '';
   email = '';
-  password = '';
+  otp = '';
   upiId = '';
 
   constructor(
@@ -180,8 +254,19 @@ export class AuthComponent {
     private router: Router,
   ) {}
 
+  ngOnDestroy() {
+    if (this.errorTimeout) clearTimeout(this.errorTimeout);
+    if (this.cooldownTimer) clearInterval(this.cooldownTimer);
+  }
+
   setMode(register: boolean) {
     this.isRegister.set(register);
+    this.clearError();
+  }
+
+  backToEmail() {
+    this.step.set('EMAIL');
+    this.otp = '';
     this.clearError();
   }
 
@@ -193,8 +278,23 @@ export class AuthComponent {
     }
   }
 
+  private startCooldown(seconds: number = 60) {
+    this.resendCooldown.set(seconds);
+    if (this.cooldownTimer) clearInterval(this.cooldownTimer);
+    this.cooldownTimer = setInterval(() => {
+      const current = this.resendCooldown();
+      if (current <= 1) {
+        this.resendCooldown.set(0);
+        clearInterval(this.cooldownTimer);
+        this.cooldownTimer = null;
+      } else {
+        this.resendCooldown.set(current - 1);
+      }
+    }, 1000);
+  }
+
   private extractErrorMessage(err: any): string {
-    if (!err) return 'Authentication failed. Please check your credentials.';
+    if (!err) return 'Request failed. Please check your network and try again.';
 
     // Check string error response
     if (typeof err.error === 'string') {
@@ -219,53 +319,94 @@ export class AuthComponent {
       return 'Cannot reach backend server. Please verify network or Vercel service.';
     }
     if (err.status === 401) {
-      return 'Invalid credentials. Please verify your email and password.';
+      return 'Invalid code or code expired. Please request a new code.';
     }
-    if (err.status === 409) {
-      return 'Account already exists with this email. Please log in instead.';
+    if (err.status === 429) {
+      return 'Too many attempts. Please wait a moment before trying again.';
     }
     if (err.status === 500) {
-      return 'Backend server error (500). Please check database configuration.';
+      return 'Backend server error (500). Please check email service configuration.';
     }
 
     if (typeof err.message === 'string' && err.message) {
       return err.message;
     }
 
-    return 'Authentication failed. Please check your inputs and try again.';
+    return 'Request failed. Please check your inputs and try again.';
   }
 
-  submit() {
+  sendOtp() {
+    if (!this.email || !this.email.trim()) {
+      this.errorMessage.set('Please enter a valid email address.');
+      return;
+    }
+
     this.loading.set(true);
     this.clearError();
+    this.infoMessage.set(null);
 
-    const obs = this.isRegister()
-      ? this.api.register({
-          email: this.email,
-          password: this.password,
-          name: this.name,
-          upiId: this.upiId,
-        })
-      : this.api.login({ email: this.email, password: this.password });
-
-    obs.subscribe({
-      next: () => {
+    this.api.sendAuthOtp(this.email.trim(), this.name?.trim() || undefined).subscribe({
+      next: (res) => {
         this.loading.set(false);
-        this.clearError();
-        this.handlePostAuthNavigation();
+        this.infoMessage.set(`6-digit code sent to ${this.email.trim()}`);
+        this.startCooldown(res.cooldownSeconds || 60);
+        this.step.set('OTP');
       },
       error: (err) => {
         this.loading.set(false);
         const msg = this.extractErrorMessage(err);
         this.errorMessage.set(msg);
 
-        // Auto-dismiss inline banner after 6 seconds
+        if (err?.error?.retryAfterSeconds) {
+          this.startCooldown(err.error.retryAfterSeconds);
+        }
+
         if (this.errorTimeout) clearTimeout(this.errorTimeout);
         this.errorTimeout = setTimeout(() => {
           this.errorMessage.set(null);
         }, 6000);
       },
     });
+  }
+
+  resendOtp() {
+    if (this.resendCooldown() > 0) return;
+    this.sendOtp();
+  }
+
+  verifyOtp() {
+    if (!this.otp || this.otp.trim().length !== 6) {
+      this.errorMessage.set('Please enter the 6-digit verification code.');
+      return;
+    }
+
+    this.loading.set(true);
+    this.clearError();
+
+    this.api
+      .verifyAuthOtp({
+        email: this.email.trim(),
+        otp: this.otp.trim(),
+        name: this.name?.trim() || undefined,
+        upiId: this.upiId?.trim() || undefined,
+      })
+      .subscribe({
+        next: () => {
+          this.loading.set(false);
+          this.clearError();
+          this.handlePostAuthNavigation();
+        },
+        error: (err) => {
+          this.loading.set(false);
+          const msg = this.extractErrorMessage(err);
+          this.errorMessage.set(msg);
+
+          if (this.errorTimeout) clearTimeout(this.errorTimeout);
+          this.errorTimeout = setTimeout(() => {
+            this.errorMessage.set(null);
+          }, 6000);
+        },
+      });
   }
 
   private handlePostAuthNavigation() {

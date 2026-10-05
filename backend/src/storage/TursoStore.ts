@@ -147,6 +147,15 @@ export class TursoStore implements IDataStore {
           expires_at DATETIME NOT NULL,
           created_at DATETIME DEFAULT CURRENT_TIMESTAMP
         );`,
+
+        `CREATE TABLE IF NOT EXISTS user_otps (
+          id TEXT PRIMARY KEY,
+          email TEXT NOT NULL,
+          otp_hash TEXT NOT NULL,
+          attempts_left INTEGER DEFAULT 5,
+          expires_at DATETIME NOT NULL,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        );`,
       ],
       'write',
     );
@@ -247,6 +256,7 @@ export class TursoStore implements IDataStore {
           `CREATE INDEX IF NOT EXISTS idx_space_invites_token ON space_invites(token_hash);`,
           `CREATE INDEX IF NOT EXISTS idx_space_invites_space ON space_invites(space_id, invited_email);`,
           `CREATE INDEX IF NOT EXISTS idx_invite_otps_inv ON invite_otps(invite_id);`,
+          `CREATE INDEX IF NOT EXISTS idx_user_otps_email ON user_otps(email);`,
         ],
         'write',
       );
@@ -316,6 +326,63 @@ export class TursoStore implements IDataStore {
     const cleanEmail = email.toLowerCase().trim();
     const res = await this.client.execute({
       sql: `DELETE FROM users WHERE LOWER(email) = ?`,
+      args: [cleanEmail],
+    });
+    return res.rowsAffected > 0;
+  }
+
+  // --- User Auth Email OTPs ---
+  async saveUserOtp(record: {
+    id: string;
+    email: string;
+    otpHash: string;
+    attemptsLeft: number;
+    expiresAt: string;
+    createdAt: string;
+  }): Promise<void> {
+    const cleanEmail = record.email.toLowerCase().trim();
+    // Delete any old OTPs for this email first
+    await this.deleteUserOtps(cleanEmail);
+    await this.client.execute({
+      sql: `INSERT INTO user_otps (id, email, otp_hash, attempts_left, expires_at, created_at)
+            VALUES (?, ?, ?, ?, ?, ?)`,
+      args: [record.id, cleanEmail, record.otpHash, record.attemptsLeft, record.expiresAt, record.createdAt],
+    });
+  }
+
+  async getActiveUserOtp(email: string): Promise<{ id: string; email: string; otpHash: string; attemptsLeft: number; expiresAt: string } | null> {
+    const cleanEmail = email.toLowerCase().trim();
+    const res = await this.client.execute({
+      sql: `SELECT * FROM user_otps WHERE LOWER(email) = ? AND expires_at > datetime('now') ORDER BY created_at DESC LIMIT 1`,
+      args: [cleanEmail],
+    });
+    if (res.rows.length === 0) return null;
+    const r = res.rows[0];
+    return {
+      id: String(r.id),
+      email: String(r.email),
+      otpHash: String(r.otp_hash),
+      attemptsLeft: Number(r.attempts_left),
+      expiresAt: String(r.expires_at),
+    };
+  }
+
+  async decrementUserOtpAttempts(otpId: string): Promise<number> {
+    await this.client.execute({
+      sql: `UPDATE user_otps SET attempts_left = MAX(0, attempts_left - 1) WHERE id = ?`,
+      args: [otpId],
+    });
+    const res = await this.client.execute({
+      sql: `SELECT attempts_left FROM user_otps WHERE id = ? LIMIT 1`,
+      args: [otpId],
+    });
+    return res.rows.length > 0 ? Number(res.rows[0].attempts_left) : 0;
+  }
+
+  async deleteUserOtps(email: string): Promise<boolean> {
+    const cleanEmail = email.toLowerCase().trim();
+    const res = await this.client.execute({
+      sql: `DELETE FROM user_otps WHERE LOWER(email) = ?`,
       args: [cleanEmail],
     });
     return res.rowsAffected > 0;

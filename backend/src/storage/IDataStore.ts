@@ -38,6 +38,12 @@ export interface IDataStore {
   getUserByEmail(email: string): Promise<UserRecord | null>;
   deleteUserByEmail(email: string): Promise<boolean>;
 
+  // User Auth Email OTPs
+  saveUserOtp(record: { id: string; email: string; otpHash: string; attemptsLeft: number; expiresAt: string; createdAt: string }): Promise<void>;
+  getActiveUserOtp(email: string): Promise<{ id: string; email: string; otpHash: string; attemptsLeft: number; expiresAt: string } | null>;
+  decrementUserOtpAttempts(otpId: string): Promise<number>;
+  deleteUserOtps(email: string): Promise<boolean>;
+
   // Groups (Primary API)
   createGroup(group: Group): Promise<Group>;
   getGroupById(groupId: string): Promise<Group | null>;

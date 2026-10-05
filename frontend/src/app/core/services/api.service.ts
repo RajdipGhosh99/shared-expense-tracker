@@ -88,10 +88,30 @@ export class ApiService {
     );
   }
 
-  // --- Auth ---
+  // --- Passwordless Auth via Email OTP ---
+  sendAuthOtp(email: string, name?: string): Observable<{
+    success: boolean;
+    message: string;
+    isExistingUser: boolean;
+    cooldownSeconds: number;
+  }> {
+    return this.http.post<any>(`${this.baseUrl}/auth/send-otp`, { email, name });
+  }
+
+  verifyAuthOtp(data: {
+    email: string;
+    otp: string;
+    name?: string;
+    upiId?: string;
+  }): Observable<AuthResponse> {
+    return this.http
+      .post<AuthResponse>(`${this.baseUrl}/auth/verify-otp`, data)
+      .pipe(tap((res) => this.setSession(res)));
+  }
+
   register(data: {
     email: string;
-    password: string;
+    password?: string;
     name: string;
     upiId?: string;
   }): Observable<AuthResponse> {
