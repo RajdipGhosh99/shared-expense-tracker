@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ApiService } from '../../core/services/api.service.js';
+import { LoadingService } from '../../core/services/loading.service.js';
 import { AddExpenseModalComponent } from '../expenses/add-expense-modal.component.js';
 import { BulkExpenseGridComponent } from '../expenses/bulk-expense-grid.component.js';
 import {
@@ -65,6 +66,25 @@ import {
                 >
                   {{ api.activeGroup()?.name || 'My Space' }}
                 </span>
+
+                <!-- iOS Native In-Header 8-Spoke Activity Spinner (Concept D) -->
+                <span
+                  *ngIf="loading.isLoading()"
+                  class="inline-flex items-center ml-0.5 text-indigo-600 animate-fade-in"
+                  title="Syncing..."
+                >
+                  <svg class="size-3 animate-ios-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                    <line x1="12" y1="2" x2="12" y2="6"></line>
+                    <line x1="12" y1="18" x2="12" y2="22" opacity="0.25"></line>
+                    <line x1="4.93" y1="4.93" x2="7.76" y2="7.76" opacity="0.9"></line>
+                    <line x1="16.24" y1="16.24" x2="19.07" y2="19.07" opacity="0.35"></line>
+                    <line x1="2" y1="12" x2="6" y2="12" opacity="0.8"></line>
+                    <line x1="18" y1="12" x2="22" y2="12" opacity="0.45"></line>
+                    <line x1="4.93" y1="19.07" x2="7.76" y2="16.24" opacity="0.7"></line>
+                    <line x1="16.24" y1="7.76" x2="19.07" y2="4.93" opacity="0.6"></line>
+                  </svg>
+                </span>
+
                 <svg
                   class="size-3 text-slate-400 shrink-0 transition-transform duration-200"
                   [class.rotate-180]="showGroupMenu()"
@@ -76,14 +96,22 @@ import {
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="m6 9 6 6 6-6" />
                 </svg>
               </div>
+
+              <!-- Role Tag / Syncing State -->
               <span
-                *ngIf="isAdmin()"
+                *ngIf="loading.isLoading()"
+                class="text-[9px] font-bold text-indigo-600 block leading-tight animate-pulse"
+              >
+                Syncing...
+              </span>
+              <span
+                *ngIf="!loading.isLoading() && isAdmin()"
                 class="text-[9px] font-black text-amber-600 uppercase tracking-wider block leading-tight"
               >
                 Admin
               </span>
               <span
-                *ngIf="!isAdmin()"
+                *ngIf="!loading.isLoading() && !isAdmin()"
                 class="text-[9px] font-medium text-slate-500 block leading-tight"
               >
                 Member
@@ -232,6 +260,14 @@ import {
               </button>
             </div>
           </div>
+        </div>
+
+        <!-- Integrated Header Laser Shimmer Indicator (Concept D) -->
+        <div
+          *ngIf="loading.isLoading()"
+          class="absolute bottom-0 inset-x-0 h-0.5 bg-indigo-100 overflow-hidden"
+        >
+          <div class="h-full w-1/3 bg-gradient-to-r from-transparent via-indigo-600 to-amber-400 rounded-full animate-shimmer-laser"></div>
         </div>
       </header>
 
@@ -1512,6 +1548,7 @@ export class DashboardComponent implements OnInit {
   constructor(
     public api: ApiService,
     public router: Router,
+    public loading: LoadingService,
   ) { }
 
   ngOnInit() {

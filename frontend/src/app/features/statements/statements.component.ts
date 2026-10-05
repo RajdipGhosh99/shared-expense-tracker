@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ApiService } from '../../core/services/api.service.js';
+import { LoadingService } from '../../core/services/loading.service.js';
 import { MonthlyStatement } from '@shared-expense-tracker/shared';
 
 @Component({
@@ -12,7 +13,7 @@ import { MonthlyStatement } from '@shared-expense-tracker/shared';
   template: `
     <div class="min-h-screen max-w-md sm:max-w-lg md:max-w-2xl mx-auto bg-slate-50 text-slate-900 pb-28 border-x border-slate-200/80 font-sans flex flex-col shadow-xs">
       <!-- Navbar -->
-      <header class="bg-white/95 backdrop-blur-xl border-b border-slate-200/90 sticky top-0 z-30 px-3 shadow-2xs">
+      <header class="bg-white/95 backdrop-blur-xl border-b border-slate-200/90 sticky top-0 z-30 px-3 shadow-2xs relative">
         <div class="flex items-center justify-between h-11">
           <div class="flex items-center space-x-2">
             <button
@@ -21,7 +22,26 @@ import { MonthlyStatement } from '@shared-expense-tracker/shared';
             >
               <span>←</span>
             </button>
-            <h1 class="text-sm font-black text-slate-900 tracking-tight">Monthly Statements</h1>
+            <div class="flex items-center gap-1.5">
+              <h1 class="text-sm font-black text-slate-900 tracking-tight">Monthly Statements</h1>
+              <!-- iOS In-Header Spinner -->
+              <span
+                *ngIf="loadingService.isLoading()"
+                class="inline-flex items-center text-indigo-600 animate-fade-in"
+                title="Loading statements..."
+              >
+                <svg class="size-3.5 animate-ios-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                  <line x1="12" y1="2" x2="12" y2="6"></line>
+                  <line x1="12" y1="18" x2="12" y2="22" opacity="0.25"></line>
+                  <line x1="4.93" y1="4.93" x2="7.76" y2="7.76" opacity="0.9"></line>
+                  <line x1="16.24" y1="16.24" x2="19.07" y2="19.07" opacity="0.35"></line>
+                  <line x1="2" y1="12" x2="6" y2="12" opacity="0.8"></line>
+                  <line x1="18" y1="12" x2="22" y2="12" opacity="0.45"></line>
+                  <line x1="4.93" y1="19.07" x2="7.76" y2="16.24" opacity="0.7"></line>
+                  <line x1="16.24" y1="7.76" x2="19.07" y2="4.93" opacity="0.6"></line>
+                </svg>
+              </span>
+            </div>
           </div>
           <a
             *ngIf="whatsappLink()"
@@ -32,6 +52,14 @@ import { MonthlyStatement } from '@shared-expense-tracker/shared';
           >
             <span>💬</span>
           </a>
+        </div>
+
+        <!-- Integrated Header Laser Shimmer Indicator -->
+        <div
+          *ngIf="loadingService.isLoading()"
+          class="absolute bottom-0 inset-x-0 h-0.5 bg-indigo-100 overflow-hidden"
+        >
+          <div class="h-full w-1/3 bg-gradient-to-r from-transparent via-indigo-600 to-amber-400 rounded-full animate-shimmer-laser"></div>
         </div>
       </header>
 
@@ -239,6 +267,7 @@ export class StatementsComponent implements OnInit {
   constructor(
     public api: ApiService,
     public router: Router,
+    public loadingService: LoadingService,
   ) {}
 
   ngOnInit() {
