@@ -299,14 +299,50 @@ import {
         (touchend)="onPullEnd()"
         (touchcancel)="onPullEnd()"
       >
+        <!-- OPTION A: iOS Native Elastic Capsule Pull-To-Refresh -->
         <div
           *ngIf="pullDistance() > 0 || isRefreshing()"
-          class="flex items-center justify-center gap-2 overflow-hidden text-xs font-semibold text-slate-500"
-          [style.height.px]="isRefreshing() ? 42 : pullDistance()"
+          class="flex items-center justify-center overflow-hidden transition-all duration-75"
+          [style.height.px]="isRefreshing() ? 52 : pullDistance()"
         >
-          <span [class.animate-spin]="isRefreshing()">↻</span>
-          <span *ngIf="isRefreshing()">Refreshing...</span>
-          <span *ngIf="!isRefreshing() && pullDistance() >= pullThreshold">Release to refresh</span>
+          <div
+            class="flex items-center gap-2 bg-white/95 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-slate-200 shadow-sm transition-transform duration-150"
+            [class.scale-105]="pullDistance() >= pullThreshold && !isRefreshing()"
+          >
+            <!-- 8-Spoke iOS Activity Spinner during refresh -->
+            <span
+              *ngIf="isRefreshing()"
+              class="inline-flex items-center text-indigo-600 animate-fade-in"
+            >
+              <svg class="size-4 animate-ios-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                <line x1="12" y1="2" x2="12" y2="6"></line>
+                <line x1="12" y1="18" x2="12" y2="22" opacity="0.25"></line>
+                <line x1="4.93" y1="4.93" x2="7.76" y2="7.76" opacity="0.9"></line>
+                <line x1="16.24" y1="16.24" x2="19.07" y2="19.07" opacity="0.35"></line>
+                <line x1="2" y1="12" x2="6" y2="12" opacity="0.8"></line>
+                <line x1="18" y1="12" x2="22" y2="12" opacity="0.45"></line>
+                <line x1="4.93" y1="19.07" x2="7.76" y2="16.24" opacity="0.7"></line>
+                <line x1="16.24" y1="7.76" x2="19.07" y2="4.93" opacity="0.6"></line>
+              </svg>
+            </span>
+
+            <!-- Downward / Flip-Up Arrow Icon when pulling -->
+            <span
+              *ngIf="!isRefreshing()"
+              class="inline-flex items-center text-indigo-600 transition-transform duration-200 ease-out"
+              [class.rotate-180]="pullDistance() >= pullThreshold"
+            >
+              <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <polyline points="19 12 12 19 5 12"></polyline>
+              </svg>
+            </span>
+
+            <!-- Status text label -->
+            <span class="text-[11px] font-bold text-slate-700 tracking-tight">
+              {{ isRefreshing() ? 'Syncing...' : (pullDistance() >= pullThreshold ? 'Release to refresh' : 'Pull to refresh') }}
+            </span>
+          </div>
         </div>
 
         <!-- ADMIN PENDING APPROVALS ALERT BANNER -->
