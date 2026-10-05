@@ -147,11 +147,27 @@ import {
               type="text"
               [(ngModel)]="title"
               (ngModelChange)="onTitleChange($event)"
+              (blur)="titleTouched.set(true)"
               name="title"
               required
               placeholder="e.g. Blinkit Groceries, Wi-Fi, Swiggy dinner"
-              class="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 bg-white text-slate-900 placeholder-slate-400 transition-all"
+              class="w-full px-4 py-3 rounded-xl border text-sm focus:outline-none bg-white text-slate-900 placeholder-slate-400 transition-all"
+              [class.border-slate-200]="!titleTouched() || (title && title.trim().length > 0)"
+              [class.focus:border-indigo-500]="!titleTouched() || (title && title.trim().length > 0)"
+              [class.focus:ring-indigo-500]="!titleTouched() || (title && title.trim().length > 0)"
+              [class.border-rose-400]="titleTouched() && (!title || title.trim().length === 0)"
+              [class.bg-rose-50/20]="titleTouched() && (!title || title.trim().length === 0)"
+              [class.focus:border-rose-500]="titleTouched() && (!title || title.trim().length === 0)"
+              [class.focus:ring-rose-500]="titleTouched() && (!title || title.trim().length === 0)"
             />
+            <!-- Title validation feedback for empty / whitespace-only input -->
+            <p
+              *ngIf="titleTouched() && (!title || title.trim().length === 0)"
+              class="text-[11px] font-semibold text-rose-600 flex items-center space-x-1 animate-fade-in"
+            >
+              <span>⚠️</span>
+              <span>Please enter a title (cannot be empty or spaces only).</span>
+            </p>
             <!-- Real-time AI Suggested Category Badge -->
             <div
               *ngIf="aiSuggestion() && aiSuggestion()?.matchedKeyword"
@@ -730,6 +746,8 @@ export class AddExpenseModalComponent implements OnInit {
     this.excludedEmails.set(next);
   }
 
+  titleTouched = signal<boolean>(false);
+
   onCategoryChange(newCat: ExpenseCategory) {
     const subs = CATEGORY_TAXONOMY[newCat] || [];
     if (subs.length > 0 && !subs.includes(this.subCategory)) {
@@ -756,7 +774,22 @@ export class AddExpenseModalComponent implements OnInit {
   }
 
   submit() {
-    if (!this.title || !this.amount || !this.date) return;
+    this.titleTouched.set(true);
+    const trimmedTitle = (this.title || '').trim();
+    if (!trimmedTitle) {
+      this.errorMessage.set('Expense title cannot be empty or just spaces.');
+      return;
+    }
+
+    if (!this.amount || this.amount <= 0) {
+      this.errorMessage.set('Please enter a valid expense amount greater than 0.');
+      return;
+    }
+
+    if (!this.date) {
+      this.errorMessage.set('Please select a valid date.');
+      return;
+    }
 
     if (this.controls().subCategory === 'mandatory' && !this.subCategory) {
       this.errorMessage.set('Subcategory is mandatory for this group.');
@@ -809,7 +842,7 @@ export class AddExpenseModalComponent implements OnInit {
 
     this.api
       .addExpense({
-        title: this.title,
+        title: trimmedTitle,
         amount: this.amount,
         payerEmail: this.payerEmail || undefined,
         date: this.date,
