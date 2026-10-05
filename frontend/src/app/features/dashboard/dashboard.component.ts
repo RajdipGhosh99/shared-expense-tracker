@@ -11,9 +11,10 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 import { ApiService } from '../../core/services/api.service.js';
 import { LoadingService } from '../../core/services/loading.service.js';
+import { OcrBridgeService } from '../../core/services/ocr-bridge.service.js';
 import { AddExpenseModalComponent } from '../expenses/add-expense-modal.component.js';
 import { BulkExpenseGridComponent } from '../expenses/bulk-expense-grid.component.js';
 import {
@@ -1784,11 +1785,20 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
   constructor(
     public api: ApiService,
     public router: Router,
+    private route: ActivatedRoute,
+    private ocrBridge: OcrBridgeService,
     public loading: LoadingService,
     private ngZone: NgZone,
   ) { }
 
   ngOnInit() {
+    // Check if routed with openBulk query param or if an OCR extraction is queued
+    this.route.queryParams.subscribe((params) => {
+      if (params['openBulk'] === '1' || this.ocrBridge.hasPending()) {
+        this.showBulkModal.set(true);
+      }
+    });
+
     this.api.fetchUserGroups().subscribe({
       next: (res) => {
         if (!res.memberships || res.memberships.length === 0) {

@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import imageCompression from 'browser-image-compression';
 import { ReceiptExtraction, ReceiptExtractionApiResponse, receiptSchema } from '@shared-expense-tracker/shared';
+import { OcrBridgeService } from '../../core/services/ocr-bridge.service.js';
 
 @Component({
   selector: 'app-receipt-upload',
@@ -175,20 +176,32 @@ import { ReceiptExtraction, ReceiptExtractionApiResponse, receiptSchema } from '
           </div>
         </div>
 
-        <!-- Action Button -->
-        <button
-          type="button"
-          (click)="applyExtraction()"
-          class="w-full py-2 bg-emerald-600 hover:bg-emerald-700 active:scale-98 text-white font-bold rounded-lg text-xs shadow-xs transition-all cursor-pointer"
-        >
-          Use Extracted Receipt in Expense Form
-        </button>
+        <!-- Action Buttons -->
+        <div class="flex items-center gap-2 pt-1">
+          <button
+            type="button"
+            (click)="openInMultisheet()"
+            class="flex-1 py-2 px-3 bg-emerald-600 hover:bg-emerald-700 active:scale-98 text-white font-bold rounded-lg text-xs shadow-xs transition-all cursor-pointer flex items-center justify-center space-x-1.5"
+          >
+            <span>📊</span>
+            <span>Review in Multisheet</span>
+          </button>
+          <button
+            type="button"
+            (click)="applyExtraction()"
+            class="py-2 px-3 bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold rounded-lg text-xs transition-all cursor-pointer shrink-0"
+            title="Use directly in single bill form"
+          >
+            Use in Single Form
+          </button>
+        </div>
       </div>
     </div>
   `,
 })
 export class ReceiptUploadComponent {
   @Output() receiptExtracted = new EventEmitter<ReceiptExtraction>();
+  @Output() openMultisheet = new EventEmitter<ReceiptExtraction>();
 
   // State Signals
   isDragging = signal<boolean>(false);
@@ -203,7 +216,10 @@ export class ReceiptUploadComponent {
 
   isProcessing = computed(() => this.isCompressing() || this.isExtracting());
 
-  constructor(private http: HttpClient) {}
+  constructor(
+    private http: HttpClient,
+    private ocrBridge: OcrBridgeService,
+  ) {}
 
   onDragOver(event: DragEvent) {
     event.preventDefault();
@@ -306,6 +322,14 @@ export class ReceiptUploadComponent {
     const ext = this.extraction();
     if (ext && ext.isValidReceipt) {
       this.receiptExtracted.emit(ext);
+    }
+  }
+
+  openInMultisheet() {
+    const ext = this.extraction();
+    if (ext && ext.isValidReceipt) {
+      this.ocrBridge.stageForMultisheet(ext);
+      this.openMultisheet.emit(ext);
     }
   }
 

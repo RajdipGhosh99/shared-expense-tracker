@@ -89,6 +89,8 @@ export interface Expense {
     splits: Record<string, number>;
     utrNumber?: string;
     overwrittenFlag: 'YES' | 'NO';
+    isOcrProcessed?: boolean;
+    ocrConfidence?: number;
     originalExpenseId?: string;
     duplicateOfId?: string;
     sheetRowIndex?: number;

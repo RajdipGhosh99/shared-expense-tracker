@@ -472,6 +472,7 @@ export class ApiService {
     utrNumber?: string;
     allowOverwrite?: boolean;
     overwriteTargetId?: string;
+    isOcrProcessed?: boolean;
   }): Observable<{ status: string; expense: Expense }> {
     const group = this.activeGroup();
     if (!group) return throwError(() => new Error('No active group'));
@@ -497,6 +498,7 @@ export class ApiService {
       isExpense?: boolean;
       splitType?: string;
       utrNumber?: string;
+      isOcrProcessed?: boolean;
     }>,
   ): Observable<{ status: string; count: number; expenses: Expense[]; errors: any[] }> {
     const group = this.activeGroup();

@@ -188,7 +188,10 @@ router.post(
         return;
       }
 
-      const validatedData = zodValidation.data;
+      const validatedData = {
+        ...zodValidation.data,
+        isOcrProcessed: zodValidation.data.isValidReceipt ? true : false,
+      };
 
       // 5. CACHE DEDUPLICATION HASH:
       // Cache verified result against SHA-256 hash

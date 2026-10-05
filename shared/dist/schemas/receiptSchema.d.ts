@@ -9,6 +9,7 @@ export declare const receiptSchema: z.ZodObject<{
     totalAmount: z.ZodNumber;
     paymentId: z.ZodNullable<z.ZodString>;
     date: z.ZodString;
+    isOcrProcessed: z.ZodDefault<z.ZodOptional<z.ZodBoolean>>;
 }, z.core.$strip>;
 export type ReceiptExtraction = z.infer<typeof receiptSchema>;
 export interface ReceiptExtractionApiResponse {

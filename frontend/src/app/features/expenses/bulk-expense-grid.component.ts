@@ -3,7 +3,8 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../core/services/api.service.js';
 import { AiCategoryService } from '../../core/services/ai-category.service.js';
-import { ExpenseCategory, SplitType, EligibleMember } from '@shared-expense-tracker/shared';
+import { OcrBridgeService } from '../../core/services/ocr-bridge.service.js';
+import { ExpenseCategory, SplitType, EligibleMember, ReceiptExtraction } from '@shared-expense-tracker/shared';
 
 export interface GridRow {
   id: number;
@@ -13,6 +14,8 @@ export interface GridRow {
   amount: number | null;
   payerEmail?: string;
   splitType: SplitType;
+  utrNumber?: string;
+  isOcrProcessed?: boolean;
 }
 
 @Component({
@@ -162,6 +165,13 @@ export interface GridRow {
             <span class="text-slate-500">ROWS: {{ rows.length }}</span>
             <span class="text-slate-300">|</span>
             <span class="text-emerald-700 font-bold">VALID: {{ validRowCount() }}</span>
+            <span
+              *ngIf="hasOcrRows()"
+              class="px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-800 border border-indigo-200 text-[10px] font-black uppercase tracking-wide flex items-center space-x-1"
+            >
+              <span>⚡</span>
+              <span>1 Row Filled by OCR</span>
+            </span>
           </div>
           <div class="text-[10px] text-slate-400 sm:block hidden">
             Scroll horizontally to view all columns
@@ -254,13 +264,24 @@ export interface GridRow {
 
                 <!-- Cell B: Description / Title -->
                 <td class="p-1 border-r border-slate-200">
-                  <input
-                    type="text"
-                    [(ngModel)]="row.title"
-                    (ngModelChange)="onRowTitleChange(idx, $event)"
-                    placeholder="e.g. Blinkit, WiFi, Swiggy"
-                    class="w-full px-2.5 py-1.5 border border-transparent focus:border-indigo-500 rounded text-xs bg-transparent focus:bg-white text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-indigo-500 font-medium"
-                  />
+                  <div class="relative flex items-center">
+                    <input
+                      type="text"
+                      [(ngModel)]="row.title"
+                      (ngModelChange)="onRowTitleChange(idx, $event)"
+                      placeholder="e.g. Blinkit, WiFi, Swiggy"
+                      class="w-full px-2.5 py-1.5 border border-transparent focus:border-indigo-500 rounded text-xs bg-transparent focus:bg-white text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-indigo-500 font-medium"
+                      [class.pr-16]="row.isOcrProcessed"
+                    />
+                    <!-- Subtle OCR badge tag to indicate extraction by AI/OCR -->
+                    <span
+                      *ngIf="row.isOcrProcessed"
+                      class="absolute right-1 px-1.5 py-0.5 rounded-md bg-indigo-50 text-indigo-700 border border-indigo-200 text-[9px] font-black tracking-tight select-none pointer-events-none"
+                      title="Processed by Multimodal AI/OCR"
+                    >
+                      ⚡ OCR
+                    </span>
+                  </div>
                 </td>
 
                 <!-- Cell C: Category -->
@@ -444,6 +465,7 @@ export class BulkExpenseGridComponent implements OnInit {
   constructor(
     public api: ApiService,
     private aiService: AiCategoryService,
+    private ocrBridge: OcrBridgeService,
   ) {}
 
   onRowTitleChange(index: number, newTitle: string) {
@@ -558,6 +580,53 @@ export class BulkExpenseGridComponent implements OnInit {
     // Pre-cache today's eligible members from BE
     this.fetchEligibleMembersForDate(today);
 
+    // Check if an OCR extraction is pending from receipt scanner
+    const stagedOcr = this.ocrBridge.consumePendingExtraction();
+    if (stagedOcr && stagedOcr.isValidReceipt) {
+      const ocrDate = stagedOcr.date && stagedOcr.date.match(/^\d{4}-\d{2}-\d{2}$/) ? stagedOcr.date : today;
+      let ocrCategory: ExpenseCategory = 'Food & Dining';
+      if (stagedOcr.vendorName) {
+        const pred = this.aiService.predict(stagedOcr.vendorName);
+        if (pred?.category) ocrCategory = pred.category;
+      }
+
+      this.rows = [
+        {
+          id: this.nextId++,
+          date: ocrDate,
+          title: stagedOcr.vendorName || 'Scanned Receipt',
+          category: ocrCategory,
+          amount: stagedOcr.totalAmount > 0 ? stagedOcr.totalAmount : null,
+          payerEmail: defaultPayer,
+          splitType: 'EXACT',
+          utrNumber: stagedOcr.paymentId || undefined,
+          isOcrProcessed: true,
+        },
+        {
+          id: this.nextId++,
+          date: ocrDate,
+          title: '',
+          category: 'Bills & Utilities',
+          amount: null,
+          payerEmail: defaultPayer,
+          splitType: 'EXACT',
+        },
+        {
+          id: this.nextId++,
+          date: ocrDate,
+          title: '',
+          category: 'Transit & Travel',
+          amount: null,
+          payerEmail: defaultPayer,
+          splitType: 'EXACT',
+        },
+      ];
+
+      // Refresh payer eligibility for OCR date
+      this.onRowDateChange(this.rows[0], ocrDate);
+      return;
+    }
+
     this.rows = [
       {
         id: this.nextId++,
@@ -638,6 +707,10 @@ export class BulkExpenseGridComponent implements OnInit {
 
   validRowCount(): number {
     return this.rows.filter((r) => this.isRowValid(r)).length;
+  }
+
+  hasOcrRows(): boolean {
+    return this.rows.some((r) => r.isOcrProcessed);
   }
 
   totalAmount(): number {
@@ -733,6 +806,8 @@ export class BulkExpenseGridComponent implements OnInit {
       isExpense:
         r.category !== 'Transfers & Adjustments' && r.category !== 'Transfers & Settlements',
       splitType: r.splitType,
+      utrNumber: r.utrNumber,
+      isOcrProcessed: r.isOcrProcessed,
     }));
 
     this.api.addExpensesBatch(items).subscribe({

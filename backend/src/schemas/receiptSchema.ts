@@ -46,6 +46,11 @@ export const receiptSchema = z.object({
   date: z
     .string()
     .describe('Transaction date in ISO format YYYY-MM-DD. Empty string if unreadable or rejected.'),
+  isOcrProcessed: z
+    .boolean()
+    .optional()
+    .default(true)
+    .describe('Indicates that this expense entry was extracted and verified by Multimodal AI/OCR.'),
 });
 
 export type ReceiptExtraction = z.infer<typeof receiptSchema>;

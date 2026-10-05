@@ -281,6 +281,8 @@ export interface Expense {
   splits: Record<string, number>; // { [userEmail]: amountMinorUnits }
   utrNumber?: string;
   overwrittenFlag: 'YES' | 'NO';
+  isOcrProcessed?: boolean; // Flag identifying that this expense was processed/extracted via Multimodal OCR
+  ocrConfidence?: number;
   originalExpenseId?: string;
   duplicateOfId?: string;
   sheetRowIndex?: number;

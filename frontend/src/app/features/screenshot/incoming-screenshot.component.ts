@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ApiService } from '../../core/services/api.service.js';
+import { OcrBridgeService } from '../../core/services/ocr-bridge.service.js';
 import { ExtractedReceiptResult, ExpenseCategory } from '@shared-expense-tracker/shared';
 
 @Component({
@@ -148,19 +149,26 @@ import { ExtractedReceiptResult, ExpenseCategory } from '@shared-expense-tracker
             Split equally with all active group members.
           </div>
 
-          <div class="flex space-x-3 pt-1">
+          <div class="flex space-x-2 pt-1">
             <button
               (click)="cancel()"
-              class="flex-1 py-2.5 rounded-lg border border-slate-300 bg-white text-slate-700 font-semibold text-xs hover:bg-slate-100 transition-all cursor-pointer shadow-xs"
+              class="px-3 py-2.5 rounded-lg border border-slate-300 bg-white text-slate-700 font-semibold text-xs hover:bg-slate-100 transition-all cursor-pointer shadow-xs"
             >
               Discard
+            </button>
+            <button
+              (click)="reviewInBulkSheet()"
+              class="flex-1 py-2.5 rounded-lg border border-emerald-300 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-bold text-xs transition-all cursor-pointer shadow-xs flex items-center justify-center space-x-1"
+            >
+              <span>📊</span>
+              <span>Review in Bulk Sheet</span>
             </button>
             <button
               (click)="confirmAndSave()"
               [disabled]="isSaving()"
               class="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg shadow-xs text-xs transition-all cursor-pointer"
             >
-              {{ isSaving() ? 'Saving...' : '1-Tap Save & Split' }}
+              {{ isSaving() ? 'Saving...' : '1-Tap Save' }}
             </button>
           </div>
         </div>
@@ -178,6 +186,7 @@ export class IncomingScreenshotComponent implements OnInit {
   constructor(
     private api: ApiService,
     private router: Router,
+    private ocrBridge: OcrBridgeService,
   ) {}
 
   async ngOnInit() {
@@ -247,6 +256,7 @@ export class IncomingScreenshotComponent implements OnInit {
         category: data.category,
         splitType: 'EXACT',
         utrNumber: data.utrNumber,
+        isOcrProcessed: true,
       })
       .subscribe({
         next: () => {
@@ -258,6 +268,25 @@ export class IncomingScreenshotComponent implements OnInit {
           alert(err.error?.message || 'Failed to save expense.');
         },
       });
+  }
+
+  reviewInBulkSheet() {
+    const data = this.extracted();
+    if (!data) return;
+
+    // Bridge data to spreadsheet bulk grid
+    this.ocrBridge.stageForMultisheet({
+      isValidReceipt: true,
+      rejectionReason: null,
+      vendorName: data.merchant,
+      totalAmount: data.amountDisplay,
+      date: this.expenseDate,
+      paymentId: data.utrNumber || null,
+      isOcrProcessed: true,
+    });
+
+    // Navigate to dashboard and trigger bulk sheet modal
+    this.router.navigate(['/dashboard'], { queryParams: { openBulk: '1' } });
   }
 
   cancel() {
