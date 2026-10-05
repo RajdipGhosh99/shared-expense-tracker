@@ -1,6 +1,6 @@
 import { Injectable, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, finalize, tap } from 'rxjs';
+import { Observable, finalize, tap, EMPTY, throwError } from 'rxjs';
 import {
   Group,
   GroupMember,
@@ -58,7 +58,20 @@ export class ApiService {
     if (savedToken && savedUser) {
       this.token.set(savedToken);
       this.currentUser.set(JSON.parse(savedUser));
-      this.fetchUserGroups().subscribe();
+      // Verify account is still valid in database (e.g. after DB wipe or token expiration)
+      this.checkMe().subscribe({
+        next: (me) => {
+          if (me?.user) {
+            this.currentUser.set(me.user);
+          }
+          this.fetchUserGroups().subscribe();
+        },
+        error: (err) => {
+          if (err?.status === 401) {
+            this.logout();
+          }
+        },
+      });
     }
     if (savedGroup) {
       const parsed = JSON.parse(savedGroup);
@@ -67,6 +80,12 @@ export class ApiService {
         this.refreshGroupData(parsed.id);
       }
     }
+  }
+
+  checkMe(): Observable<{ user: { email: string; name: string; upiId?: string } }> {
+    return this.http.get<{ user: { email: string; name: string; upiId?: string } }>(
+      `${this.baseUrl}/auth/me`,
+    );
   }
 
   // --- Auth ---
@@ -298,7 +317,7 @@ export class ApiService {
 
   toggleAway(isAway: boolean, awayUntil?: string): Observable<any> {
     const group = this.activeGroup();
-    if (!group) throw new Error('No active group');
+    if (!group) return EMPTY;
     return this.http
       .patch(`${this.baseUrl}/groups/${group.id}/members/away`, { isAway, awayUntil })
       .pipe(tap(() => this.refreshGroupData(group.id)));
@@ -383,7 +402,7 @@ export class ApiService {
     overwriteTargetId?: string;
   }): Observable<{ status: string; expense: Expense }> {
     const group = this.activeGroup();
-    if (!group) throw new Error('No active group');
+    if (!group) return throwError(() => new Error('No active group'));
 
     return this.http
       .post<{ status: string; expense: Expense }>(`${this.baseUrl}/expenses`, {
@@ -408,7 +427,7 @@ export class ApiService {
     }>,
   ): Observable<{ status: string; count: number; expenses: Expense[]; errors: any[] }> {
     const group = this.activeGroup();
-    if (!group) throw new Error('No active group');
+    if (!group) return throwError(() => new Error('No active group'));
 
     return this.http
       .post<{ status: string; count: number; expenses: Expense[]; errors: any[] }>(
@@ -441,7 +460,7 @@ export class ApiService {
   // --- Settlements ---
   recordSettlement(receiverEmail: string, amount: number, notes?: string): Observable<any> {
     const group = this.activeGroup();
-    if (!group) throw new Error('No active group');
+    if (!group) return throwError(() => new Error('No active group'));
 
     return this.http
       .post(`${this.baseUrl}/settlements`, {
@@ -464,7 +483,7 @@ export class ApiService {
     whatsappLink: string;
   }> {
     const group = this.activeGroup();
-    if (!group) throw new Error('No active group');
+    if (!group) return throwError(() => new Error('No active group'));
 
     let url = `${this.baseUrl}/statements?groupId=${group.id}&period=${period}`;
     if (startDate) url += `&startDate=${startDate}`;

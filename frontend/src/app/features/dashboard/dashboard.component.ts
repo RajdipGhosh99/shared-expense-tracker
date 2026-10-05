@@ -1428,7 +1428,11 @@ export class DashboardComponent implements OnInit {
 
   ngOnInit() {
     this.api.fetchUserGroups().subscribe({
-      next: () => {
+      next: (res) => {
+        if (!res.memberships || res.memberships.length === 0) {
+          this.router.navigate(['/onboarding']);
+          return;
+        }
         const active = this.api.activeGroup();
         if (active?.formControls) {
           this.formControlsConfig = { ...active.formControls };
@@ -1638,6 +1642,7 @@ export class DashboardComponent implements OnInit {
   }
 
   toggleVacation() {
+    if (!this.api.activeGroup()) return;
     this.api.toggleAway(!this.isAway()).subscribe();
   }
 
