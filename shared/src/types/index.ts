@@ -2,7 +2,7 @@
 // User & Member Models
 // ==========================================
 export type MemberRole = 'ADMIN' | 'MEMBER';
-export type MemberStatus = 'ACTIVE' | 'PENDING' | 'REJECTED' | 'LEFT';
+export type MemberStatus = 'ACTIVE' | 'PENDING' | 'REJECTED' | 'LEFT' | 'INACTIVE';
 
 export interface User {
   id: string;
@@ -67,11 +67,15 @@ export const DEFAULT_GROUP_FORM_CONTROLS: GroupFormControls = {
 // ==========================================
 // Group Models
 // ==========================================
+export type GroupStatus = 'ACTIVE' | 'INACTIVE';
+
 export interface Group {
   id: string;
   name: string;
   inviteCode: string;
   currency: string; // e.g. 'INR'
+  status?: GroupStatus; // 'ACTIVE' or 'INACTIVE' (archived/read-only)
+  googleSheetSync?: boolean;
   formControls?: GroupFormControls; // Group-level entry form controls managed by Admin
   createdAt: string;
 }

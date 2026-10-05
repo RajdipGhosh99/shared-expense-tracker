@@ -1,5 +1,5 @@
 export type MemberRole = 'ADMIN' | 'MEMBER';
-export type MemberStatus = 'ACTIVE' | 'PENDING' | 'REJECTED' | 'LEFT';
+export type MemberStatus = 'ACTIVE' | 'PENDING' | 'REJECTED' | 'LEFT' | 'INACTIVE';
 export interface User {
     id: string;
     email: string;
@@ -42,11 +42,14 @@ export interface GroupFormControls {
     notes: FieldControlMode;
 }
 export declare const DEFAULT_GROUP_FORM_CONTROLS: GroupFormControls;
+export type GroupStatus = 'ACTIVE' | 'INACTIVE';
 export interface Group {
     id: string;
     name: string;
     inviteCode: string;
     currency: string;
+    status?: GroupStatus;
+    googleSheetSync?: boolean;
     formControls?: GroupFormControls;
     createdAt: string;
 }

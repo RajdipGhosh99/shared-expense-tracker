@@ -38,6 +38,13 @@ router.post('/', authMiddleware, async (req: AuthRequest, res: Response) => {
     return res.status(400).json({ error: 'Group ID, title, and amount are required.' });
   }
 
+  const group = await db.getGroupById(groupId);
+  if (group?.status === 'INACTIVE') {
+    return res.status(403).json({
+      error: 'This space is currently inactive (archived/read-only). An admin must reactivate the space before logging expenses.',
+    });
+  }
+
   const expenseDate =
     date && typeof date === 'string' && date.trim().length > 0
       ? date.trim().slice(0, 10)
@@ -196,6 +203,13 @@ router.post('/batch', authMiddleware, async (req: AuthRequest, res: Response) =>
 
   if (!groupId || !Array.isArray(items) || items.length === 0) {
     return res.status(400).json({ error: 'Group ID and non-empty items array are required.' });
+  }
+
+  const group = await db.getGroupById(groupId);
+  if (group?.status === 'INACTIVE') {
+    return res.status(403).json({
+      error: 'This space is currently inactive (archived/read-only). An admin must reactivate the space before logging expenses.',
+    });
   }
 
   const allMembers = await db.getMembers(groupId);

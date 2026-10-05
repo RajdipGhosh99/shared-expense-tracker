@@ -239,9 +239,13 @@ export class TursoStore implements IDataStore {
       );
     } catch {}
     try {
-      await this.client.execute(
-        "UPDATE group_members SET moved_in_at = COALESCE(SUBSTR(joined_at, 1, 10), DATE('now')) WHERE moved_in_at IS NULL;",
-      );
+      await this.client.execute("ALTER TABLE group_members SET moved_in_at = COALESCE(SUBSTR(joined_at, 1, 10), DATE('now')) WHERE moved_in_at IS NULL;");
+    } catch {}
+    try {
+      await this.client.execute("ALTER TABLE groups ADD COLUMN status TEXT DEFAULT 'ACTIVE';");
+    } catch {}
+    try {
+      await this.client.execute("UPDATE groups SET status = 'ACTIVE' WHERE status IS NULL;");
     } catch {}
 
     // Indexes
@@ -415,6 +419,7 @@ export class TursoStore implements IDataStore {
       name: String(r.name),
       inviteCode: String(r.invite_code),
       currency: String(r.currency),
+      status: (r.status as any) || 'ACTIVE',
       googleSheetSync: r.google_sheet_sync === undefined || Number(r.google_sheet_sync) !== 0,
       formControls: r.form_controls
         ? JSON.parse(String(r.form_controls))
@@ -439,6 +444,7 @@ export class TursoStore implements IDataStore {
       name: String(r.name),
       inviteCode: String(r.invite_code),
       currency: String(r.currency),
+      status: (r.status as any) || 'ACTIVE',
       googleSheetSync: r.google_sheet_sync === undefined || Number(r.google_sheet_sync) !== 0,
       formControls: r.form_controls
         ? JSON.parse(String(r.form_controls))
@@ -458,6 +464,7 @@ export class TursoStore implements IDataStore {
       name: String(r.name),
       inviteCode: String(r.invite_code),
       currency: String(r.currency),
+      status: (r.status as any) || 'ACTIVE',
       googleSheetSync: r.google_sheet_sync === undefined || Number(r.google_sheet_sync) !== 0,
       formControls: r.form_controls
         ? JSON.parse(String(r.form_controls))
@@ -468,6 +475,27 @@ export class TursoStore implements IDataStore {
 
   async getAllFlats(): Promise<Flat[]> {
     return this.getAllGroups();
+  }
+
+  async updateGroupStatus(groupId: string, status: 'ACTIVE' | 'INACTIVE'): Promise<boolean> {
+    const res = await this.client.execute({
+      sql: `UPDATE groups SET status = ? WHERE id = ?`,
+      args: [status, groupId],
+    });
+    return res.rowsAffected > 0;
+  }
+
+  async deleteGroup(groupId: string): Promise<boolean> {
+    await this.client.batch([
+      { sql: `DELETE FROM expenses WHERE group_id = ? OR flat_id = ?`, args: [groupId, groupId] },
+      { sql: `DELETE FROM settlements WHERE group_id = ? OR flat_id = ?`, args: [groupId, groupId] },
+      { sql: `DELETE FROM monthly_statements WHERE group_id = ? OR flat_id = ?`, args: [groupId, groupId] },
+      { sql: `DELETE FROM group_members WHERE group_id = ?`, args: [groupId] },
+      { sql: `DELETE FROM group_invites WHERE group_id = ?`, args: [groupId] },
+      { sql: `DELETE FROM space_invites WHERE space_id = ?`, args: [groupId] },
+      { sql: `DELETE FROM groups WHERE id = ?`, args: [groupId] },
+    ]);
+    return true;
   }
 
   async updateGroupFormControls(
@@ -582,6 +610,7 @@ export class TursoStore implements IDataStore {
         name: String(r.name),
         inviteCode: String(r.invite_code),
         currency: String(r.currency || 'INR'),
+        status: (r.status as any) || 'ACTIVE',
         googleSheetSync: r.google_sheet_sync === undefined || Number(r.google_sheet_sync) !== 0,
         createdAt: String(r.created_at),
       };
@@ -639,7 +668,10 @@ export class TursoStore implements IDataStore {
     movedOutAt?: string | null,
   ): Promise<boolean> {
     const normalizedEmail = userEmail.toLowerCase().trim();
-    const statusClause = movedOutAt ? ", status = 'LEFT'" : "";
+    // If movedOutAt is provided, mark status as LEFT. If movedOutAt is null/cleared, ensure status is ACTIVE if it was LEFT.
+    const statusClause = movedOutAt
+      ? ", status = 'LEFT'"
+      : ", status = CASE WHEN status = 'LEFT' THEN 'ACTIVE' ELSE status END";
     const res = await this.client.execute({
       sql: `UPDATE group_members SET moved_in_at = ?, moved_out_at = ?${statusClause} WHERE group_id = ? AND LOWER(user_email) = LOWER(?)`,
       args: [movedInAt, movedOutAt || null, groupId, normalizedEmail],

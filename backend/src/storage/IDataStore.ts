@@ -49,6 +49,8 @@ export interface IDataStore {
   getGroupById(groupId: string): Promise<Group | null>;
   getGroupByInviteCode(code: string): Promise<Group | null>;
   getAllGroups(): Promise<Group[]>;
+  updateGroupStatus(groupId: string, status: 'ACTIVE' | 'INACTIVE'): Promise<boolean>;
+  deleteGroup(groupId: string): Promise<boolean>;
   updateGroupFormControls(groupId: string, formControls: GroupFormControls): Promise<boolean>;
 
   // Flats (Backwards compatibility)

@@ -252,8 +252,28 @@ import {
                 <span>Invite Roommate via Link</span>
               </button>
               <button
+                *ngIf="isAdmin()"
+                (click)="showGroupMenu.set(false); toggleSpaceStatus()"
+                class="w-full py-2 px-3 text-left text-xs font-bold rounded-xl transition-colors flex items-center space-x-2 cursor-pointer"
+                [class.text-amber-700]="(api.activeGroup()?.status || 'ACTIVE') === 'ACTIVE'"
+                [class.hover:bg-amber-50]="(api.activeGroup()?.status || 'ACTIVE') === 'ACTIVE'"
+                [class.text-emerald-700]="api.activeGroup()?.status === 'INACTIVE'"
+                [class.hover:bg-emerald-50]="api.activeGroup()?.status === 'INACTIVE'"
+              >
+                <span>{{ api.activeGroup()?.status === 'INACTIVE' ? '▶️' : '⏸️' }}</span>
+                <span>{{ api.activeGroup()?.status === 'INACTIVE' ? 'Reactivate This Space' : 'Deactivate This Space (Archive)' }}</span>
+              </button>
+              <button
+                *ngIf="isAdmin()"
+                (click)="openDeleteSpaceModal()"
+                class="w-full py-2 px-3 text-left text-xs font-bold text-rose-600 hover:bg-rose-50 rounded-xl transition-colors flex items-center space-x-2 cursor-pointer"
+              >
+                <span>🗑️</span>
+                <span>Delete This Space...</span>
+              </button>
+              <button
                 (click)="showGroupMenu.set(false); api.logout(); router.navigate(['/auth'])"
-                class="w-full py-2 px-3 text-left text-xs font-bold text-rose-600 hover:bg-rose-50 rounded-xl transition-colors flex items-center space-x-2 cursor-pointer border-t border-slate-100 mt-1 pt-2"
+                class="w-full py-2 px-3 text-left text-xs font-bold text-slate-500 hover:bg-slate-100 rounded-xl transition-colors flex items-center space-x-2 cursor-pointer border-t border-slate-100 mt-1 pt-2"
               >
                 <span>🚪</span>
                 <span>Log out</span>
@@ -333,6 +353,31 @@ import {
               </div>
             </div>
           </div>
+        </div>
+
+        <!-- SPACE INACTIVE / ARCHIVED BANNER -->
+        <div
+          *ngIf="api.activeGroup()?.status === 'INACTIVE'"
+          class="bg-amber-500/15 border-2 border-amber-400 p-4 rounded-2xl shadow-xs space-y-2 text-amber-950"
+        >
+          <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-2">
+              <span class="text-xl">⏸️</span>
+              <h4 class="text-xs font-black uppercase tracking-wider text-amber-900">
+                Space is Currently Inactive (Archived)
+              </h4>
+            </div>
+            <button
+              *ngIf="isAdmin()"
+              (click)="toggleSpaceStatus()"
+              class="px-2.5 py-1 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs rounded-xl shadow-xs cursor-pointer transition-all active:scale-95"
+            >
+              ▶ Reactivate
+            </button>
+          </div>
+          <p class="text-xs text-amber-800 leading-relaxed font-medium">
+            This space is in read-only mode. Adding new bills and spreadsheet batch imports are temporarily paused. Existing statements, receipts, and balances remain fully accessible.
+          </p>
         </div>
 
         <!-- PENDING MEMBERSHIP WARNING (If logged-in user is pending) -->
@@ -571,8 +616,52 @@ import {
           </button>
         </div>
 
-        <!-- SUGGESTED SETTLEMENTS (Min-Cash-Flow) -->
-        <div class="bg-white p-4.5 rounded-2xl border border-slate-200 shadow-xs space-y-3">
+        <!-- REDESIGNED SEGMENTED TAB CONTROLS -->
+        <div class="bg-slate-200/80 p-1 rounded-2xl flex items-center gap-1 text-xs">
+          <button
+            type="button"
+            (click)="activeTab.set('bills')"
+            class="flex-1 py-2 rounded-xl font-bold transition-all text-center cursor-pointer"
+            [class.bg-white]="activeTab() === 'bills'"
+            [class.text-indigo-700]="activeTab() === 'bills'"
+            [class.shadow-2xs]="activeTab() === 'bills'"
+            [class.text-slate-600]="activeTab() !== 'bills'"
+            [class.hover:text-slate-900]="activeTab() !== 'bills'"
+          >
+            🧾 Bills ({{ api.expenses().length }})
+          </button>
+          <button
+            type="button"
+            (click)="activeTab.set('members')"
+            class="flex-1 py-2 rounded-xl font-bold transition-all text-center cursor-pointer"
+            [class.bg-white]="activeTab() === 'members'"
+            [class.text-indigo-700]="activeTab() === 'members'"
+            [class.shadow-2xs]="activeTab() === 'members'"
+            [class.text-slate-600]="activeTab() !== 'members'"
+            [class.hover:text-slate-900]="activeTab() !== 'members'"
+          >
+            👥 Flatmates ({{ activeMembers().length }})
+          </button>
+          <button
+            *ngIf="isAdmin()"
+            type="button"
+            (click)="activeTab.set('controls')"
+            class="flex-1 py-2 rounded-xl font-bold transition-all text-center cursor-pointer"
+            [class.bg-white]="activeTab() === 'controls'"
+            [class.text-indigo-700]="activeTab() === 'controls'"
+            [class.shadow-2xs]="activeTab() === 'controls'"
+            [class.text-slate-600]="activeTab() !== 'controls'"
+            [class.hover:text-slate-900]="activeTab() !== 'controls'"
+          >
+            ⚙️ Form Rules
+          </button>
+        </div>
+
+        <!-- SUGGESTED SETTLEMENTS (Min-Cash-Flow) (Shown on both Bills and Flatmates tabs when debts exist) -->
+        <div
+          *ngIf="activeTab() !== 'controls'"
+          class="bg-white p-4.5 rounded-2xl border border-slate-200 shadow-xs space-y-3"
+        >
           <div class="flex justify-between items-center">
             <h3
               class="font-bold text-slate-800 text-xs uppercase tracking-wider flex items-center space-x-1.5"
@@ -629,8 +718,11 @@ import {
           </div>
         </div>
 
-        <!-- GROUP MEMBERS & ADMIN MANAGEMENT -->
-        <div class="bg-white p-4.5 rounded-2xl border border-slate-200 shadow-xs space-y-3">
+        <!-- GROUP MEMBERS & ADMIN MANAGEMENT (Flatmates Tab) -->
+        <div
+          *ngIf="activeTab() === 'members'"
+          class="bg-white p-4.5 rounded-2xl border border-slate-200 shadow-xs space-y-3"
+        >
           <div class="flex justify-between items-center">
             <h3
               class="font-bold text-slate-800 text-xs uppercase tracking-wider flex items-center space-x-1.5"
@@ -720,10 +812,26 @@ import {
                   </button>
                 </ng-container>
 
-                <!-- If caller is admin: tenancy update & promote/demote -->
+                <!-- If caller is admin: tenancy update, status toggle & promote/demote -->
                 <ng-container
                   *ngIf="isAdmin() && m.status !== 'PENDING'"
                 >
+                  <!-- Member Active / Inactive Toggle -->
+                  <button
+                    *ngIf="m.userEmail !== api.currentUser()?.email && m.status !== 'LEFT'"
+                    (click)="toggleMemberStatus(m)"
+                    class="px-2 py-1 text-[10px] font-bold rounded-lg cursor-pointer transition-colors border"
+                    [class.bg-emerald-50]="(m.status || 'ACTIVE') === 'ACTIVE'"
+                    [class.text-emerald-700]="(m.status || 'ACTIVE') === 'ACTIVE'"
+                    [class.border-emerald-200]="(m.status || 'ACTIVE') === 'ACTIVE'"
+                    [class.bg-amber-50]="m.status === 'INACTIVE'"
+                    [class.text-amber-800]="m.status === 'INACTIVE'"
+                    [class.border-amber-200]="m.status === 'INACTIVE'"
+                    [title]="m.status === 'INACTIVE' ? 'Activate member' : 'Deactivate member'"
+                  >
+                    {{ m.status === 'INACTIVE' ? '⏸️ Inactive' : '🟢 Active' }}
+                  </button>
+
                   <button
                     (click)="openTenancyModal(m)"
                     class="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-[10px] font-bold rounded-lg cursor-pointer transition-colors"
@@ -755,7 +863,7 @@ import {
 
         <!-- ADMIN GROUP EXPENSE ENTRY FORM CONTROLS -->
         <div
-          *ngIf="isAdmin()"
+          *ngIf="isAdmin() && activeTab() === 'controls'"
           class="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden"
         >
           <!-- Section Header -->
@@ -1019,8 +1127,11 @@ import {
           </div>
         </div>
 
-        <!-- RECENT GROUP EXPENSES FEED -->
-        <div class="bg-white p-4.5 rounded-2xl border border-slate-200 shadow-xs space-y-3">
+        <!-- RECENT GROUP EXPENSES FEED (Bills Tab) -->
+        <div
+          *ngIf="activeTab() === 'bills'"
+          class="bg-white p-4.5 rounded-2xl border border-slate-200 shadow-xs space-y-3"
+        >
           <div class="flex justify-between items-center">
             <h3
               class="font-bold text-slate-800 text-xs uppercase tracking-wider flex items-center space-x-1.5"
@@ -1422,10 +1533,17 @@ import {
             </div>
 
             <div class="space-y-1">
-              <label class="text-xs font-bold text-slate-700 flex items-center justify-between">
-                <span>Move-Out Date (Vacated)</span>
-                <span class="text-[10px] text-slate-400">Leave blank if residing</span>
-              </label>
+              <div class="flex items-center justify-between">
+                <label class="text-xs font-bold text-slate-700">Move-Out Date (Vacated)</label>
+                <button
+                  type="button"
+                  (click)="clearMoveOutDate()"
+                  class="text-[10px] font-bold text-rose-600 hover:text-rose-800 underline cursor-pointer"
+                  title="Remove move-out date and keep roommate active"
+                >
+                  ✕ Clear Date (Residing)
+                </button>
+              </div>
               <input
                 type="date"
                 [(ngModel)]="tenancyMoveOutDate"
@@ -1433,7 +1551,7 @@ import {
                 class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs text-slate-900 focus:outline-none focus:border-indigo-500"
               />
               <p class="text-[10px] text-slate-500">
-                Setting a move-out date marks this flatmate as left. They won't be charged for subsequent bills.
+                {{ tenancyMoveOutDate ? 'Setting a move-out date marks this flatmate as left after that date.' : 'No move-out date set: this flatmate is actively residing.' }}
               </p>
             </div>
 
@@ -1445,6 +1563,71 @@ import {
               {{ tenancyLoading() ? 'Saving...' : 'Update Tenancy Dates' }}
             </button>
           </form>
+        </div>
+      </div>
+
+      <!-- Delete Space Permanently Modal (Requires Typing Space Name) -->
+      <div
+        *ngIf="showDeleteSpaceModal()"
+        class="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-center justify-center p-4"
+      >
+        <div
+          class="bg-white rounded-3xl max-w-sm w-full p-6 space-y-4 shadow-2xl border border-rose-200"
+        >
+          <div class="flex items-center justify-between border-b border-rose-100 pb-3">
+            <div class="flex items-center space-x-2 text-rose-600">
+              <span class="text-lg">⚠️</span>
+              <h3 class="font-extrabold text-sm text-slate-900">Delete Space Permanently</h3>
+            </div>
+            <button
+              (click)="showDeleteSpaceModal.set(false)"
+              class="text-slate-400 hover:text-slate-700 text-base font-bold cursor-pointer"
+            >
+              ✕
+            </button>
+          </div>
+
+          <p class="text-xs text-slate-600 leading-relaxed">
+            This action <strong>CANNOT</strong> be undone. All expenses, settlements, statements, and active invites for
+            <strong class="text-slate-900">{{ api.activeGroup()?.name }}</strong> will be permanently deleted.
+          </p>
+
+          <div
+            *ngIf="deleteSpaceError()"
+            class="p-2.5 bg-rose-50 border border-rose-200 text-rose-700 text-xs rounded-xl"
+          >
+            {{ deleteSpaceError() }}
+          </div>
+
+          <div class="space-y-1.5 bg-rose-50/80 p-3.5 rounded-2xl border border-rose-200">
+            <label class="text-[11px] font-bold text-rose-900 block">
+              Type <span class="select-all font-mono font-black text-rose-950 underline">{{ api.activeGroup()?.name }}</span> to confirm:
+            </label>
+            <input
+              type="text"
+              [(ngModel)]="deleteConfirmInput"
+              placeholder="Type exact space name"
+              class="w-full px-3 py-2 rounded-xl border border-rose-300 text-xs text-slate-900 font-mono focus:outline-none focus:border-rose-500 bg-white"
+            />
+          </div>
+
+          <div class="flex gap-2 pt-1">
+            <button
+              type="button"
+              (click)="showDeleteSpaceModal.set(false)"
+              class="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition-all cursor-pointer"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              [disabled]="deleteSpaceLoading() || deleteConfirmInput.trim().toLowerCase() !== (api.activeGroup()?.name || '').trim().toLowerCase()"
+              (click)="confirmDeleteSpaceSubmit()"
+              class="flex-1 py-2.5 bg-rose-600 hover:bg-rose-700 disabled:opacity-40 text-white text-xs font-bold rounded-xl transition-all shadow-xs cursor-pointer disabled:cursor-not-allowed"
+            >
+              {{ deleteSpaceLoading() ? 'Deleting...' : 'Delete Space' }}
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -1463,6 +1646,13 @@ export class DashboardComponent implements OnInit {
   showGroupMenu = signal<boolean>(false);
   showCreateModal = signal<boolean>(false);
   showJoinModal = signal<boolean>(false);
+  showDeleteSpaceModal = signal<boolean>(false);
+  deleteConfirmInput = '';
+  deleteSpaceLoading = signal<boolean>(false);
+  deleteSpaceError = signal<string | null>(null);
+
+  // Redesigned Dashboard Segmented Tab ('bills' | 'members' | 'controls')
+  activeTab = signal<'bills' | 'members' | 'controls'>('bills');
 
   newGroupName = '';
   newGroupCurrency = 'INR';
@@ -1646,6 +1836,10 @@ export class DashboardComponent implements OnInit {
   }
 
   openAddBill() {
+    if (this.api.activeGroup()?.status === 'INACTIVE') {
+      alert('This space is currently inactive (archived/read-only). An Admin must reactivate it before bills can be added.');
+      return;
+    }
     if (this.isCurrentMemberPending()) {
       alert('Your join request is awaiting Admin approval. You cannot add bills until approved.');
       return;
@@ -1654,6 +1848,10 @@ export class DashboardComponent implements OnInit {
   }
 
   openSheetEntry() {
+    if (this.api.activeGroup()?.status === 'INACTIVE') {
+      alert('This space is currently inactive (archived/read-only). An Admin must reactivate it before bulk entries can be added.');
+      return;
+    }
     if (this.isCurrentMemberPending()) {
       alert('Your join request is awaiting Admin approval. You cannot add bills until approved.');
       return;
@@ -1946,5 +2144,90 @@ export class DashboardComponent implements OnInit {
           this.tenancyError.set(err.error?.error || 'Failed to update tenancy.');
         },
       });
+  }
+
+  clearMoveOutDate() {
+    this.tenancyMoveOutDate = '';
+  }
+
+  toggleMemberStatus(m: GroupMember) {
+    const group = this.api.activeGroup();
+    if (!group) return;
+    const currentStatus = m.status || 'ACTIVE';
+    const newStatus = currentStatus === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
+    const actionLabel = newStatus === 'INACTIVE' ? 'deactivate' : 'activate';
+
+    if (confirm(`Are you sure you want to ${actionLabel} ${m.name}? ${newStatus === 'INACTIVE' ? 'They will be paused from participating in new expenses.' : 'They will be active again.'}`)) {
+      this.api.updateMemberStatus(group.id, m.userEmail, newStatus).subscribe({
+        next: () => {
+          this.api.refreshGroupData(group.id);
+        },
+        error: (err) => {
+          alert(err.error?.error || `Failed to update status for ${m.name}`);
+        },
+      });
+    }
+  }
+
+  toggleSpaceStatus() {
+    const group = this.api.activeGroup();
+    if (!group) return;
+    const currentStatus = group.status || 'ACTIVE';
+    const newStatus = currentStatus === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
+    const msg =
+      newStatus === 'INACTIVE'
+        ? `Deactivate / Archive "${group.name}"?\n\nThe space will become read-only: no new expenses can be added until reactivated, but past statements and ledger debts remain accessible.`
+        : `Reactivate "${group.name}"?\n\nMembers will be able to log expenses and split bills again.`;
+
+    if (confirm(msg)) {
+      this.api.updateGroupStatus(group.id, newStatus).subscribe({
+        next: () => {
+          this.api.refreshGroupData(group.id);
+        },
+        error: (err) => {
+          alert(err.error?.error || 'Failed to update space status.');
+        },
+      });
+    }
+  }
+
+  openDeleteSpaceModal() {
+    this.showGroupMenu.set(false);
+    this.deleteConfirmInput = '';
+    this.deleteSpaceError.set(null);
+    this.deleteSpaceLoading.set(false);
+    this.showDeleteSpaceModal.set(true);
+  }
+
+  confirmDeleteSpaceSubmit() {
+    const group = this.api.activeGroup();
+    if (!group) return;
+
+    if (this.deleteConfirmInput.trim().toLowerCase() !== group.name.trim().toLowerCase()) {
+      this.deleteSpaceError.set(`Name does not match. Please type exactly "${group.name}".`);
+      return;
+    }
+
+    this.deleteSpaceLoading.set(true);
+    this.deleteSpaceError.set(null);
+
+    this.api.deleteGroup(group.id, this.deleteConfirmInput.trim()).subscribe({
+      next: () => {
+        this.deleteSpaceLoading.set(false);
+        this.showDeleteSpaceModal.set(false);
+        alert(`Space "${group.name}" has been permanently deleted.`);
+        this.api.fetchUserGroups().subscribe({
+          next: (res) => {
+            if (!res.memberships || res.memberships.length === 0) {
+              this.router.navigate(['/onboarding']);
+            }
+          },
+        });
+      },
+      error: (err) => {
+        this.deleteSpaceLoading.set(false);
+        this.deleteSpaceError.set(err.error?.error || 'Failed to delete space.');
+      },
+    });
   }
 }

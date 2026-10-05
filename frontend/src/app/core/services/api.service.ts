@@ -309,6 +309,48 @@ export class ApiService {
       );
   }
 
+  updateGroupStatus(groupId: string, status: 'ACTIVE' | 'INACTIVE'): Observable<any> {
+    return this.http
+      .patch(`${this.baseUrl}/groups/${groupId}/status`, { status })
+      .pipe(
+        tap((res: any) => {
+          if (this.activeGroup()?.id === groupId && res.group) {
+            this.setActiveGroup(res.group);
+          }
+          this.fetchUserGroups().subscribe();
+        }),
+      );
+  }
+
+  deleteGroup(groupId: string, confirmName: string): Observable<any> {
+    return this.http
+      .request('delete', `${this.baseUrl}/groups/${groupId}`, {
+        body: { confirmName },
+      })
+      .pipe(
+        tap(() => {
+          if (this.activeGroup()?.id === groupId) {
+            localStorage.removeItem('group_active');
+            this.activeGroup.set(null);
+          }
+          this.fetchUserGroups().subscribe();
+        }),
+      );
+  }
+
+  updateMemberStatus(groupId: string, userEmail: string, status: 'ACTIVE' | 'INACTIVE'): Observable<any> {
+    return this.http
+      .patch(`${this.baseUrl}/groups/${groupId}/members/${encodeURIComponent(userEmail)}/status`, {
+        status,
+      })
+      .pipe(
+        tap(() => {
+          this.refreshGroupData(groupId);
+          this.fetchUserGroups().subscribe();
+        }),
+      );
+  }
+
   updateMemberRole(groupId: string, userEmail: string, role: MemberRole): Observable<any> {
     return this.http
       .patch(`${this.baseUrl}/groups/${groupId}/members/${encodeURIComponent(userEmail)}/role`, {

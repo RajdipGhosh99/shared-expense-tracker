@@ -78,6 +78,53 @@ router.get('/:id', authMiddleware, async (req: AuthRequest, res: Response) => {
   return res.json({ group, flat: group, members });
 });
 
+// Admin Toggle Space Status (ACTIVE / INACTIVE)
+router.patch('/:id/status', authMiddleware, async (req: AuthRequest, res: Response) => {
+  const user = req.user!;
+  const groupId = req.params.id as string;
+  const { status } = req.body;
+  const db = getStorage();
+
+  if (!status || !['ACTIVE', 'INACTIVE'].includes(status)) {
+    return res.status(400).json({ error: 'Valid status (ACTIVE or INACTIVE) is required.' });
+  }
+
+  const caller = await db.getMember(groupId, user.email);
+  if (!caller || caller.role !== 'ADMIN') {
+    return res.status(403).json({ error: 'Only a group Admin can change space active status.' });
+  }
+
+  const updated = await db.updateGroupStatus(groupId, status);
+  const updatedGroup = await db.getGroupById(groupId);
+  return res.json({ success: updated, group: updatedGroup });
+});
+
+// Admin Delete Space (Permanently deletes space and all associated records)
+router.delete('/:id', authMiddleware, async (req: AuthRequest, res: Response) => {
+  const user = req.user!;
+  const groupId = req.params.id as string;
+  const { confirmName } = req.body;
+  const db = getStorage();
+
+  const group = await db.getGroupById(groupId);
+  if (!group) return res.status(404).json({ error: 'Space not found.' });
+
+  const caller = await db.getMember(groupId, user.email);
+  if (!caller || caller.role !== 'ADMIN') {
+    return res.status(403).json({ error: 'Only a group Admin can delete this space.' });
+  }
+
+  // Require confirmation typing of the exact group name
+  if (!confirmName || confirmName.trim().toLowerCase() !== group.name.trim().toLowerCase()) {
+    return res.status(400).json({
+      error: `Please confirm deletion by typing the exact space name: "${group.name}".`,
+    });
+  }
+
+  await db.deleteGroup(groupId);
+  return res.json({ success: true, message: `Space "${group.name}" was permanently deleted.` });
+});
+
 // Get Group Members
 router.get('/:id/members', authMiddleware, async (req: AuthRequest, res: Response) => {
   const db = getStorage();
@@ -151,6 +198,32 @@ router.post(
     const removed = await db.removeMember(groupId, targetEmail);
     await db.revokeSpaceInvitesForMember(groupId, targetEmail);
     return res.json({ success: removed, message: `Rejected join request for ${targetEmail}` });
+  },
+);
+
+// Admin Toggle Member Status (ACTIVE or INACTIVE)
+router.patch(
+  '/:id/members/:email/status',
+  authMiddleware,
+  async (req: AuthRequest, res: Response) => {
+    const user = req.user!;
+    const groupId = req.params.id as string;
+    const targetEmail = req.params.email as string;
+    const { status } = req.body;
+    const db = getStorage();
+
+    if (!status || !['ACTIVE', 'INACTIVE'].includes(status)) {
+      return res.status(400).json({ error: 'Valid status (ACTIVE or INACTIVE) is required.' });
+    }
+
+    const caller = await db.getMember(groupId, user.email);
+    if (!caller || caller.role !== 'ADMIN') {
+      return res.status(403).json({ error: 'Only a group Admin can change member active status.' });
+    }
+
+    const updated = await db.updateMemberStatus(groupId, targetEmail, status);
+    const updatedMember = await db.getMember(groupId, targetEmail);
+    return res.json({ success: updated, member: updatedMember });
   },
 );
 
