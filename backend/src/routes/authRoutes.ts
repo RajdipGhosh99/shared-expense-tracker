@@ -16,14 +16,34 @@ const loginOtpCooldowns = new Map<string, number>();
 /**
  * POST /api/auth/send-otp
  * Passwordless: send 6-digit OTP to user email
+ * Body: { email, name?, mode?: 'login' | 'signup' }
  */
 router.post('/send-otp', async (req: Request, res: Response) => {
-  const { email, name } = req.body;
+  const { email, name, mode } = req.body;
   if (!email || typeof email !== 'string') {
     return res.status(400).json({ error: 'Valid email address is required.' });
   }
 
   const cleanEmail = email.toLowerCase().trim();
+  const storage = getStorage();
+  const existingUser = await storage.getUserByEmail(cleanEmail);
+
+  // If user is attempting to sign up, but account already exists:
+  if (mode === 'signup' && existingUser) {
+    return res.status(409).json({
+      error: 'An account with this email already exists. Please switch to Log In.',
+      isExistingUser: true,
+    });
+  }
+
+  // If user is attempting to log in, but no account exists:
+  if (mode === 'login' && !existingUser) {
+    return res.status(404).json({
+      error: 'No account found with this email. Please switch to Sign Up.',
+      isExistingUser: false,
+    });
+  }
+
   const now = Date.now();
   const lastSent = loginOtpCooldowns.get(cleanEmail) || 0;
   if (now - lastSent < 60000) {
@@ -33,9 +53,6 @@ router.post('/send-otp', async (req: Request, res: Response) => {
       retryAfterSeconds: remaining,
     });
   }
-
-  const storage = getStorage();
-  const existingUser = await storage.getUserByEmail(cleanEmail);
 
   // Generate 6-digit numeric OTP
   const rawOtp = String(crypto.randomInt(100000, 1000000));
@@ -61,7 +78,7 @@ router.post('/send-otp', async (req: Request, res: Response) => {
 
   return res.json({
     success: true,
-    message: 'Verification code sent to your email.',
+    message: mode === 'signup' ? 'Verification code sent. Verify your email to complete signup.' : 'Verification code sent to your email.',
     isExistingUser: !!existingUser,
     cooldownSeconds: 60,
   });
@@ -69,10 +86,11 @@ router.post('/send-otp', async (req: Request, res: Response) => {
 
 /**
  * POST /api/auth/verify-otp
- * Passwordless: verify OTP and issue JWT. Auto-creates account if new user.
+ * Passwordless: verify OTP and issue JWT.
+ * When signing up, requires verified email OTP before creating the user.
  */
 router.post('/verify-otp', async (req: Request, res: Response) => {
-  const { email, otp, name, upiId } = req.body;
+  const { email, otp, name, upiId, mode } = req.body;
   if (!email || !otp) {
     return res.status(400).json({ error: 'Email and verification code are required.' });
   }
@@ -102,11 +120,11 @@ router.post('/verify-otp', async (req: Request, res: Response) => {
   // OTP verified successfully -> clear OTP record
   await storage.deleteUserOtps(cleanEmail);
 
-  // Upsert user in database
+  // Email is now officially verified! Check / provision user
   let userRecord = await storage.getUserByEmail(cleanEmail);
   if (!userRecord) {
     const fallbackName = name?.trim() || cleanEmail.split('@')[0].charAt(0).toUpperCase() + cleanEmail.split('@')[0].slice(1);
-    const dummyHash = await bcrypt.hash('otp_auth_' + Date.now(), 10);
+    const dummyHash = await bcrypt.hash('otp_verified_' + Date.now(), 10);
     userRecord = await storage.createUser({
       id: 'usr_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7),
       email: cleanEmail,
@@ -136,6 +154,7 @@ router.post('/verify-otp', async (req: Request, res: Response) => {
   return res.json({
     token,
     user: { email: userRecord.email, name: userRecord.name, upiId: userRecord.upiId || '' },
+    message: mode === 'signup' ? 'Email verified! Account created successfully.' : 'Logged in successfully.',
   });
 });
 

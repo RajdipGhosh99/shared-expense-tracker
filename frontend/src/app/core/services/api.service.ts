@@ -89,13 +89,13 @@ export class ApiService {
   }
 
   // --- Passwordless Auth via Email OTP ---
-  sendAuthOtp(email: string, name?: string): Observable<{
+  sendAuthOtp(email: string, name?: string, mode?: 'login' | 'signup'): Observable<{
     success: boolean;
     message: string;
     isExistingUser: boolean;
     cooldownSeconds: number;
   }> {
-    return this.http.post<any>(`${this.baseUrl}/auth/send-otp`, { email, name });
+    return this.http.post<any>(`${this.baseUrl}/auth/send-otp`, { email, name, mode });
   }
 
   verifyAuthOtp(data: {
@@ -103,6 +103,7 @@ export class ApiService {
     otp: string;
     name?: string;
     upiId?: string;
+    mode?: 'login' | 'signup';
   }): Observable<AuthResponse> {
     return this.http
       .post<AuthResponse>(`${this.baseUrl}/auth/verify-otp`, data)

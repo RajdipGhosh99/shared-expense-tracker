@@ -109,12 +109,22 @@ import { ApiService } from '../../core/services/api.service.js';
 
         <!-- STEP 1: Enter Email / Details -->
         <form *ngIf="step() === 'EMAIL'" (ngSubmit)="sendOtp()" class="space-y-3.5">
+          <!-- Step indicator for Sign Up -->
+          <div *ngIf="isRegister()" class="flex items-center justify-between px-3 py-2 bg-indigo-500/10 border border-indigo-500/20 rounded-2xl text-[11px] text-indigo-300 font-medium">
+            <span class="flex items-center space-x-1.5">
+              <span class="size-4 bg-indigo-600 rounded-full flex items-center justify-center text-[9px] font-bold text-white">1</span>
+              <span>Step 1 of 2: Enter Details</span>
+            </span>
+            <span class="text-[10px] text-indigo-400 font-semibold">Requires Email OTP</span>
+          </div>
+
           <div *ngIf="isRegister()" class="space-y-1">
             <label class="text-[11px] font-bold text-slate-300 ml-1">Full Name</label>
             <input
               type="text"
               [(ngModel)]="name"
               name="name"
+              required
               placeholder="e.g. Alex Johnson"
               class="w-full px-4 py-3 rounded-2xl bg-white/5 border border-white/10 text-xs sm:text-sm text-white placeholder-slate-500 focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-400 transition-all"
             />
@@ -148,10 +158,12 @@ import { ApiService } from '../../core/services/api.service.js';
 
           <button
             type="submit"
-            [disabled]="loading() || !email.trim()"
+            [disabled]="loading() || !email.trim() || (isRegister() && !name.trim())"
             class="w-full py-3.5 bg-gradient-to-r from-indigo-600 via-indigo-500 to-purple-600 hover:opacity-95 active:scale-[0.98] font-black rounded-2xl shadow-lg shadow-indigo-600/30 transition-all flex items-center justify-center space-x-2 cursor-pointer text-xs sm:text-sm disabled:opacity-50 mt-1"
           >
-            <span *ngIf="!loading()">Send 6-Digit Code</span>
+            <span *ngIf="!loading()">{{
+              isRegister() ? 'Verify Email with OTP →' : 'Send 6-Digit Code'
+            }}</span>
             <span
               *ngIf="loading()"
               class="animate-spin size-4 border-2 border-white border-t-transparent rounded-full"
@@ -161,6 +173,15 @@ import { ApiService } from '../../core/services/api.service.js';
 
         <!-- STEP 2: Enter 6-Digit OTP -->
         <form *ngIf="step() === 'OTP'" (ngSubmit)="verifyOtp()" class="space-y-4">
+          <!-- Step indicator for Sign Up -->
+          <div *ngIf="isRegister()" class="flex items-center justify-between px-3 py-2 bg-indigo-500/10 border border-indigo-500/20 rounded-2xl text-[11px] text-indigo-300 font-medium">
+            <span class="flex items-center space-x-1.5">
+              <span class="size-4 bg-indigo-600 rounded-full flex items-center justify-center text-[9px] font-bold text-white">2</span>
+              <span>Step 2 of 2: Verify & Finish Sign Up</span>
+            </span>
+            <span class="text-[10px] text-emerald-400 font-bold">Almost done</span>
+          </div>
+
           <div class="p-3 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-between">
             <div class="truncate mr-2">
               <span class="text-[10px] uppercase font-bold text-slate-400 block">Sent code to</span>
@@ -177,7 +198,7 @@ import { ApiService } from '../../core/services/api.service.js';
 
           <div class="space-y-2">
             <label class="text-[11px] font-bold text-slate-300 ml-1 block text-center">
-              Enter 6-Digit Verification Code
+              {{ isRegister() ? 'Enter 6-Digit Verification Code to Complete Sign Up' : 'Enter 6-Digit Verification Code' }}
             </label>
             <input
               type="text"
@@ -198,7 +219,9 @@ import { ApiService } from '../../core/services/api.service.js';
             [disabled]="loading() || otp.trim().length !== 6"
             class="w-full py-3.5 bg-gradient-to-r from-indigo-600 via-indigo-500 to-purple-600 hover:opacity-95 active:scale-[0.98] font-black rounded-2xl shadow-lg shadow-indigo-600/30 transition-all flex items-center justify-center space-x-2 cursor-pointer text-xs sm:text-sm disabled:opacity-50"
           >
-            <span *ngIf="!loading()">Verify & Log In</span>
+            <span *ngIf="!loading()">{{
+              isRegister() ? 'Verify & Create Account' : 'Verify & Log In'
+            }}</span>
             <span
               *ngIf="loading()"
               class="animate-spin size-4 border-2 border-white border-t-transparent rounded-full"
@@ -321,6 +344,12 @@ export class AuthComponent implements OnDestroy {
     if (err.status === 401) {
       return 'Invalid code or code expired. Please request a new code.';
     }
+    if (err.status === 404) {
+      return err?.error?.error || 'No account found with this email. Please switch to Sign Up.';
+    }
+    if (err.status === 409) {
+      return err?.error?.error || 'Account already exists with this email. Please switch to Log In.';
+    }
     if (err.status === 429) {
       return 'Too many attempts. Please wait a moment before trying again.';
     }
@@ -341,32 +370,45 @@ export class AuthComponent implements OnDestroy {
       return;
     }
 
+    if (this.isRegister() && (!this.name || !this.name.trim())) {
+      this.errorMessage.set('Please enter your full name to sign up.');
+      return;
+    }
+
     this.loading.set(true);
     this.clearError();
     this.infoMessage.set(null);
 
-    this.api.sendAuthOtp(this.email.trim(), this.name?.trim() || undefined).subscribe({
-      next: (res) => {
-        this.loading.set(false);
-        this.infoMessage.set(`6-digit code sent to ${this.email.trim()}`);
-        this.startCooldown(res.cooldownSeconds || 60);
-        this.step.set('OTP');
-      },
-      error: (err) => {
-        this.loading.set(false);
-        const msg = this.extractErrorMessage(err);
-        this.errorMessage.set(msg);
+    const mode: 'login' | 'signup' = this.isRegister() ? 'signup' : 'login';
 
-        if (err?.error?.retryAfterSeconds) {
-          this.startCooldown(err.error.retryAfterSeconds);
-        }
+    this.api
+      .sendAuthOtp(this.email.trim(), this.name?.trim() || undefined, mode)
+      .subscribe({
+        next: (res) => {
+          this.loading.set(false);
+          this.infoMessage.set(
+            this.isRegister()
+              ? `Verification code sent to ${this.email.trim()}. Enter it below to complete sign up.`
+              : `6-digit code sent to ${this.email.trim()}`
+          );
+          this.startCooldown(res.cooldownSeconds || 60);
+          this.step.set('OTP');
+        },
+        error: (err) => {
+          this.loading.set(false);
+          const msg = this.extractErrorMessage(err);
+          this.errorMessage.set(msg);
 
-        if (this.errorTimeout) clearTimeout(this.errorTimeout);
-        this.errorTimeout = setTimeout(() => {
-          this.errorMessage.set(null);
-        }, 6000);
-      },
-    });
+          if (err?.error?.retryAfterSeconds) {
+            this.startCooldown(err.error.retryAfterSeconds);
+          }
+
+          if (this.errorTimeout) clearTimeout(this.errorTimeout);
+          this.errorTimeout = setTimeout(() => {
+            this.errorMessage.set(null);
+          }, 6000);
+        },
+      });
   }
 
   resendOtp() {
@@ -383,12 +425,15 @@ export class AuthComponent implements OnDestroy {
     this.loading.set(true);
     this.clearError();
 
+    const mode: 'login' | 'signup' = this.isRegister() ? 'signup' : 'login';
+
     this.api
       .verifyAuthOtp({
         email: this.email.trim(),
         otp: this.otp.trim(),
         name: this.name?.trim() || undefined,
         upiId: this.upiId?.trim() || undefined,
+        mode,
       })
       .subscribe({
         next: () => {
