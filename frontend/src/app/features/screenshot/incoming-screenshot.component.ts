@@ -78,9 +78,56 @@ import { ExtractedReceiptResult, ExpenseCategory, ReceiptExtraction } from '@sha
           <span>Reading GPay / PhonePe receipt details...</span>
         </div>
 
+        <!-- Extraction Error Feedback Banner -->
+        <div
+          *ngIf="errorMessage() && !isAnalyzing()"
+          class="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-medium space-y-1.5 animate-fade-in"
+        >
+          <div class="flex items-center space-x-2 font-black text-rose-900">
+            <span class="text-base">⚠️</span>
+            <span>Receipt Extraction Failed</span>
+          </div>
+          <p class="text-[11px] leading-relaxed text-rose-700">{{ errorMessage() }}</p>
+          <div class="pt-1 flex items-center justify-end space-x-2">
+            <button
+              type="button"
+              (click)="resetState()"
+              class="px-2.5 py-1 bg-white border border-rose-300 rounded-lg text-rose-700 text-[11px] font-bold hover:bg-rose-100 cursor-pointer"
+            >
+              Try Another Image
+            </button>
+          </div>
+        </div>
+
+        <!-- Document Guardrail Rejection Notice (Non-receipt, selfie, blurred) -->
+        <div
+          *ngIf="guardrailNotice() && !isAnalyzing()"
+          class="p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs space-y-2 animate-fade-in"
+        >
+          <div class="flex items-center space-x-2 font-black text-amber-900">
+            <span class="text-base">🚫</span>
+            <span>Document Not Recognized as Financial Receipt</span>
+          </div>
+          <p class="text-[11px] text-amber-800 leading-relaxed">
+            The uploaded image does not appear to be an authentic, legible payment receipt or UPI transaction proof.
+          </p>
+          <div class="inline-block bg-white px-2.5 py-1 rounded-md border border-amber-300 text-[10px] font-mono font-bold text-amber-900">
+            Reason: {{ guardrailNotice() }}
+          </div>
+          <div class="pt-1 flex items-center justify-end space-x-2">
+            <button
+              type="button"
+              (click)="resetState()"
+              class="px-2.5 py-1 bg-white border border-amber-300 rounded-lg text-amber-800 text-[11px] font-bold hover:bg-amber-100 cursor-pointer"
+            >
+              Upload Valid Receipt
+            </button>
+          </div>
+        </div>
+
         <!-- Parsed Review Card -->
         <div
-          *ngIf="extracted() && !isAnalyzing()"
+          *ngIf="extracted() && !isAnalyzing() && !guardrailNotice()"
           class="bg-slate-50 rounded-xl p-4 border border-slate-200 space-y-4"
         >
           <div class="flex justify-between items-center border-b border-slate-200/80 pb-3">
@@ -181,6 +228,8 @@ export class IncomingScreenshotComponent implements OnInit {
   isAnalyzing = signal<boolean>(false);
   isSaving = signal<boolean>(false);
   extracted = signal<ExtractedReceiptResult | null>(null);
+  errorMessage = signal<string | null>(null);
+  guardrailNotice = signal<string | null>(null);
   expenseDate = new Date().toISOString().split('T')[0];
 
   constructor(
@@ -188,6 +237,14 @@ export class IncomingScreenshotComponent implements OnInit {
     private router: Router,
     private ocrBridge: OcrBridgeService,
   ) {}
+
+  resetState() {
+    this.errorMessage.set(null);
+    this.guardrailNotice.set(null);
+    this.extracted.set(null);
+    this.previewUrl.set(null);
+    this.isAnalyzing.set(false);
+  }
 
   async ngOnInit() {
     // Check if opened via PWA Share Target from IndexedDB
@@ -222,21 +279,45 @@ export class IncomingScreenshotComponent implements OnInit {
   private processFile(file: File) {
     this.previewUrl.set(URL.createObjectURL(file));
     this.isAnalyzing.set(true);
+    this.errorMessage.set(null);
+    this.guardrailNotice.set(null);
 
     this.api.extractReceipt(file).subscribe({
-      next: (res) => {
-        this.extracted.set(res);
+      next: (res: any) => {
         this.isAnalyzing.set(false);
 
+        // Normalize response whether returned directly or inside { success: true, data: ... }
+        const dataPayload = res.data ? res.data : res;
+
+        // Check Document Guardrail
+        if (dataPayload.isValidReceipt === false) {
+          this.guardrailNotice.set(
+            dataPayload.rejectionReason || 'Uploaded image is not a recognized payment receipt.',
+          );
+          return;
+        }
+
+        // Map into extracted signal
+        this.extracted.set({
+          merchant: dataPayload.vendorName || dataPayload.merchant || 'Shared Expense',
+          amountDisplay: dataPayload.totalAmount ?? dataPayload.amountDisplay ?? 0,
+          amountMinorUnits: Math.round((dataPayload.totalAmount ?? dataPayload.amountDisplay ?? 0) * 100),
+          category: dataPayload.category || 'Food & Dining',
+          utrNumber: dataPayload.paymentId || dataPayload.utrNumber || undefined,
+          extractedAt: new Date().toISOString(),
+          isMultipleBills: Boolean(dataPayload.isMultipleBills || (dataPayload.items && dataPayload.items.length > 1)),
+          items: dataPayload.items,
+        });
+
         // If screenshot contains multiple bills at a time, automatically open into spreadsheet bulk entry grid!
-        if (res.isMultipleBills || (res.items && res.items.length > 1)) {
-          const itemsToStage: ReceiptExtraction[] = (res.items && res.items.length > 0)
-            ? res.items.map((it) => ({
+        if (dataPayload.isMultipleBills || (dataPayload.items && dataPayload.items.length > 1)) {
+          const itemsToStage: ReceiptExtraction[] = (dataPayload.items && dataPayload.items.length > 0)
+            ? dataPayload.items.map((it: any) => ({
                 isValidReceipt: true,
                 rejectionReason: null,
-                vendorName: it.merchant,
-                totalAmount: it.amountDisplay,
-                paymentId: it.utrNumber || null,
+                vendorName: it.vendorName || it.merchant || 'Expense',
+                totalAmount: it.totalAmount ?? it.amountDisplay ?? 0,
+                paymentId: it.paymentId || it.utrNumber || null,
                 date: it.date || this.expenseDate,
                 isOcrProcessed: true,
                 items: [],
@@ -245,9 +326,9 @@ export class IncomingScreenshotComponent implements OnInit {
                 {
                   isValidReceipt: true,
                   rejectionReason: null,
-                  vendorName: res.merchant,
-                  totalAmount: res.amountDisplay,
-                  paymentId: res.utrNumber || null,
+                  vendorName: dataPayload.vendorName || dataPayload.merchant || 'Expense',
+                  totalAmount: dataPayload.totalAmount ?? dataPayload.amountDisplay ?? 0,
+                  paymentId: dataPayload.paymentId || dataPayload.utrNumber || null,
                   date: this.expenseDate,
                   isOcrProcessed: true,
                   items: [],
@@ -258,17 +339,14 @@ export class IncomingScreenshotComponent implements OnInit {
           this.router.navigate(['/dashboard'], { queryParams: { openBulk: '1' } });
         }
       },
-      error: () => {
-        // Fallback default
-        this.extracted.set({
-          merchant: 'Shared Grocery',
-          amountDisplay: 840.0,
-          amountMinorUnits: 84000,
-          category: 'Food & Dining',
-          utrNumber: '427819283719',
-          extractedAt: new Date().toISOString(),
-        });
+      error: (err) => {
         this.isAnalyzing.set(false);
+        const serverError =
+          err.error?.error ||
+          err.error?.message ||
+          err.message ||
+          'Failed to extract receipt data from server.';
+        this.errorMessage.set(serverError);
       },
     });
   }

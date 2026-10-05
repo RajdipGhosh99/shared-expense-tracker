@@ -78,10 +78,11 @@ Output ONLY valid JSON adhering strictly to the responseSchema. Zero Markdown co
 
 /**
  * Part 3: Node.js Backend Route
- * POST /api/extract-receipt
+ * Unified Multimodal AI Receipt Extraction Endpoint:
+ * Handles POST /api/extract-receipt, POST /extract-receipt, and POST /api/receipts/extract
  */
 router.post(
-  '/extract-receipt',
+  ['/extract-receipt', '/receipts/extract', '/extract'],
   upload.single('receipt'),
   async (req: Request, res: Response): Promise<void> => {
     const startTime = Date.now();
@@ -225,7 +226,14 @@ router.post(
       });
 
       // 6. RETURN: Send validated JSON to client
-      // Note: req.file.buffer automatically gets dereferenced and garbage collected by V8
+      // Supports both new schema `{ success: true, data: validatedData, meta: ... }`
+      // AND direct legacy schema `{ merchant, amountDisplay, category, utrNumber, items, ... }`
+      // so any caller on /extract, /extract-receipt, or /receipts/extract gets a unified, rich response.
+      const legacyMerchant = validatedData.vendorName || (validatedData.items && validatedData.items[0]?.vendorName) || 'Shared Expense';
+      const legacyAmount = validatedData.totalAmount || (validatedData.items && validatedData.items[0]?.totalAmount) || 0;
+      const legacyUtr = validatedData.paymentId || (validatedData.items && validatedData.items[0]?.paymentId) || undefined;
+      const isMultipleBills = Boolean(validatedData.items && validatedData.items.length > 1);
+
       res.json({
         success: true,
         data: validatedData,
@@ -234,6 +242,26 @@ router.post(
           isDuplicateFile: false,
           processingTimeMs: Date.now() - startTime,
         },
+        // Direct top-level fields for backwards compatibility with any client callers expecting direct JSON:
+        merchant: legacyMerchant,
+        amountDisplay: legacyAmount,
+        amountMinorUnits: Math.round(legacyAmount * 100),
+        category: (validatedData.items && validatedData.items[0]?.category) || 'Food & Dining',
+        utrNumber: legacyUtr,
+        date: validatedData.date,
+        isMultipleBills,
+        isOcrProcessed: validatedData.isOcrProcessed,
+        isValidReceipt: validatedData.isValidReceipt,
+        rejectionReason: validatedData.rejectionReason,
+        items: validatedData.items?.map((it) => ({
+          merchant: it.vendorName,
+          amountDisplay: it.totalAmount,
+          amountMinorUnits: Math.round(it.totalAmount * 100),
+          category: it.category || 'Food & Dining',
+          utrNumber: it.paymentId || undefined,
+          date: it.date,
+        })),
+        extractedAt: new Date().toISOString(),
       });
     } catch (err: any) {
       console.error('[ReceiptExtraction] Error processing receipt:', err);

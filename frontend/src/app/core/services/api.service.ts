@@ -525,11 +525,11 @@ export class ApiService {
     );
   }
 
-  // --- Screenshot Receipt OCR ---
+  // --- Screenshot Receipt OCR (Unified /extract-receipt) ---
   extractReceipt(file: File): Observable<ExtractedReceiptResult> {
     const formData = new FormData();
     formData.append('receipt', file, file.name);
-    return this.http.post<ExtractedReceiptResult>(`${this.baseUrl}/receipts/extract`, formData);
+    return this.http.post<ExtractedReceiptResult>(`${this.baseUrl}/extract-receipt`, formData);
   }
 
   // --- Settlements ---
