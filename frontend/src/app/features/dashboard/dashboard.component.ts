@@ -1674,6 +1674,8 @@ export class DashboardComponent implements OnInit {
   pullDistance = signal(0);
   isRefreshing = signal(false);
   private pullStartY: number | null = null;
+  private pullStartX: number | null = null;
+  private isPullIntent = false;
 
   showAddModal = signal<boolean>(false);
   showBulkModal = signal<boolean>(false);
@@ -1794,33 +1796,62 @@ export class DashboardComponent implements OnInit {
 
   onPullStart(event: TouchEvent) {
     const main = event.currentTarget as HTMLElement;
-    this.pullStartY = main.scrollTop <= 0 && !this.isRefreshing()
-      ? event.touches[0]?.clientY ?? null
-      : null;
+    // Only arm pull-to-refresh if user touches while strictly at top
+    if (main.scrollTop <= 0 && !this.isRefreshing()) {
+      this.pullStartY = event.touches[0]?.clientY ?? null;
+      this.pullStartX = event.touches[0]?.clientX ?? null;
+      this.isPullIntent = false;
+    } else {
+      this.pullStartY = null;
+      this.pullStartX = null;
+      this.isPullIntent = false;
+    }
   }
 
   onPullMove(event: TouchEvent) {
     if (this.pullStartY === null || this.isRefreshing()) return;
 
     const main = event.currentTarget as HTMLElement;
+    // If user has scrolled down anywhere, cancel pull immediately
     if (main.scrollTop > 0) {
       this.pullStartY = null;
+      this.pullStartX = null;
+      this.isPullIntent = false;
       this.pullDistance.set(0);
       return;
     }
 
-    const distance = (event.touches[0]?.clientY ?? this.pullStartY) - this.pullStartY;
-    if (distance > 0) {
-      if (event.cancelable) event.preventDefault();
-      this.pullDistance.set(Math.min(distance * 0.55, this.pullThreshold + 20));
+    const currentY = event.touches[0]?.clientY ?? this.pullStartY;
+    const currentX = event.touches[0]?.clientX ?? (this.pullStartX ?? 0);
+    const deltaY = currentY - this.pullStartY;
+    const deltaX = Math.abs(currentX - (this.pullStartX ?? currentX));
+
+    // If scrolling upwards or sideways, let native browser scroll take over completely
+    if (deltaY <= 0 || deltaX > deltaY) {
+      this.pullDistance.set(0);
+      return;
+    }
+
+    // Only engage drag resistance once vertical pull exceeds minimal threshold (10px)
+    if (deltaY > 10) {
+      this.isPullIntent = true;
+      // Prevent browser default scroll only when pulling down while at scrollTop 0
+      if (event.cancelable) {
+        event.preventDefault();
+      }
+      this.pullDistance.set(Math.min((deltaY - 10) * 0.5, this.pullThreshold + 15));
     } else {
       this.pullDistance.set(0);
     }
   }
 
   onPullEnd() {
+    const hadIntent = this.isPullIntent;
     this.pullStartY = null;
-    if (this.pullDistance() < this.pullThreshold || this.isRefreshing()) {
+    this.pullStartX = null;
+    this.isPullIntent = false;
+
+    if (!hadIntent || this.pullDistance() < this.pullThreshold || this.isRefreshing()) {
       this.pullDistance.set(0);
       return;
     }
