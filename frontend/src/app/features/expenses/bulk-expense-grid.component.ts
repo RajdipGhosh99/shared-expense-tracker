@@ -29,71 +29,91 @@ export interface GridRow {
       <div
         class="bg-white rounded-t-3xl sm:rounded-2xl max-w-4xl w-full mx-auto shadow-2xl border border-slate-200 animate-slide-up flex flex-col max-h-[92vh] text-slate-900"
       >
-        <!-- Header -->
+        <!-- Modal Header: Mobile-First Responsive Toolbar -->
         <div
-          class="px-5 py-3.5 border-b border-slate-200 flex items-center justify-between bg-slate-50/80 rounded-t-3xl sm:rounded-t-2xl"
+          class="px-3.5 py-2.5 sm:px-5 sm:py-3 border-b border-slate-200/90 flex flex-col gap-2 bg-slate-50/95 rounded-t-3xl sm:rounded-t-2xl"
         >
-          <div class="flex items-center space-x-3">
-            <div
-              class="w-8 h-8 rounded-lg bg-emerald-600 text-white flex items-center justify-center font-bold shadow-xs"
-            >
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M3 10h18M3 14h18m-9-4v8m-7 4h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                />
-              </svg>
-            </div>
-            <div>
-              <div class="flex items-center space-x-2">
-                <h3 class="text-sm font-bold text-slate-900">Spreadsheet Bulk Entry</h3>
-                <span
-                  class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200"
-                >
-                  Bulk Mode
-                </span>
+          <!-- Top Row: Title, Badge, and Close Button -->
+          <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-2.5 min-w-0">
+              <div
+                class="size-7 sm:size-8 rounded-lg bg-emerald-700 text-white flex items-center justify-center font-bold shadow-2xs shrink-0"
+              >
+                <!-- Spreadsheet Grid Icon -->
+                <svg class="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M3 10h18M3 14h18m-9-4v8m-7 4h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                  />
+                </svg>
               </div>
-              <p class="text-xs text-slate-500">
-                Log multiple expenses in a spreadsheet grid with auto-split
-              </p>
+              <div class="min-w-0">
+                <div class="flex items-center gap-1.5">
+                  <h3 class="text-xs sm:text-sm font-black text-slate-900 truncate">
+                    Spreadsheet Bulk Entry
+                  </h3>
+                  <span
+                    class="px-1.5 py-0.5 rounded-md text-[9px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200 uppercase tracking-wider shrink-0"
+                  >
+                    Sheet
+                  </span>
+                </div>
+                <p class="text-[10px] text-slate-400 truncate hidden sm:block">
+                  Tab or tap cells to edit • Auto-calculates totals & splits
+                </p>
+              </div>
             </div>
-          </div>
 
-          <div class="flex items-center gap-1 sm:gap-2">
-            <button
-              type="button"
-              (click)="openSingle.emit()"
-              class="px-2 py-1.5 sm:px-2.5 rounded-xl border border-indigo-200 bg-indigo-50 hover:bg-indigo-100 text-xs font-semibold text-indigo-700 flex items-center space-x-1 transition-colors cursor-pointer shadow-2xs"
-              title="Switch to single bill entry"
-            >
-              <span>💳</span>
-              <span class="hidden sm:inline">Single Bill</span>
-            </button>
-            <button
-              type="button"
-              (click)="showPasteModal.set(!showPasteModal())"
-              class="px-2 py-1.5 sm:px-2.5 rounded-xl border border-slate-300 bg-white hover:bg-slate-100 text-xs font-semibold text-slate-700 flex items-center space-x-1 transition-colors cursor-pointer shadow-2xs"
-              title="Paste copied rows directly from spreadsheet or Excel"
-            >
-              <span>📋</span>
-              <span class="hidden sm:inline">Paste Rows</span>
-            </button>
-            <button
-              type="button"
-              (click)="addRow()"
-              class="px-2.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-xs font-bold text-white flex items-center space-x-1 transition-colors cursor-pointer shadow-xs active:scale-95"
-            >
-              <span>＋</span>
-              <span class="hidden sm:inline">Add Row</span>
-            </button>
+            <!-- Close Modal Button -->
             <button
               type="button"
               (click)="close.emit()"
-              class="size-8 rounded-xl hover:bg-slate-200 text-slate-500 hover:text-slate-800 font-bold flex items-center justify-center transition-colors cursor-pointer"
+              class="size-8 rounded-xl hover:bg-slate-200 active:bg-slate-300 text-slate-400 hover:text-slate-800 font-bold flex items-center justify-center transition-colors cursor-pointer shrink-0"
+              title="Close modal"
             >
               ✕
+            </button>
+          </div>
+
+          <!-- Bottom Row: Quick Action Toolbar (Pill Buttons) -->
+          <div class="flex items-center justify-between gap-1.5 overflow-x-auto pb-0.5 scrollbar-none">
+            <div class="flex items-center gap-1.5 shrink-0">
+              <button
+                type="button"
+                (click)="addRow()"
+                class="px-2.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-xs font-bold text-white flex items-center space-x-1 transition-all cursor-pointer shadow-2xs"
+              >
+                <span>＋</span>
+                <span>Add Row</span>
+              </button>
+              <button
+                type="button"
+                (click)="showPasteModal.set(!showPasteModal())"
+                class="px-2.5 py-1.5 rounded-xl border border-slate-300/80 bg-white hover:bg-slate-100 active:scale-95 text-xs font-semibold text-slate-700 flex items-center space-x-1 transition-all cursor-pointer shadow-2xs"
+                title="Paste copied rows directly from spreadsheet or Excel"
+              >
+                <span>📋</span>
+                <span>Paste Rows</span>
+              </button>
+              <button
+                type="button"
+                (click)="openSingle.emit()"
+                class="px-2.5 py-1.5 rounded-xl border border-indigo-200 bg-indigo-50 hover:bg-indigo-100 active:scale-95 text-xs font-semibold text-indigo-700 flex items-center space-x-1 transition-all cursor-pointer shadow-2xs"
+                title="Switch to single bill entry"
+              >
+                <span>💳</span>
+                <span>Single Bill</span>
+              </button>
+            </div>
+
+            <button
+              type="button"
+              (click)="clearEmptyRows()"
+              class="text-slate-400 hover:text-slate-600 text-[10px] sm:text-xs font-medium cursor-pointer shrink-0 hover:underline px-1"
+            >
+              Clear empty
             </button>
           </div>
         </div>
@@ -101,19 +121,19 @@ export interface GridRow {
         <!-- Paste Drawer (If open) -->
         <div
           *ngIf="showPasteModal()"
-          class="p-4 bg-emerald-50/70 border-b border-emerald-200 space-y-2"
+          class="p-3 sm:p-4 bg-emerald-50/70 border-b border-emerald-200 space-y-2"
         >
           <div class="flex justify-between items-center text-xs font-bold text-emerald-900">
-            <span>📋 Paste Tab-Separated Rows from Spreadsheet / Excel</span>
-            <span class="text-[11px] font-normal text-emerald-700"
+            <span>📋 Paste Tab-Separated Rows from Excel / Sheets</span>
+            <span class="text-[10px] sm:text-[11px] font-normal text-emerald-700 hidden sm:inline"
               >Format: Date [tab] Title [tab] Amount [tab] Category</span
             >
           </div>
           <textarea
             [(ngModel)]="pasteText"
             rows="3"
-            placeholder="2026-10-03	Blinkit Milk & Eggs	350	Groceries
-2026-10-03	Electricity Bill	1820	Electricity"
+            placeholder="2026-10-03	Blinkit Milk & Eggs	350	Food & Dining
+2026-10-03	Electricity Bill	1820	Bills & Utilities"
             class="w-full p-2.5 bg-white border border-emerald-300 rounded-lg text-xs font-mono focus:outline-none focus:ring-1 focus:ring-emerald-500 text-slate-800"
           ></textarea>
           <div class="flex justify-end space-x-2">
@@ -129,94 +149,116 @@ export interface GridRow {
               (click)="importPastedText()"
               class="px-3 py-1 bg-emerald-600 text-white rounded-md text-xs font-bold shadow-xs hover:bg-emerald-700"
             >
-              Parse & Add to Grid
+              Parse & Add to Sheet
             </button>
           </div>
         </div>
 
-        <!-- Main Content: Mobile Card-List (< md) & Desktop Spreadsheet Table (>= md) -->
-        <div class="flex-1 overflow-y-auto p-3 sm:p-4 max-h-[65vh]">
-          
-          <!-- MOBILE VIEW (< md): Touch-Friendly Expense Entry Cards -->
-          <div class="block md:hidden space-y-3">
-            <div
-              *ngFor="let row of rows; let idx = index"
-              class="p-3.5 bg-slate-50/90 border border-slate-200/90 rounded-2xl space-y-2.5 transition-all shadow-2xs relative"
-              [class.border-emerald-300]="isRowValid(row)"
-              [class.bg-emerald-50/30]="isRowValid(row)"
-            >
-              <!-- Card Header: Index Badge & Delete Row -->
-              <div class="flex items-center justify-between">
-                <div class="flex items-center space-x-2">
-                  <span class="size-6 rounded-lg bg-slate-200/80 text-slate-700 font-mono text-[11px] font-bold flex items-center justify-center">
-                    #{{ idx + 1 }}
-                  </span>
-                  <span *ngIf="isRowValid(row)" class="text-[10px] font-bold text-emerald-600 bg-emerald-100/80 px-2 py-0.5 rounded-full flex items-center gap-1">
-                    <span>✓</span> Ready
-                  </span>
-                </div>
-                <button
-                  type="button"
-                  (click)="removeRow(idx)"
-                  [disabled]="rows.length <= 1"
-                  class="text-slate-400 hover:text-rose-600 disabled:opacity-20 p-1 rounded-lg hover:bg-rose-50 transition-colors cursor-pointer"
-                  title="Delete row"
+        <!-- Formula Bar / Status Bar (Authentic Spreadsheet Look) -->
+        <div class="px-3 py-1.5 bg-slate-100/90 border-b border-slate-200 flex items-center justify-between text-[11px] text-slate-600 font-mono select-none">
+          <div class="flex items-center space-x-2">
+            <span class="font-bold text-emerald-800 px-1.5 py-0.2 bg-emerald-100 rounded text-[10px]">fx</span>
+            <span class="text-slate-500">ROWS: {{ rows.length }}</span>
+            <span class="text-slate-300">|</span>
+            <span class="text-emerald-700 font-bold">VALID: {{ validRowCount() }}</span>
+          </div>
+          <div class="text-[10px] text-slate-400 sm:block hidden">
+            Scroll horizontally to view all columns
+          </div>
+        </div>
+
+        <!-- Authentic Mobile & Desktop Spreadsheet Grid Container -->
+        <div class="flex-1 overflow-x-auto overflow-y-auto max-h-[60vh] bg-slate-50/50">
+          <table class="w-full text-left text-xs border-collapse border-slate-200">
+            <!-- Spreadsheet Column Headers (A, B, C, D, E) -->
+            <thead class="sticky top-0 z-20 bg-slate-100">
+              <tr class="border-b border-slate-300 text-slate-600 font-bold uppercase text-[10px] tracking-wider select-none">
+                <!-- Row Header Indicator (Excel/Sheets Column Index) -->
+                <th class="py-2 px-2 w-9 text-center bg-slate-200/90 border-r border-slate-300 sticky left-0 z-30 font-mono text-slate-500 text-[10px]">
+                  #
+                </th>
+                <!-- Column A: Date -->
+                <th class="py-2 px-2.5 min-w-[125px] border-r border-slate-200 bg-slate-100">
+                  <div class="flex items-center justify-between">
+                    <span>Date <span class="text-rose-500">*</span></span>
+                    <span class="text-[9px] text-slate-400 font-mono font-normal">A</span>
+                  </div>
+                </th>
+                <!-- Column B: Title -->
+                <th class="py-2 px-2.5 min-w-[190px] border-r border-slate-200 bg-slate-100">
+                  <div class="flex items-center justify-between">
+                    <span>Description / Title <span class="text-rose-500">*</span></span>
+                    <span class="text-[9px] text-slate-400 font-mono font-normal">B</span>
+                  </div>
+                </th>
+                <!-- Column C: Category -->
+                <th class="py-2 px-2.5 min-w-[155px] border-r border-slate-200 bg-slate-100">
+                  <div class="flex items-center justify-between">
+                    <span>Category <span class="text-[9px] text-indigo-600 font-bold">✨ AI</span></span>
+                    <span class="text-[9px] text-slate-400 font-mono font-normal">C</span>
+                  </div>
+                </th>
+                <!-- Column D: Amount -->
+                <th class="py-2 px-2.5 min-w-[115px] border-r border-slate-200 bg-slate-100">
+                  <div class="flex items-center justify-between">
+                    <span>Amount (₹) <span class="text-rose-500">*</span></span>
+                    <span class="text-[9px] text-slate-400 font-mono font-normal">D</span>
+                  </div>
+                </th>
+                <!-- Column E: Split -->
+                <th class="py-2 px-2.5 min-w-[105px] border-r border-slate-200 bg-slate-100">
+                  <div class="flex items-center justify-between">
+                    <span>Split Method</span>
+                    <span class="text-[9px] text-slate-400 font-mono font-normal">E</span>
+                  </div>
+                </th>
+                <!-- Column F: Actions -->
+                <th class="py-2 px-1.5 w-10 text-center bg-slate-100"></th>
+              </tr>
+            </thead>
+
+            <!-- Spreadsheet Grid Cells with Grid Lines -->
+            <tbody class="divide-y divide-slate-200 bg-white">
+              <tr
+                *ngFor="let row of rows; let idx = index"
+                class="hover:bg-indigo-50/30 transition-colors group"
+                [class.bg-emerald-50/30]="isRowValid(row)"
+              >
+                <!-- Sticky Row Number (# 1, 2, 3...) -->
+                <td
+                  class="py-1 px-1 text-center bg-slate-100 group-hover:bg-slate-200/90 font-mono text-[11px] font-bold text-slate-500 border-r border-slate-300 sticky left-0 z-10 select-none"
+                  [class.text-emerald-700]="isRowValid(row)"
                 >
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                  </svg>
-                </button>
-              </div>
+                  <span *ngIf="isRowValid(row)" class="text-[9px] text-emerald-600 block">✓</span>
+                  {{ idx + 1 }}
+                </td>
 
-              <!-- Title / Description -->
-              <div class="space-y-1">
-                <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Description / Title</label>
-                <input
-                  type="text"
-                  [(ngModel)]="row.title"
-                  (ngModelChange)="onRowTitleChange(idx, $event)"
-                  placeholder="e.g. Blinkit, WiFi, Swiggy, Groceries"
-                  class="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs bg-white text-slate-900 placeholder-slate-400 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 font-medium shadow-2xs"
-                />
-              </div>
-
-              <!-- Two Column: Date & Amount -->
-              <div class="grid grid-cols-2 gap-2">
-                <div class="space-y-1">
-                  <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Date</label>
+                <!-- Cell A: Date -->
+                <td class="p-1 border-r border-slate-200">
                   <input
                     type="date"
                     [(ngModel)]="row.date"
                     required
-                    class="w-full px-2.5 py-2 border border-slate-200 rounded-xl text-xs bg-white text-slate-900 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 font-medium shadow-2xs"
+                    class="w-full px-2 py-1.5 border border-transparent focus:border-indigo-500 rounded text-xs bg-transparent focus:bg-white text-slate-900 focus:outline-none focus:ring-1 focus:ring-indigo-500 font-medium font-mono"
                   />
-                </div>
+                </td>
 
-                <div class="space-y-1">
-                  <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Amount (₹)</label>
-                  <div class="relative">
-                    <span class="absolute left-2.5 top-2 text-slate-400 text-xs font-semibold">₹</span>
-                    <input
-                      type="number"
-                      step="0.01"
-                      [(ngModel)]="row.amount"
-                      placeholder="0.00"
-                      class="w-full pl-6 pr-2.5 py-2 border border-slate-200 rounded-xl text-xs bg-white text-slate-900 font-bold focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 font-mono shadow-2xs"
-                    />
-                  </div>
-                </div>
-              </div>
+                <!-- Cell B: Description / Title -->
+                <td class="p-1 border-r border-slate-200">
+                  <input
+                    type="text"
+                    [(ngModel)]="row.title"
+                    (ngModelChange)="onRowTitleChange(idx, $event)"
+                    placeholder="e.g. Blinkit, WiFi, Swiggy"
+                    class="w-full px-2.5 py-1.5 border border-transparent focus:border-indigo-500 rounded text-xs bg-transparent focus:bg-white text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-indigo-500 font-medium"
+                  />
+                </td>
 
-              <!-- Two Column: Category & Split Method -->
-              <div class="grid grid-cols-2 gap-2 pt-0.5">
-                <div class="space-y-1">
-                  <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider flex items-center justify-between">
-                    <span>Category</span>
-                    <span class="text-[9px] text-indigo-600 font-bold">✨ AI</span>
-                  </label>
+                <!-- Cell C: Category -->
+                <td class="p-1 border-r border-slate-200">
                   <select
                     [(ngModel)]="row.category"
-                    class="w-full px-2 py-2 border border-slate-200 rounded-xl text-xs bg-white text-slate-800 focus:outline-none focus:border-indigo-500 font-medium cursor-pointer shadow-2xs truncate"
+                    class="w-full px-2 py-1.5 border border-transparent focus:border-indigo-500 rounded text-xs bg-transparent focus:bg-white text-slate-800 focus:outline-none font-medium cursor-pointer"
                   >
                     <option value="Food & Dining">🍔 Food & Dining</option>
                     <option value="Bills & Utilities">⚡ Bills & Utilities</option>
@@ -228,179 +270,50 @@ export interface GridRow {
                     <option value="Transfers & Adjustments">🔄 Transfers & Adjustments</option>
                     <option value="Other">📦 Other</option>
                   </select>
-                </div>
+                </td>
 
-                <div class="space-y-1">
-                  <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Split Method</label>
+                <!-- Cell D: Amount (₹) -->
+                <td class="p-1 border-r border-slate-200">
+                  <div class="relative">
+                    <span class="absolute left-2 top-1.5 text-slate-400 text-xs font-semibold">₹</span>
+                    <input
+                      type="number"
+                      step="0.01"
+                      [(ngModel)]="row.amount"
+                      placeholder="0.00"
+                      class="w-full pl-5 pr-2 py-1.5 border border-transparent focus:border-indigo-500 rounded text-xs bg-transparent focus:bg-white text-slate-900 font-bold focus:outline-none focus:ring-1 focus:ring-indigo-500 font-mono text-right"
+                    />
+                  </div>
+                </td>
+
+                <!-- Cell E: Split Method -->
+                <td class="p-1 border-r border-slate-200">
                   <select
                     [(ngModel)]="row.splitType"
-                    class="w-full px-2 py-2 border border-slate-200 rounded-xl text-xs bg-white text-slate-800 focus:outline-none focus:border-indigo-500 font-medium cursor-pointer shadow-2xs"
+                    (keydown.tab)="onLastCellTab(idx)"
+                    class="w-full px-2 py-1.5 border border-transparent focus:border-indigo-500 rounded text-xs bg-transparent focus:bg-white text-slate-800 focus:outline-none font-medium cursor-pointer"
                   >
                     <option value="EQUAL">Equal</option>
                     <option value="EXACT">Exact</option>
                     <option value="PERCENTAGE">% Split</option>
                   </select>
-                </div>
-              </div>
-            </div>
+                </td>
 
-            <!-- Mobile Add Row Action -->
-            <button
-              type="button"
-              (click)="addRow()"
-              class="w-full py-3 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-800 rounded-2xl text-xs font-bold flex items-center justify-center space-x-1.5 transition-all active:scale-98 cursor-pointer shadow-2xs"
-            >
-              <span>＋</span>
-              <span>Add Another Expense Row</span>
-            </button>
-          </div>
-
-          <!-- DESKTOP SPREADSHEET TABLE (>= md) -->
-          <div class="hidden md:block overflow-x-auto">
-            <table class="w-full text-left text-xs border-collapse">
-              <thead>
-                <tr
-                  class="bg-slate-100/90 text-slate-600 font-semibold border-y border-slate-200 uppercase text-[10px] tracking-wider select-none"
-                >
-                  <th class="py-2.5 px-2 w-8 text-center">#</th>
-                  <th class="py-2.5 px-2 min-w-[125px]">
-                    Date <span class="text-rose-500 font-bold">*</span>
-                  </th>
-                  <th class="py-2.5 px-2 min-w-[180px]">
-                    Description / Title <span class="text-rose-500 font-bold">*</span>
-                  </th>
-                  <th class="py-2.5 px-2 min-w-[140px]">
-                    Category
-                    <span
-                      class="text-[10px] text-indigo-600 font-bold"
-                      title="Auto-detects as you type"
-                      >✨ AI</span
-                    >
-                  </th>
-                  <th class="py-2.5 px-2 min-w-[110px]">
-                    Amount (₹) <span class="text-rose-500 font-bold">*</span>
-                  </th>
-                  <th class="py-2.5 px-2 min-w-[110px]">Split</th>
-                  <th class="py-2.5 px-2 w-10 text-center"></th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-slate-100">
-                <tr
-                  *ngFor="let row of rows; let idx = index"
-                  class="hover:bg-slate-50/80 transition-colors group"
-                  [class.bg-emerald-50/20]="isRowValid(row)"
-                >
-                  <!-- Row Number -->
-                  <td
-                    class="py-1.5 px-2 text-center text-slate-400 font-mono text-[11px] select-none"
+                <!-- Cell F: Delete Row Action -->
+                <td class="p-1 text-center">
+                  <button
+                    type="button"
+                    (click)="removeRow(idx)"
+                    [disabled]="rows.length <= 1"
+                    class="text-slate-400 hover:text-rose-600 disabled:opacity-20 p-1 rounded-md hover:bg-rose-50 transition-colors cursor-pointer"
+                    title="Delete row"
                   >
-                    {{ idx + 1 }}
-                  </td>
-
-                  <!-- Date -->
-                  <td class="py-1.5 px-2">
-                    <input
-                      type="date"
-                      [(ngModel)]="row.date"
-                      required
-                      class="w-full px-2 py-1.5 border border-slate-200 rounded-md text-xs bg-white text-slate-900 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 font-medium"
-                    />
-                  </td>
-
-                  <!-- Title / Description with Real-time AI Category Detection -->
-                  <td class="py-1.5 px-2">
-                    <input
-                      type="text"
-                      [(ngModel)]="row.title"
-                      (ngModelChange)="onRowTitleChange(idx, $event)"
-                      placeholder="e.g. Blinkit, WiFi, Swiggy"
-                      class="w-full px-2.5 py-1.5 border border-slate-200 rounded-md text-xs bg-white text-slate-900 placeholder-slate-400 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 font-medium"
-                    />
-                  </td>
-
-                  <!-- Category -->
-                  <td class="py-1.5 px-2">
-                    <select
-                      [(ngModel)]="row.category"
-                      class="w-full px-2 py-1.5 border border-slate-200 rounded-md text-xs bg-white text-slate-800 focus:outline-none focus:border-indigo-500 font-medium cursor-pointer"
-                    >
-                      <option value="Food & Dining">🍔 Food & Dining</option>
-                      <option value="Bills & Utilities">⚡ Bills & Utilities</option>
-                      <option value="Transit & Travel">🚗 Transit & Travel</option>
-                      <option value="Shopping & Lifestyle">🛍️ Shopping & Lifestyle</option>
-                      <option value="Entertainment & Leisure">🎬 Entertainment & Leisure</option>
-                      <option value="Health & Wellness">💊 Health & Wellness</option>
-                      <option value="Education & Work">📚 Education & Work</option>
-                      <option value="Transfers & Adjustments">🔄 Transfers & Adjustments</option>
-                      <option value="Other">📦 Other</option>
-                    </select>
-                  </td>
-
-                  <!-- Amount (₹) -->
-                  <td class="py-1.5 px-2">
-                    <div class="relative">
-                      <span class="absolute left-2 top-1.5 text-slate-400 text-xs font-semibold"
-                        >₹</span
-                      >
-                      <input
-                        type="number"
-                        step="0.01"
-                        [(ngModel)]="row.amount"
-                        placeholder="0.00"
-                        class="w-full pl-5 pr-2 py-1.5 border border-slate-200 rounded-md text-xs bg-white text-slate-900 font-bold focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 font-mono"
-                      />
-                    </div>
-                  </td>
-
-                  <!-- Split Method -->
-                  <td class="py-1.5 px-2">
-                    <select
-                      [(ngModel)]="row.splitType"
-                      (keydown.tab)="onLastCellTab(idx)"
-                      class="w-full px-2 py-1.5 border border-slate-200 rounded-md text-xs bg-white text-slate-800 focus:outline-none focus:border-indigo-500 font-medium cursor-pointer"
-                    >
-                      <option value="EQUAL">Equal</option>
-                      <option value="EXACT">Exact</option>
-                      <option value="PERCENTAGE">%</option>
-                    </select>
-                  </td>
-
-                  <!-- Delete Action -->
-                  <td class="py-1.5 px-2 text-center">
-                    <button
-                      type="button"
-                      (click)="removeRow(idx)"
-                      [disabled]="rows.length <= 1"
-                      class="text-slate-400 hover:text-rose-600 disabled:opacity-20 p-1 rounded transition-colors cursor-pointer"
-                      title="Delete row"
-                    >
-                      ✕
-                    </button>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-
-          <!-- Empty Grid Quick Add Helper & Clear Action -->
-          <div class="pt-3 flex items-center justify-between text-xs text-slate-500">
-            <button
-              type="button"
-              (click)="addRow()"
-              class="text-indigo-600 hover:text-indigo-800 font-semibold hidden md:flex items-center space-x-1 cursor-pointer"
-            >
-              <span>＋ Add another row</span>
-              <span class="text-[11px] text-slate-400">(or press Tab on last cell)</span>
-            </button>
-
-            <button
-              type="button"
-              (click)="clearEmptyRows()"
-              class="text-slate-400 hover:text-slate-600 text-xs font-medium cursor-pointer ml-auto"
-            >
-              Clear empty rows
-            </button>
-          </div>
+                    ✕
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
 
         <!-- Footer / Live Calculation & Batch Save -->
