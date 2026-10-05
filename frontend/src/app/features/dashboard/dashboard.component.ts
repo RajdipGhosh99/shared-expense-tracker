@@ -1683,9 +1683,6 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
   readonly pullThreshold = 68;
   pullDistance = signal(0);
   isRefreshing = signal(false);
-  private pullStartY: number | null = null;
-  private pullStartX: number | null = null;
-  private isPullIntent = false;
   private unbindTouchListeners?: () => void;
 
   showAddModal = signal<boolean>(false);
@@ -1828,77 +1825,79 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     if (!el) return;
 
     this.ngZone.runOutsideAngular(() => {
-      let isTrackingTop = false;
+      // Gesture state
+      let startY = 0;
+      let startX = 0;
+      let intentDecided = false;   // has direction been decided yet?
+      let isPullDown = false;       // is this gesture a pull-down (vs scroll)?
 
       const handleTouchStart = (e: TouchEvent) => {
-        // Only arm when strictly at the very top (scrollTop <= 0) and not currently refreshing
+        // Only arm if we're at the very top and not already refreshing
         if (el.scrollTop <= 0 && !this.isRefreshing()) {
-          this.pullStartY = e.touches[0]?.clientY ?? null;
-          this.pullStartX = e.touches[0]?.clientX ?? null;
-          this.isPullIntent = false;
-          isTrackingTop = true;
+          startY = e.touches[0].clientY;
+          startX = e.touches[0].clientX;
+          intentDecided = false;
+          isPullDown = false;
         } else {
-          this.pullStartY = null;
-          this.pullStartX = null;
-          this.isPullIntent = false;
-          isTrackingTop = false;
+          startY = -1; // sentinel: not arming
         }
       };
 
       const handleTouchMove = (e: TouchEvent) => {
-        if (!isTrackingTop || this.pullStartY === null || this.isRefreshing()) return;
+        if (startY < 0 || this.isRefreshing()) return;
 
-        // If user has scrolled down into content, cancel pull tracking immediately
+        const touch = e.touches[0];
+        const dy = touch.clientY - startY;
+        const dx = Math.abs(touch.clientX - startX);
+
+        // First meaningful movement: decide if pull-down or scroll
+        if (!intentDecided && (Math.abs(dy) > 6 || dx > 6)) {
+          intentDecided = true;
+          // Only treat as pull-down if clearly moving down, not sideways, and still at top
+          isPullDown = dy > 0 && dx < dy * 0.6 && el.scrollTop <= 0;
+          if (!isPullDown) {
+            startY = -1; // abort pull tracking, let browser scroll freely
+            if (this.pullDistance() !== 0) {
+              this.ngZone.run(() => this.pullDistance.set(0));
+            }
+            return;
+          }
+        }
+
+        if (!intentDecided || !isPullDown) return;
+
+        // Cancel if user scrolled into content
         if (el.scrollTop > 0) {
-          this.pullStartY = null;
-          this.pullStartX = null;
-          this.isPullIntent = false;
-          isTrackingTop = false;
+          startY = -1;
+          isPullDown = false;
           if (this.pullDistance() !== 0) {
             this.ngZone.run(() => this.pullDistance.set(0));
           }
           return;
         }
 
-        const currentY = e.touches[0]?.clientY ?? this.pullStartY;
-        const currentX = e.touches[0]?.clientX ?? (this.pullStartX ?? 0);
-        const deltaY = currentY - this.pullStartY;
-        const deltaX = Math.abs(currentX - (this.pullStartX ?? currentX));
-
-        // Normal upward or horizontal swipe: abort pull and let native scroll proceed with zero friction
-        if (deltaY <= 0 || deltaX > deltaY) {
-          if (this.isPullIntent) {
-            this.isPullIntent = false;
-            this.ngZone.run(() => this.pullDistance.set(0));
-          }
-          return;
-        }
-
-        // Only engage elastic pull resistance once deliberate downward pull exceeds 20px
-        if (deltaY > 20) {
-          this.isPullIntent = true;
-          // Prevent browser rubber-banding ONLY while actively pulling the custom capsule down
-          if (e.cancelable) {
-            e.preventDefault();
-          }
-          const targetDist = Math.min((deltaY - 20) * 0.45, this.pullThreshold + 15);
-          this.ngZone.run(() => this.pullDistance.set(targetDist));
-        } else if (this.pullDistance() !== 0) {
-          this.ngZone.run(() => this.pullDistance.set(0));
+        // Compute elastic distance — fully passive, no preventDefault
+        if (dy > 0) {
+          const dist = Math.min(dy * 0.4, this.pullThreshold + 20);
+          this.ngZone.run(() => this.pullDistance.set(dist));
         }
       };
 
       const handleTouchEnd = () => {
-        const hadIntent = this.isPullIntent;
-        const currentDist = this.pullDistance();
+        if (startY < 0 || !isPullDown) {
+          startY = -1;
+          isPullDown = false;
+          intentDecided = false;
+          return;
+        }
 
-        this.pullStartY = null;
-        this.pullStartX = null;
-        this.isPullIntent = false;
-        isTrackingTop = false;
+        const currentDist = this.pullDistance();
+        startY = -1;
+        isPullDown = false;
+        intentDecided = false;
 
         this.ngZone.run(() => {
-          if (!hadIntent || currentDist < this.pullThreshold || this.isRefreshing()) {
+          if (currentDist < this.pullThreshold || this.isRefreshing()) {
             this.pullDistance.set(0);
             return;
           }
@@ -1921,11 +1920,12 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
         });
       };
 
-      // Register non-passive touchmove so e.preventDefault() works ONLY when intentionally pulling down at scrollTop 0
-      el.addEventListener('touchstart', handleTouchStart, { passive: true });
-      el.addEventListener('touchmove', handleTouchMove, { passive: false });
-      el.addEventListener('touchend', handleTouchEnd, { passive: true });
-      el.addEventListener('touchcancel', handleTouchEnd, { passive: true });
+      // ALL listeners are passive — browser scroll is NEVER blocked
+      const opts = { passive: true };
+      el.addEventListener('touchstart', handleTouchStart, opts);
+      el.addEventListener('touchmove', handleTouchMove, opts);
+      el.addEventListener('touchend', handleTouchEnd, opts);
+      el.addEventListener('touchcancel', handleTouchEnd, opts);
 
       this.unbindTouchListeners = () => {
         el.removeEventListener('touchstart', handleTouchStart);
