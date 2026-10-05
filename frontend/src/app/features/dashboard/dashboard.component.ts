@@ -23,7 +23,7 @@ import {
     >
       <!-- Native Mobile App Header -->
       <header
-        class="bg-white/95 backdrop-blur-xl border-b border-slate-200/90 sticky top-0 z-30 px-3 py-2 pt-safe shadow-2xs"
+        class="bg-white/95 backdrop-blur-xl border-b border-slate-200/90 sticky top-0 z-30 px-3 shadow-2xs"
       >
         <div class="relative flex h-11 items-center justify-between gap-2">
           <!-- Space Selector Capsule Pill -->

@@ -12,7 +12,7 @@ import { MonthlyStatement } from '@shared-expense-tracker/shared';
   template: `
     <div class="min-h-screen max-w-md sm:max-w-lg md:max-w-2xl mx-auto bg-slate-50 text-slate-900 pb-28 border-x border-slate-200/80 font-sans flex flex-col shadow-xs">
       <!-- Navbar -->
-      <header class="bg-white/95 backdrop-blur-xl border-b border-slate-200/90 sticky top-0 z-30 px-3 py-2 pt-safe shadow-2xs">
+      <header class="bg-white/95 backdrop-blur-xl border-b border-slate-200/90 sticky top-0 z-30 px-3 shadow-2xs">
         <div class="flex items-center justify-between h-11">
           <div class="flex items-center space-x-2">
             <button
