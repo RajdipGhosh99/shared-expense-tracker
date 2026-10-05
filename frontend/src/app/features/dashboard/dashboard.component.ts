@@ -21,82 +21,143 @@ import {
     <div
       class="min-h-screen max-w-md sm:max-w-lg md:max-w-2xl mx-auto bg-slate-50 text-slate-900 flex flex-col shadow-xs relative border-x border-slate-200/80 font-sans"
     >
-      <!-- Top Mature Executive Header -->
+      <!-- Native Mobile App Header -->
       <header
-        class="bg-white/95 backdrop-blur-md border-b border-slate-200/90 sticky top-0 z-30 px-2 py-1 pt-safe shadow-2xs"
+        class="bg-white/95 backdrop-blur-xl border-b border-slate-200/90 sticky top-0 z-30 px-3 py-2 pt-safe shadow-2xs"
       >
-        <div class="relative flex h-12 items-center gap-1">
+        <div class="relative flex h-11 items-center justify-between gap-2">
+          <!-- Space Selector Capsule Pill -->
           <button
             type="button"
             [attr.aria-expanded]="showGroupMenu()"
             aria-haspopup="true"
             (click)="showGroupMenu.set(!showGroupMenu())"
-            class="flex h-11 min-w-0 flex-1 items-center gap-2 rounded-xl px-1.5 text-left transition-colors hover:bg-slate-100 active:bg-slate-200 cursor-pointer"
-            title="Switch or manage groups"
+            class="flex items-center gap-2.5 bg-slate-100/90 hover:bg-slate-200/70 active:bg-slate-200 py-1.5 px-3 rounded-2xl transition-all cursor-pointer min-w-0 max-w-[210px] sm:max-w-[260px] border border-slate-200/70 shadow-2xs active:scale-98"
+            title="Switch or manage spaces"
           >
-            <img src="/pwa-icon.svg" alt="" class="size-8 shrink-0 rounded-lg" />
-            <span
-              role="heading"
-              aria-level="1"
-              class="min-w-0 flex-1 truncate text-sm font-bold text-slate-900"
+            <!-- Space Icon with Admin Crown Indicator -->
+            <div
+              class="relative size-7 rounded-xl flex items-center justify-center text-xs font-bold shadow-2xs shrink-0"
+              [class.bg-gradient-to-tr]="isAdmin()"
+              [class.from-indigo-600]="isAdmin()"
+              [class.to-violet-600]="isAdmin()"
+              [class.text-white]="isAdmin()"
+              [class.bg-slate-800]="!isAdmin()"
+              [class.text-white]="!isAdmin()"
             >
-              {{ api.activeGroup()?.name || 'My Group' }}
-            </span>
-            <svg
-              class="size-4 shrink-0 text-slate-500"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              aria-hidden="true"
-            >
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m6 9 6 6 6-6" />
-            </svg>
+              🏢
+              <span
+                *ngIf="isAdmin()"
+                class="absolute -top-1.5 -right-1.5 size-3.5 bg-amber-400 text-slate-950 text-[8px] font-black rounded-full flex items-center justify-center ring-2 ring-white shadow-2xs"
+                title="Space Admin"
+              >
+                👑
+              </span>
+            </div>
+
+            <!-- Space Title & Role Tag -->
+            <div class="min-w-0 text-left">
+              <div class="flex items-center gap-1">
+                <span
+                  role="heading"
+                  aria-level="1"
+                  class="min-w-0 truncate text-xs font-extrabold text-slate-900 tracking-tight"
+                >
+                  {{ api.activeGroup()?.name || 'My Space' }}
+                </span>
+                <svg
+                  class="size-3 text-slate-400 shrink-0 transition-transform duration-200"
+                  [class.rotate-180]="showGroupMenu()"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                >
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="m6 9 6 6 6-6" />
+                </svg>
+              </div>
+              <span
+                *ngIf="isAdmin()"
+                class="text-[9px] font-black text-amber-600 uppercase tracking-wider block leading-tight"
+              >
+                Admin
+              </span>
+              <span
+                *ngIf="!isAdmin()"
+                class="text-[9px] font-medium text-slate-500 block leading-tight"
+              >
+                Member
+              </span>
+            </div>
           </button>
 
-          <div class="flex shrink-0 items-center gap-0.5">
+          <!-- Right Action Capsule -->
+          <div class="flex shrink-0 items-center gap-1.5">
+            <!-- Admin Quick Invite Button (Opens WhatsApp Invite Generator) -->
             <button
+              *ngIf="isAdmin()"
               type="button"
-              (click)="copyCode()"
-              class="flex size-11 items-center justify-center rounded-xl text-slate-600 transition-colors hover:bg-slate-100 active:bg-slate-200 cursor-pointer"
-              [title]="copiedCode() ? 'Invite code copied' : 'Copy invite code'"
-              [attr.aria-label]="copiedCode() ? 'Invite code copied' : 'Copy invite code'"
+              (click)="openInviteModal()"
+              class="size-9 rounded-2xl bg-emerald-50 hover:bg-emerald-100 active:bg-emerald-200 active:scale-95 text-emerald-700 flex items-center justify-center font-bold text-xs border border-emerald-200 shadow-2xs transition-all cursor-pointer"
+              title="Generate WhatsApp Invite Link"
+              aria-label="Generate WhatsApp Invite Link"
             >
-              <svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                <rect x="8" y="8" width="12" height="12" rx="2" stroke-width="2" />
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3" />
-              </svg>
+              <span>＋👤</span>
             </button>
 
+            <!-- Regular User: Statements Shortcut -->
+            <button
+              *ngIf="!isAdmin()"
+              type="button"
+              (click)="router.navigate(['/statements'])"
+              class="size-9 rounded-2xl bg-slate-100 hover:bg-slate-200 active:bg-slate-300 active:scale-95 text-slate-700 flex items-center justify-center font-bold text-xs border border-slate-200/80 shadow-2xs transition-all cursor-pointer"
+              title="Monthly Statements"
+              aria-label="Monthly Statements"
+            >
+              <span>📄</span>
+            </button>
+
+            <!-- Tactile Logout Button -->
             <button
               type="button"
               (click)="api.logout(); router.navigate(['/auth'])"
-              class="flex size-11 items-center justify-center rounded-xl text-slate-600 transition-colors hover:bg-rose-50 hover:text-rose-600 active:bg-rose-100 cursor-pointer"
+              class="size-9 rounded-2xl bg-slate-100 hover:bg-rose-50 hover:text-rose-600 active:bg-rose-100 active:scale-95 text-slate-500 flex items-center justify-center transition-all cursor-pointer border border-slate-200/70"
               title="Log out"
               aria-label="Log out"
             >
-              <svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <svg class="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 17l5-5-5-5m5 5H3m9-9h6a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-6" />
               </svg>
             </button>
 
-            <div
-              class="ml-1 flex size-8 shrink-0 items-center justify-center rounded-full border border-slate-300 bg-slate-100 text-xs font-bold text-slate-700 select-none"
-              [title]="api.currentUser()?.email || ''"
-              aria-hidden="true"
-            >
-              {{ api.currentUser()?.name?.charAt(0) || 'U' }}
+            <!-- User Avatar Badge with Status Dot -->
+            <div class="relative ml-0.5">
+              <div
+                class="size-9 rounded-2xl flex items-center justify-center text-xs font-black select-none shadow-2xs transition-all"
+                [class.ring-2]="isAdmin()"
+                [class.ring-amber-400]="isAdmin()"
+                [class.bg-slate-900]="isAdmin()"
+                [class.text-white]="isAdmin()"
+                [class.bg-indigo-600]="!isAdmin()"
+                [class.text-white]="!isAdmin()"
+                [title]="api.currentUser()?.email || ''"
+                aria-hidden="true"
+              >
+                {{ api.currentUser()?.name?.charAt(0) || 'U' }}
+              </div>
+              <span class="absolute -bottom-0.5 -right-0.5 size-2.5 bg-emerald-500 rounded-full ring-2 ring-white"></span>
             </div>
           </div>
 
-          <!-- Group Switcher Dropdown Menu -->
+          <!-- Space Switcher Dropdown Sheet -->
           <div
             *ngIf="showGroupMenu()"
-            class="absolute left-0 top-full z-50 mt-1 w-72 bg-white rounded-2xl shadow-2xl border border-slate-200 p-2 space-y-1.5 animate-in fade-in zoom-in-95 duration-100"
+            class="absolute left-0 top-full z-50 mt-1.5 w-72 bg-white rounded-2xl shadow-2xl border border-slate-200 p-2 space-y-1.5 animate-in fade-in zoom-in-95 duration-100"
           >
             <div
               class="px-2.5 py-1.5 flex items-center justify-between text-[11px] font-bold text-slate-400 uppercase tracking-wider border-b border-slate-100"
             >
-              <span>Your Groups ({{ api.userGroups().length }})</span>
+              <span>Your Spaces ({{ api.userGroups().length }})</span>
               <button
                 (click)="showGroupMenu.set(false)"
                 class="text-slate-400 hover:text-slate-700 text-xs font-bold p-1 cursor-pointer"
@@ -105,7 +166,7 @@ import {
               </button>
             </div>
 
-            <!-- Group list -->
+            <!-- Space list -->
             <div class="max-h-56 overflow-y-auto space-y-1">
               <div
                 *ngFor="let ug of api.userGroups()"
@@ -124,17 +185,17 @@ import {
                       *ngIf="ug.role === 'ADMIN'"
                       class="px-1.5 py-0.2 bg-amber-50 text-amber-700 border border-amber-200 text-[9px] font-extrabold rounded"
                     >
-                      Admin
+                      👑 Admin
                     </span>
                     <span
-                      *ngIf="ug.status === 'PENDING'"
-                      class="px-1.5 py-0.2 bg-rose-50 text-rose-700 border border-rose-200 text-[9px] font-bold rounded"
+                      *ngIf="ug.role !== 'ADMIN'"
+                      class="px-1.5 py-0.2 bg-slate-100 text-slate-600 text-[9px] font-medium rounded"
                     >
-                      Pending
+                      Member
                     </span>
                   </div>
-                  <p class="text-[10px] text-slate-400 font-mono mt-0.5">
-                    Code: {{ ug.group.inviteCode }}
+                  <p class="text-[10px] text-slate-400 font-medium mt-0.5">
+                    {{ ug.group.currency || 'INR' }} • {{ ug.status }}
                   </p>
                 </div>
                 <span
@@ -145,21 +206,22 @@ import {
               </div>
             </div>
 
-            <!-- Quick group actions -->
+            <!-- Quick space actions -->
             <div class="pt-1.5 border-t border-slate-100 space-y-1">
               <button
                 (click)="showGroupMenu.set(false); showCreateModal.set(true)"
                 class="w-full py-2 px-3 text-left text-xs font-bold text-indigo-600 hover:bg-indigo-50 rounded-xl transition-colors flex items-center space-x-2 cursor-pointer"
               >
                 <span>＋</span>
-                <span>Create New Group</span>
+                <span>Create New Space</span>
               </button>
               <button
-                (click)="showGroupMenu.set(false); showJoinModal.set(true)"
+                *ngIf="isAdmin()"
+                (click)="showGroupMenu.set(false); openInviteModal()"
                 class="w-full py-2 px-3 text-left text-xs font-bold text-emerald-600 hover:bg-emerald-50 rounded-xl transition-colors flex items-center space-x-2 cursor-pointer"
               >
                 <span>🔗</span>
-                <span>Join Another Group</span>
+                <span>Invite Roommate via Link</span>
               </button>
               <button
                 (click)="showGroupMenu.set(false); api.logout(); router.navigate(['/auth'])"
