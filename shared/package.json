@@ -15,7 +15,9 @@
     "build": "tsc -b",
     "test": "node --test dist/**/*.test.js"
   },
-  "dependencies": {},
+  "dependencies": {
+    "zod": "^4.6.5"
+  },
   "devDependencies": {
     "@types/node": "^22.10.2",
     "typescript": "^5.7.0"

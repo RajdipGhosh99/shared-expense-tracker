@@ -9,6 +9,7 @@ import authRoutes from './routes/authRoutes.js';
 import groupRoutes from './routes/groupRoutes.js';
 import expenseRoutes from './routes/expenseRoutes.js';
 import receiptRoutes from './routes/receiptRoutes.js';
+import receiptExtractionRoutes from './routes/receiptExtractionRoutes.js';
 import settleRoutes from './routes/settleRoutes.js';
 import statementRoutes from './routes/statementRoutes.js';
 import cronRoutes from './routes/cronRoutes.js';
@@ -76,6 +77,8 @@ app.use(['/api/statements', '/statements'], statementRoutes);
 app.use(['/api/cron', '/cron'], cronRoutes);
 app.use(['/api/invites', '/invites'], inviteRoutes);
 app.use('/api', inviteRoutes);
+app.use('/api', receiptExtractionRoutes);
+app.use(receiptExtractionRoutes);
 
 // 404 Endpoint Not Found fallback
 app.use((req, res) => {
