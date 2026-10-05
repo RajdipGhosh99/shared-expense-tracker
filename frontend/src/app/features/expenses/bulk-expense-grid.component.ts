@@ -205,10 +205,10 @@ export interface GridRow {
                     <span class="text-[9px] text-slate-400 font-mono font-normal">D</span>
                   </div>
                 </th>
-                <!-- Column E: Split -->
+                <!-- Column E: Paid By -->
                 <th class="py-2 px-2.5 min-w-[105px] border-r border-slate-200 bg-slate-100">
                   <div class="flex items-center justify-between">
-                    <span>Split Method</span>
+                    <span>Paid By</span>
                     <span class="text-[9px] text-slate-400 font-mono font-normal">E</span>
                   </div>
                 </th>
@@ -286,7 +286,7 @@ export interface GridRow {
                   </div>
                 </td>
 
-                <!-- Cell E: Split Method -->
+                <!-- Cell E: Paid By -->
                 <td class="p-1 border-r border-slate-200">
                   <select
                     [(ngModel)]="row.splitType"

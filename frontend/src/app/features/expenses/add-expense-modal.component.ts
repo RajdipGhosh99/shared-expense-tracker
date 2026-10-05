@@ -269,12 +269,12 @@ import {
             </div>
           </div>
 
-          <!-- Split Method & Optional Notes -->
+          <!-- Paid By & Optional Notes -->
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-            <!-- Split Method -->
+            <!-- Paid By -->
             <div *ngIf="controls().splitType !== 'hidden'" class="space-y-1.5">
               <label class="text-xs font-bold text-slate-700 flex items-center justify-between">
-                <span>Split Method</span>
+                <span>Paid By</span>
                 <span
                   *ngIf="controls().splitType === 'view_only'"
                   class="text-[9px] text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-200 font-bold"

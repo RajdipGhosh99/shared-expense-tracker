@@ -801,10 +801,10 @@ import {
                 </select>
               </div>
 
-              <!-- Split Method -->
+              <!-- Paid By -->
               <div class="flex items-center justify-between py-2 border-b border-slate-50">
                 <div>
-                  <p class="font-semibold text-slate-800">Split Method</p>
+                  <p class="font-semibold text-slate-800">Paid By</p>
                   <p class="text-[10px] text-slate-400">Lock to equal or allow custom splits</p>
                 </div>
                 <select
@@ -935,10 +935,10 @@ import {
                   </div>
                 </div>
 
-                <!-- Split Method preview -->
+                <!-- Paid By preview -->
                 <div *ngIf="formControlsConfig.splitType !== 'hidden'">
                   <div class="flex justify-between mb-0.5">
-                    <span class="font-semibold text-slate-600 text-[10px]">Split Method</span>
+                    <span class="font-semibold text-slate-600 text-[10px]">Paid By</span>
                     <span
                       *ngIf="formControlsConfig.splitType === 'view_only'"
                       class="text-[9px] text-indigo-600 bg-indigo-50 px-1.5 rounded border border-indigo-200 font-bold"
@@ -959,7 +959,7 @@ import {
                 </div>
                 <div *ngIf="formControlsConfig.splitType === 'hidden'">
                   <div class="w-full h-7 rounded-lg border border-dashed border-slate-200 bg-slate-50/50 flex items-center justify-center">
-                    <span class="text-[9px] text-slate-300 italic">Split method hidden (always equal)</span>
+                    <span class="text-[9px] text-slate-300 italic">Paid By hidden (always equal)</span>
                   </div>
                 </div>
 
