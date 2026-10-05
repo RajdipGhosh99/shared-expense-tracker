@@ -108,12 +108,23 @@ router.post('/', authMiddleware, async (req: AuthRequest, res: Response) => {
 
   let finalSplits: Record<string, number> = {};
 
-  if (splitType === 'EXACT' && customSplits) {
-    finalSplits = customSplits;
+  if (splitType === 'EXACT' && customSplits && Object.keys(customSplits).length > 0) {
+    const splitCalc = calculateSplits({
+      totalAmountMinorUnits: amountMinorUnits,
+      splitType: 'EXACT',
+      payerEmail,
+      memberEmails,
+      absentMemberEmails: absentEmails,
+      exactAmountsMinorUnits: customSplits,
+    });
+    if (!splitCalc.isValid) {
+      return res.status(400).json({ error: splitCalc.errorMessage });
+    }
+    finalSplits = splitCalc.splits;
   } else {
     const splitCalc = calculateSplits({
       totalAmountMinorUnits: amountMinorUnits,
-      splitType: (splitType as SplitType) || 'EQUAL',
+      splitType: (splitType as SplitType) || 'EXACT',
       payerEmail,
       memberEmails,
       absentMemberEmails: absentEmails,
@@ -266,7 +277,7 @@ router.post('/batch', authMiddleware, async (req: AuthRequest, res: Response) =>
 
     const splitCalc = calculateSplits({
       totalAmountMinorUnits: amountMinorUnits,
-      splitType: (item.splitType as SplitType) || 'EQUAL',
+      splitType: (item.splitType as SplitType) || 'EXACT',
       payerEmail: itemPayerEmail,
       memberEmails: itemMemberEmails,
       absentMemberEmails: itemAbsentEmails,

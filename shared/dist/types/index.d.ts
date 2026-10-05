@@ -54,7 +54,7 @@ export interface Group {
     createdAt: string;
 }
 export type Flat = Group;
-export type SplitType = 'EQUAL' | 'EXACT' | 'PERCENTAGE' | 'SHARES';
+export type SplitType = 'EXACT' | 'EQUAL' | 'PERCENTAGE' | 'SHARES' | 'PERSONAL';
 export type ExpenseCategory = 'Food & Dining' | 'Bills & Utilities' | 'Transit & Travel' | 'Shopping & Lifestyle' | 'Entertainment & Leisure' | 'Health & Wellness' | 'Education & Work' | 'Transfers & Adjustments' | 'Other' | 'Shopping & E-Commerce' | 'Health & Well-being' | 'Education & Career' | 'Transfers & Settlements';
 export declare const CATEGORY_TAXONOMY: Record<string, string[]>;
 export interface SplitDynamicInfo {

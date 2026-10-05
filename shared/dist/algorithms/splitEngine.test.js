@@ -46,6 +46,38 @@ describe('SplitEngine (Zero-Drift Integer Minor Units)', () => {
         assert.equal(result.isValid, false);
         assert.match(result.errorMessage || '', /does not match total bill/);
     });
+    test('EXACT split without explicit mapping falls back to even exact allocation', () => {
+        const result = calculateSplits({
+            totalAmountMinorUnits: 10000,
+            splitType: 'EXACT',
+            payerEmail: 'rahul@group.com',
+            memberEmails: ['rahul@group.com', 'amit@group.com'],
+        });
+        assert.equal(result.isValid, true);
+        assert.equal(result.splits['rahul@group.com'], 5000);
+        assert.equal(result.splits['amit@group.com'], 5000);
+    });
+    test('PERSONAL split allocates 100% to payer and 0 to other flatmates', () => {
+        const result = calculateSplits({
+            totalAmountMinorUnits: 15000, // ₹150.00
+            splitType: 'PERSONAL',
+            payerEmail: 'rahul@group.com',
+            memberEmails: ['rahul@group.com', 'amit@group.com', 'priya@group.com'],
+        });
+        assert.equal(result.isValid, true);
+        assert.equal(result.splits['rahul@group.com'], 15000);
+        assert.equal(result.splits['amit@group.com'], 0);
+        assert.equal(result.splits['priya@group.com'], 0);
+        // Verify it produces 0 debt transactions in DebtEngine
+        const members = [
+            { email: 'rahul@group.com', name: 'Rahul' },
+            { email: 'amit@group.com', name: 'Amit' },
+            { email: 'priya@group.com', name: 'Priya' },
+        ];
+        const expenses = [{ payerEmail: 'rahul@group.com', splits: result.splits }];
+        const debtResult = simplifyDebts('group-1', members, expenses, []);
+        assert.equal(debtResult.simplifiedDebts.length, 0, 'Personal expense creates 0 debts');
+    });
 });
 describe('DebtEngine (Min-Cash-Flow Simplification)', () => {
     test('Resolves circular debts to 0 transactions', () => {

@@ -39,11 +39,19 @@ export function calculateSplits(request) {
         }
         case 'EXACT': {
             if (!request.exactAmountsMinorUnits) {
-                return {
-                    splits: {},
-                    isValid: false,
-                    errorMessage: 'Exact amounts mapping is required.',
-                };
+                // Default behavior: calculate exact minor unit splits evenly across active members
+                const n = activeMembers.length;
+                const baseShare = Math.floor(totalAmountMinorUnits / n);
+                let remainder = totalAmountMinorUnits - baseShare * n;
+                for (const email of activeMembers) {
+                    let share = baseShare;
+                    if (remainder > 0) {
+                        share += 1;
+                        remainder -= 1;
+                    }
+                    splits[email] = share;
+                }
+                return { splits, isValid: true };
             }
             let sum = 0;
             for (const email of activeMembers) {
@@ -58,6 +66,17 @@ export function calculateSplits(request) {
                     isValid: false,
                     errorMessage: `Sum of exact splits (₹${(sum / 100).toFixed(2)}) does not match total bill (₹${(totalAmountMinorUnits / 100).toFixed(2)}). Difference: ₹${diff.toFixed(2)}.`,
                 };
+            }
+            return { splits, isValid: true };
+        }
+        case 'PERSONAL': {
+            // 100% of expense is allocated to the payer; all other flatmates owe 0. No debt generated.
+            const payer = (request.payerEmail || '').toLowerCase();
+            for (const email of activeMembers) {
+                splits[email] = email.toLowerCase() === payer ? totalAmountMinorUnits : 0;
+            }
+            if (request.payerEmail && !activeMembers.some((e) => e.toLowerCase() === payer)) {
+                splits[request.payerEmail] = totalAmountMinorUnits;
             }
             return { splits, isValid: true };
         }

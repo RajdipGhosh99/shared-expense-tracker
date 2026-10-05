@@ -30,7 +30,7 @@ import {
   template: `
     <!-- Mobile & Desktop Responsive App Container (Standard Mature Theme) -->
     <div
-      class="min-h-screen max-w-md sm:max-w-lg md:max-w-2xl mx-auto bg-slate-50 text-slate-900 flex flex-col shadow-xs relative border-x border-slate-200/80 font-sans"
+      class="h-full max-w-md sm:max-w-lg md:max-w-2xl mx-auto bg-slate-50 text-slate-900 flex flex-col shadow-xs relative border-x border-slate-200/80 font-sans overflow-hidden"
     >
       <!-- Native Mobile App Header -->
       <header

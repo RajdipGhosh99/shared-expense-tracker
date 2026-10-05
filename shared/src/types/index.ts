@@ -85,7 +85,7 @@ export type Flat = Group;
 // ==========================================
 // Expense & Splitting Models
 // ==========================================
-export type SplitType = 'EQUAL' | 'EXACT' | 'PERCENTAGE' | 'SHARES';
+export type SplitType = 'EXACT' | 'EQUAL' | 'PERCENTAGE' | 'SHARES' | 'PERSONAL';
 
 export type ExpenseCategory =
   | 'Food & Dining'

@@ -321,9 +321,11 @@ export interface GridRow {
                     (keydown.tab)="onLastCellTab(idx)"
                     class="w-full px-2 py-1.5 border border-transparent focus:border-indigo-500 rounded text-xs bg-transparent focus:bg-white text-slate-800 focus:outline-none font-medium cursor-pointer"
                   >
-                    <option value="EQUAL">Equal</option>
                     <option value="EXACT">Exact</option>
+                    <option value="EQUAL">Equal</option>
                     <option value="PERCENTAGE">% Split</option>
+                    <option value="SHARES">Shares</option>
+                    <option value="PERSONAL">Personal</option>
                   </select>
                 </td>
 
@@ -453,7 +455,7 @@ export class BulkExpenseGridComponent implements OnInit {
         category: 'Food & Dining',
         amount: null,
         payerEmail: defaultPayer,
-        splitType: 'EQUAL',
+        splitType: 'EXACT',
       },
       {
         id: this.nextId++,
@@ -462,7 +464,7 @@ export class BulkExpenseGridComponent implements OnInit {
         category: 'Bills & Utilities',
         amount: null,
         payerEmail: defaultPayer,
-        splitType: 'EQUAL',
+        splitType: 'EXACT',
       },
       {
         id: this.nextId++,
@@ -471,7 +473,7 @@ export class BulkExpenseGridComponent implements OnInit {
         category: 'Transit & Travel',
         amount: null,
         payerEmail: defaultPayer,
-        splitType: 'EQUAL',
+        splitType: 'EXACT',
       },
       {
         id: this.nextId++,
@@ -480,7 +482,7 @@ export class BulkExpenseGridComponent implements OnInit {
         category: 'Shopping & E-Commerce',
         amount: null,
         payerEmail: defaultPayer,
-        splitType: 'EQUAL',
+        splitType: 'EXACT',
       },
     ];
   }
@@ -494,7 +496,7 @@ export class BulkExpenseGridComponent implements OnInit {
       category: 'Food & Dining',
       amount: null,
       payerEmail: this.currentUserEmail(),
-      splitType: 'EQUAL',
+      splitType: 'EXACT',
     });
   }
 
@@ -572,7 +574,7 @@ export class BulkExpenseGridComponent implements OnInit {
         category,
         amount: isNaN(amount as number) ? null : amount,
         payerEmail: this.currentUserEmail(),
-        splitType: 'EQUAL',
+        splitType: 'EXACT',
       });
     }
 

@@ -322,11 +322,14 @@ import {
                 *ngIf="controls().splitType !== 'view_only'"
                 [(ngModel)]="splitType"
                 name="splitType"
+                (ngModelChange)="onSplitTypeChange()"
                 class="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs font-medium focus:outline-none focus:border-indigo-500 bg-white text-slate-800 transition-all"
               >
+                <option value="EXACT">Exact Amounts (Default)</option>
                 <option value="EQUAL">Equal Split</option>
-                <option value="EXACT">Exact Amounts</option>
                 <option value="PERCENTAGE">Percentages</option>
+                <option value="SHARES">Shares / Ratio</option>
+                <option value="PERSONAL">Personal (No Split)</option>
               </select>
             </div>
           </div>
@@ -443,12 +446,42 @@ import {
 
                 <!-- Share amount -->
                 <div class="text-right">
+                  <!-- EXACT mode input -->
+                  <div
+                    *ngIf="(m.eligibilityStatus === 'ACTIVE' || m.eligibilityStatus === 'PENDING_INVITE') && !isExcluded(m.userEmail) && splitType === 'EXACT'"
+                    class="flex items-center justify-end space-x-1"
+                  >
+                    <span class="text-xs font-bold text-slate-500">₹</span>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      [value]="getExactAmount(m.userEmail)"
+                      (input)="onExactAmountInput(m.userEmail, $event)"
+                      class="w-20 px-2 py-1 text-right font-mono font-bold text-xs rounded-lg border border-slate-200 focus:outline-none focus:border-indigo-500 bg-white text-indigo-700 shadow-2xs"
+                    />
+                  </div>
+
+                  <!-- EQUAL / SHARES / PERCENTAGE mode share -->
                   <span
-                    *ngIf="(m.eligibilityStatus === 'ACTIVE' || m.eligibilityStatus === 'PENDING_INVITE') && !isExcluded(m.userEmail) && amount && amount > 0 && splitType === 'EQUAL'"
+                    *ngIf="(m.eligibilityStatus === 'ACTIVE' || m.eligibilityStatus === 'PENDING_INVITE') && !isExcluded(m.userEmail) && amount && amount > 0 && splitType !== 'EXACT' && splitType !== 'PERSONAL'"
                     class="font-bold text-indigo-700 font-mono text-xs"
                   >
                     ₹{{ perPersonShare().toFixed(2) }}
                   </span>
+
+                  <!-- PERSONAL mode -->
+                  <div
+                    *ngIf="(m.eligibilityStatus === 'ACTIVE' || m.eligibilityStatus === 'PENDING_INVITE') && !isExcluded(m.userEmail) && splitType === 'PERSONAL'"
+                  >
+                    <span *ngIf="isPayer(m.userEmail)" class="font-bold text-indigo-700 font-mono text-xs">
+                      ₹{{ ((amount || 0)).toFixed(2) }} <span class="text-[9px] font-semibold text-indigo-500">(100%)</span>
+                    </span>
+                    <span *ngIf="!isPayer(m.userEmail)" class="font-medium text-slate-400 font-mono text-xs">
+                      ₹0.00 <span class="text-[9px] italic">(No Debt)</span>
+                    </span>
+                  </div>
+
                   <span
                     *ngIf="isExcluded(m.userEmail) && (m.eligibilityStatus === 'ACTIVE' || m.eligibilityStatus === 'PENDING_INVITE')"
                     class="text-[10px] text-slate-400 font-medium italic"
@@ -465,13 +498,45 @@ import {
               </div>
             </div>
 
-            <!-- Summary banner -->
+            <!-- Summary banner: EQUAL -->
             <div
               *ngIf="amount && amount > 0 && splitType === 'EQUAL' && effectiveParticipants().length > 0"
               class="p-2.5 bg-indigo-50 rounded-xl border border-indigo-100 text-xs text-indigo-900 flex items-center justify-between"
             >
               <span class="font-medium text-slate-600">Each Active Roommate Pays:</span>
               <span class="font-black text-indigo-700 text-sm">₹{{ perPersonShare().toFixed(2) }}</span>
+            </div>
+
+            <!-- Summary banner: EXACT -->
+            <div
+              *ngIf="amount && amount > 0 && splitType === 'EXACT' && effectiveParticipants().length > 0"
+              class="p-2.5 bg-indigo-50 rounded-xl border border-indigo-100 text-xs text-indigo-900 flex items-center justify-between"
+            >
+              <div class="flex items-center space-x-1.5">
+                <span class="font-medium text-slate-600">Total Allocated:</span>
+                <span class="font-bold text-indigo-700">₹{{ totalExactAllocated().toFixed(2) }} / ₹{{ ((amount || 0)).toFixed(2) }}</span>
+              </div>
+              <span
+                *ngIf="Math.abs(exactDifference()) > 0.01"
+                class="text-[10px] font-bold text-rose-600 bg-rose-50 px-2 py-0.5 rounded border border-rose-200"
+              >
+                {{ exactDifference() > 0 ? 'Remaining: ₹' + exactDifference().toFixed(2) : 'Over: ₹' + (-exactDifference()).toFixed(2) }}
+              </span>
+              <span
+                *ngIf="Math.abs(exactDifference()) <= 0.01"
+                class="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200"
+              >
+                ✓ Balanced
+              </span>
+            </div>
+
+            <!-- Summary banner: PERSONAL -->
+            <div
+              *ngIf="amount && amount > 0 && splitType === 'PERSONAL'"
+              class="p-2.5 bg-slate-100 rounded-xl border border-slate-200 text-xs text-slate-700 flex items-center justify-between"
+            >
+              <span class="font-medium text-slate-600">Personal (Solo Expense):</span>
+              <span class="font-bold text-slate-800">100% borne by {{ isCurrentUserPayer() ? 'You' : payerEmail }} (₹0 flatmate debt)</span>
             </div>
           </div>
 
@@ -505,8 +570,11 @@ export class AddExpenseModalComponent implements OnInit {
   category: ExpenseCategory = 'Food & Dining';
   subCategory = 'Groceries & Dark Stores';
   notes = '';
-  splitType: SplitType = 'EQUAL';
+  splitType: SplitType = 'EXACT';
   payerEmail = '';
+  exactAmounts: Record<string, number> = {};
+  isExactManualEdited = false;
+  protected readonly Math = Math;
 
   loading = signal<boolean>(false);
   errorMessage = signal<string | null>(null);
@@ -532,6 +600,46 @@ export class AddExpenseModalComponent implements OnInit {
       !this.payerEmail ||
       this.payerEmail.toLowerCase() === this.currentUserEmail().toLowerCase()
     );
+  }
+
+  isPayer(email: string): boolean {
+    const p = (this.payerEmail || this.currentUserEmail()).toLowerCase();
+    return email.toLowerCase() === p;
+  }
+
+  getExactAmount(email: string): number {
+    const key = email.toLowerCase();
+    if (this.exactAmounts[key] !== undefined) {
+      return this.exactAmounts[key];
+    }
+    return this.perPersonShare();
+  }
+
+  onExactAmountInput(email: string, event: Event) {
+    const input = event.target as HTMLInputElement;
+    const val = parseFloat(input.value);
+    this.isExactManualEdited = true;
+    this.exactAmounts[email.toLowerCase()] = isNaN(val) ? 0 : val;
+  }
+
+  totalExactAllocated(): number {
+    const participants = this.effectiveParticipants();
+    if (participants.length === 0) return 0;
+    let sum = 0;
+    for (const p of participants) {
+      sum += this.getExactAmount(p.userEmail);
+    }
+    return Math.round((sum + Number.EPSILON) * 100) / 100;
+  }
+
+  exactDifference(): number {
+    const total = this.amount || 0;
+    return Math.round((total - this.totalExactAllocated() + Number.EPSILON) * 100) / 100;
+  }
+
+  onSplitTypeChange() {
+    this.isExactManualEdited = false;
+    this.exactAmounts = {};
   }
 
   effectiveParticipants = computed(() =>
@@ -670,7 +778,25 @@ export class AddExpenseModalComponent implements OnInit {
 
     let customSplits: Record<string, number> | undefined = undefined;
     const participants = this.effectiveParticipants();
-    if (this.excludedEmails().size > 0 && participants.length > 0 && this.amount) {
+
+    if (effectiveSplit === 'PERSONAL') {
+      const payer = this.payerEmail || this.currentUserEmail();
+      const minorTotal = Math.round((this.amount || 0) * 100);
+      customSplits = { [payer]: minorTotal };
+      for (const p of this.eligibleMembers()) {
+        if (p.userEmail.toLowerCase() !== payer.toLowerCase()) {
+          customSplits[p.userEmail] = 0;
+        }
+      }
+    } else if (effectiveSplit === 'EXACT') {
+      if (this.amount && participants.length > 0) {
+        customSplits = {};
+        for (const p of participants) {
+          const val = this.getExactAmount(p.userEmail);
+          customSplits[p.userEmail] = Math.round(val * 100);
+        }
+      }
+    } else if (this.excludedEmails().size > 0 && participants.length > 0 && this.amount) {
       const minorTotal = Math.round(this.amount * 100);
       const share = Math.floor(minorTotal / participants.length);
       let remainder = minorTotal - share * participants.length;
@@ -691,7 +817,7 @@ export class AddExpenseModalComponent implements OnInit {
         subCategory: this.controls().subCategory !== 'hidden' ? this.subCategory : undefined,
         notes: this.controls().notes !== 'hidden' ? this.notes : undefined,
         isExpense,
-        splitType: customSplits ? 'EXACT' : effectiveSplit,
+        splitType: effectiveSplit,
         splits: customSplits,
       })
       .subscribe({
@@ -719,7 +845,25 @@ export class AddExpenseModalComponent implements OnInit {
 
     let customSplits: Record<string, number> | undefined = undefined;
     const participants = this.effectiveParticipants();
-    if (this.excludedEmails().size > 0 && participants.length > 0 && this.amount) {
+
+    if (effectiveSplit === 'PERSONAL') {
+      const payer = this.payerEmail || this.currentUserEmail();
+      const minorTotal = Math.round((this.amount || 0) * 100);
+      customSplits = { [payer]: minorTotal };
+      for (const p of this.eligibleMembers()) {
+        if (p.userEmail.toLowerCase() !== payer.toLowerCase()) {
+          customSplits[p.userEmail] = 0;
+        }
+      }
+    } else if (effectiveSplit === 'EXACT') {
+      if (this.amount && participants.length > 0) {
+        customSplits = {};
+        for (const p of participants) {
+          const val = this.getExactAmount(p.userEmail);
+          customSplits[p.userEmail] = Math.round(val * 100);
+        }
+      }
+    } else if (this.excludedEmails().size > 0 && participants.length > 0 && this.amount) {
       const minorTotal = Math.round(this.amount * 100);
       const share = Math.floor(minorTotal / participants.length);
       let remainder = minorTotal - share * participants.length;
@@ -739,7 +883,7 @@ export class AddExpenseModalComponent implements OnInit {
         category: this.category,
         subCategory: this.controls().subCategory !== 'hidden' ? this.subCategory : undefined,
         notes: this.controls().notes !== 'hidden' ? this.notes : undefined,
-        splitType: customSplits ? 'EXACT' : effectiveSplit,
+        splitType: effectiveSplit,
         splits: customSplits,
         allowOverwrite: true,
         overwriteTargetId: conflict.existingRecord.id,

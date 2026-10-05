@@ -1,0 +1,6 @@
+/* app-root must fill the full viewport and not overflow */
+:host {
+  display: block;
+  height: 100%;
+  overflow: hidden;
+}

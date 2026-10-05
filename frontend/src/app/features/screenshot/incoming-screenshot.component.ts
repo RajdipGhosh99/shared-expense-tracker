@@ -245,7 +245,7 @@ export class IncomingScreenshotComponent implements OnInit {
         amount: data.amountDisplay,
         date: this.expenseDate,
         category: data.category,
-        splitType: 'EQUAL',
+        splitType: 'EXACT',
         utrNumber: data.utrNumber,
       })
       .subscribe({
