@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../core/services/api.service.js';
 import { AiCategoryService } from '../../core/services/ai-category.service.js';
-import { ExpenseCategory, SplitType } from '@shared-expense-tracker/shared';
+import { ExpenseCategory, SplitType, EligibleMember } from '@shared-expense-tracker/shared';
 
 export interface GridRow {
   id: number;
@@ -246,6 +246,7 @@ export interface GridRow {
                   <input
                     type="date"
                     [(ngModel)]="row.date"
+                    (ngModelChange)="onRowDateChange(row, $event)"
                     required
                     class="w-full px-2 py-1.5 border border-transparent focus:border-indigo-500 rounded text-xs bg-transparent focus:bg-white text-slate-900 focus:outline-none focus:ring-1 focus:ring-indigo-500 font-medium font-mono"
                   />
@@ -294,16 +295,21 @@ export interface GridRow {
                   </div>
                 </td>
 
-                <!-- Cell E: Paid By -->
+                <!-- Cell E: Paid By (Date & Tenancy-Aware from BE) -->
                 <td class="p-1 border-r border-slate-200">
                   <select
                     [(ngModel)]="row.payerEmail"
                     class="w-full px-2 py-1.5 border border-transparent focus:border-indigo-500 rounded text-xs bg-transparent focus:bg-white text-slate-800 focus:outline-none font-medium cursor-pointer"
                   >
-                    <!-- Current User (You) -->
-                    <option [value]="currentUserEmail()">You</option>
-                    <!-- Other Active Group Members -->
-                    <ng-container *ngFor="let m of activeGroupMembers()">
+                    <!-- Current User (You) if active on this date -->
+                    <option
+                      *ngIf="isCurrentUserActiveOnDate(row.date)"
+                      [value]="currentUserEmail()"
+                    >
+                      You
+                    </option>
+                    <!-- Other Active Group Members on this date -->
+                    <ng-container *ngFor="let m of getPayersForDate(row.date)">
                       <option
                         *ngIf="m.userEmail.toLowerCase() !== currentUserEmail().toLowerCase()"
                         [value]="m.userEmail"
@@ -424,6 +430,11 @@ export class BulkExpenseGridComponent implements OnInit {
   showPasteModal = signal<boolean>(false);
   pasteText = '';
 
+  // Cache: date -> array of active eligible members from BE
+  private dateEligibleMap = new Map<string, EligibleMember[]>();
+  // In-flight requests tracker to avoid duplicate calls for same date
+  private inFlightRequests = new Map<string, boolean>();
+
   activeGroupMembers = computed(() => {
     return this.api.members().filter((m) => (m.status || 'ACTIVE') === 'ACTIVE');
   });
@@ -443,10 +454,110 @@ export class BulkExpenseGridComponent implements OnInit {
     }
   }
 
+  getPayersForDate(dateStr: string): { userEmail: string; name: string }[] {
+    if (!dateStr) return this.activeGroupMembers();
+    const cached = this.dateEligibleMap.get(dateStr);
+    if (cached) {
+      return cached.filter(
+        (m) => m.eligibilityStatus === 'ACTIVE' || m.eligibilityStatus === 'PENDING_INVITE',
+      );
+    }
+    // If not cached yet, trigger background fetch (cached immediately) and return fallback active members
+    this.fetchEligibleMembersForDate(dateStr);
+    return this.activeGroupMembers();
+  }
+
+  isCurrentUserActiveOnDate(dateStr: string): boolean {
+    const myEmail = this.currentUserEmail().toLowerCase();
+    if (!myEmail) return true;
+    if (!dateStr) return true;
+    const cached = this.dateEligibleMap.get(dateStr);
+    if (cached) {
+      return cached.some(
+        (m) =>
+          m.userEmail.toLowerCase() === myEmail &&
+          (m.eligibilityStatus === 'ACTIVE' || m.eligibilityStatus === 'PENDING_INVITE'),
+      );
+    }
+    return true; // Optimistic fallback until BE responds
+  }
+
+  fetchEligibleMembersForDate(dateStr: string, callback?: (active: EligibleMember[]) => void) {
+    if (!dateStr) return;
+    const group = this.api.activeGroup();
+    if (!group) return;
+
+    if (this.dateEligibleMap.has(dateStr)) {
+      if (callback) {
+        const cached = this.dateEligibleMap.get(dateStr) || [];
+        const active = cached.filter(
+          (m) => m.eligibilityStatus === 'ACTIVE' || m.eligibilityStatus === 'PENDING_INVITE',
+        );
+        callback(active);
+      }
+      return;
+    }
+
+    if (this.inFlightRequests.get(dateStr)) {
+      return; // Already requesting this date
+    }
+
+    this.inFlightRequests.set(dateStr, true);
+    this.api.getEligibleMembers(group.id, dateStr).subscribe({
+      next: (res) => {
+        this.inFlightRequests.delete(dateStr);
+        const members = res.eligibleMembers || [];
+        this.dateEligibleMap.set(dateStr, members);
+        const active = members.filter(
+          (m) => m.eligibilityStatus === 'ACTIVE' || m.eligibilityStatus === 'PENDING_INVITE',
+        );
+        if (callback) {
+          callback(active);
+        }
+      },
+      error: () => {
+        this.inFlightRequests.delete(dateStr);
+      },
+    });
+  }
+
+  onRowDateChange(row: GridRow, newDate: string) {
+    if (!newDate) return;
+    row.date = newDate;
+
+    // Fast & optimized: fetch from BE with caching
+    this.fetchEligibleMembersForDate(newDate, (activeMembers) => {
+      if (!activeMembers || activeMembers.length === 0) return;
+
+      const myEmail = this.currentUserEmail().toLowerCase();
+      const currentPayer = (row.payerEmail || myEmail).toLowerCase();
+
+      // Check if current payer is valid on this new date
+      const isCurrentPayerValid = activeMembers.some(
+        (m) => m.userEmail.toLowerCase() === currentPayer,
+      );
+
+      if (!isCurrentPayerValid) {
+        // Current payer is not active on this date (e.g. moved out or not yet moved in)
+        // Default to current user (ME) if active on this date, or the first active member
+        const amIActive = activeMembers.some((m) => m.userEmail.toLowerCase() === myEmail);
+        if (amIActive) {
+          row.payerEmail = this.currentUserEmail();
+        } else {
+          row.payerEmail = activeMembers[0].userEmail;
+        }
+      }
+    });
+  }
+
   ngOnInit() {
     // Initialize with 4 blank rows ready to type
     const today = new Date().toISOString().split('T')[0];
     const defaultPayer = this.currentUserEmail();
+
+    // Pre-cache today's eligible members from BE
+    this.fetchEligibleMembersForDate(today);
+
     this.rows = [
       {
         id: this.nextId++,
@@ -489,15 +600,23 @@ export class BulkExpenseGridComponent implements OnInit {
 
   addRow() {
     const today = new Date().toISOString().split('T')[0];
-    this.rows.push({
+    // Check if previous row has a date to carry forward smoothly
+    const lastRow = this.rows[this.rows.length - 1];
+    const rowDate = lastRow?.date || today;
+
+    const newRow: GridRow = {
       id: this.nextId++,
-      date: today,
+      date: rowDate,
       title: '',
       category: 'Food & Dining',
       amount: null,
       payerEmail: this.currentUserEmail(),
       splitType: 'EXACT',
-    });
+    };
+    this.rows.push(newRow);
+
+    // Ensure eligible members for this row's date are loaded/validated
+    this.onRowDateChange(newRow, rowDate);
   }
 
   removeRow(index: number) {
@@ -587,6 +706,9 @@ export class BulkExpenseGridComponent implements OnInit {
       }
       this.pasteText = '';
       this.showPasteModal.set(false);
+
+      // Validate eligible payers for every imported row's date
+      parsedRows.forEach((r) => this.onRowDateChange(r, r.date));
     }
   }
 
