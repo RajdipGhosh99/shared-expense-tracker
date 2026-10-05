@@ -383,33 +383,51 @@ import {
 
           <!-- Vacation Mode Toggle Bar -->
           <div class="pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
-            <div class="flex items-center space-x-2 text-slate-600">
-              <svg
-                class="w-4 h-4 text-slate-500"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"
-                />
-              </svg>
-              <span class="font-semibold text-xs">Vacation Mode</span>
+            <div class="flex items-center space-x-2 text-slate-700">
+              <span class="text-base">🏖️</span>
+              <div>
+                <div class="flex items-center space-x-1.5">
+                  <span class="font-bold text-xs text-slate-800">Vacation Mode</span>
+                  <span
+                    class="text-[10px] px-2 py-0.5 rounded-full font-bold transition-colors"
+                    [class.bg-amber-100]="isAway()"
+                    [class.text-amber-800]="isAway()"
+                    [class.border]="isAway()"
+                    [class.border-amber-300]="isAway()"
+                    [class.bg-slate-100]="!isAway()"
+                    [class.text-slate-500]="!isAway()"
+                  >
+                    {{ isAway() ? 'Away (Excluded)' : 'Active' }}
+                  </span>
+                </div>
+                <p class="text-[10px] text-slate-400">
+                  {{ isAway() ? 'You are excluded from new shared bills' : 'Split expenses automatically' }}
+                </p>
+              </div>
             </div>
+
+            <!-- Modern Toggle Switch Button -->
             <button
+              type="button"
+              role="switch"
+              [attr.aria-checked]="isAway()"
+              [disabled]="togglingVacation()"
               (click)="toggleVacation()"
-              class="px-3 py-1.5 rounded-xl font-bold text-xs transition-all active:scale-95 cursor-pointer shadow-xs"
-              [class.bg-amber-600]="isAway()"
-              [class.text-white]="isAway()"
-              [class.bg-slate-100]="!isAway()"
-              [class.text-slate-700]="!isAway()"
-              [class.border]="!isAway()"
-              [class.border-slate-300]="!isAway()"
+              class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-amber-500/30 disabled:opacity-50"
+              [class.bg-amber-500]="isAway()"
+              [class.bg-slate-200]="!isAway()"
+              title="Toggle vacation mode"
             >
-              {{ isAway() ? 'Away (Excluded)' : 'At Group (Active)' }}
+              <span class="sr-only">Toggle Vacation Mode</span>
+              <span
+                aria-hidden="true"
+                class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out flex items-center justify-center text-[10px]"
+                [class.translate-x-5]="isAway()"
+                [class.translate-x-0]="!isAway()"
+              >
+                <span *ngIf="togglingVacation()" class="animate-spin text-[8px] text-slate-400">⟳</span>
+                <span *ngIf="!togglingVacation() && isAway()">🌴</span>
+              </span>
             </button>
           </div>
         </div>
@@ -1489,6 +1507,7 @@ export class DashboardComponent implements OnInit {
   formControlsConfig: GroupFormControls = { ...DEFAULT_GROUP_FORM_CONTROLS };
   savingControls = signal<boolean>(false);
   controlsSavedMsg = signal<string | null>(null);
+  togglingVacation = signal<boolean>(false);
 
   constructor(
     public api: ApiService,
@@ -1711,8 +1730,16 @@ export class DashboardComponent implements OnInit {
   }
 
   toggleVacation() {
-    if (!this.api.activeGroup()) return;
-    this.api.toggleAway(!this.isAway()).subscribe();
+    if (!this.api.activeGroup() || this.togglingVacation()) return;
+    this.togglingVacation.set(true);
+    this.api.toggleAway(!this.isAway()).subscribe({
+      next: () => {
+        this.togglingVacation.set(false);
+      },
+      error: () => {
+        this.togglingVacation.set(false);
+      },
+    });
   }
 
   markSettled(tx: any) {
