@@ -1,11 +1,11 @@
 {
-  "name": "Shared Expense Tracker",
-  "short_name": "Shared Bills",
-  "description": "Smart group & roommate expense tracker with GPay receipt sharing and Min-Cash-Flow settlements",
+  "name": "Bhagabhagi — Shared Expense Tracker",
+  "short_name": "Bhagabhagi",
+  "description": "Crazy-fast group & roommate expense tracker with instant Min-Cash-Flow settlements",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#111827",
-  "theme_color": "#111827",
+  "background_color": "#090514",
+  "theme_color": "#090514",
   "icons": [
     {
       "src": "/pwa-icon-192.png",
