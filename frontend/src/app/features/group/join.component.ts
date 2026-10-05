@@ -9,79 +9,86 @@ import { ApiService } from '../../core/services/api.service.js';
   standalone: true,
   imports: [CommonModule, FormsModule],
   template: `
-    <div class="min-h-screen flex items-center justify-center p-4 bg-slate-50 text-slate-900 font-sans">
-      <div class="max-w-md w-full bg-white p-7 sm:p-9 rounded-2xl border border-slate-200 shadow-sm space-y-6">
+    <div class="min-h-screen flex items-center justify-center p-4 bg-slate-100 text-slate-900 font-sans">
+      <div class="max-w-sm sm:max-w-md w-full bg-white p-6 sm:p-8 rounded-[36px] border border-slate-200/80 shadow-xl space-y-5">
         
         <!-- SKELETON / LOADING VALIDATION -->
         <div *ngIf="validating()" class="py-12 text-center space-y-4">
-          <div class="w-10 h-10 border-3 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
+          <div class="size-10 border-3 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
           <p class="text-xs font-semibold text-slate-500">Validating invite link...</p>
         </div>
 
         <!-- INVALID / REVOKED ERROR STATE -->
-        <div *ngIf="!validating() && validationError()" class="text-center space-y-5 py-4">
-          <div class="w-14 h-14 rounded-2xl bg-rose-50 border border-rose-200 text-rose-600 flex items-center justify-center mx-auto text-2xl">
+        <div *ngIf="!validating() && validationError()" class="text-center space-y-4 py-2">
+          <div class="size-16 rounded-2xl bg-rose-50 border border-rose-200 text-rose-600 flex items-center justify-center mx-auto text-2xl">
             ⚠️
           </div>
-          <div class="space-y-1.5">
-            <h2 class="text-xl font-bold text-slate-900 tracking-tight">Invite Link Unavailable</h2>
+          <div class="space-y-1">
+            <h2 class="text-lg font-black text-slate-900 tracking-tight">Invite Link Unavailable</h2>
             <p class="text-xs text-slate-500 max-w-xs mx-auto leading-relaxed">
               {{ validationError() }}
             </p>
           </div>
           <button
             (click)="goToAuth()"
-            class="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl text-xs transition-all cursor-pointer"
+            class="px-5 py-3 bg-slate-900 hover:bg-slate-800 text-white font-black rounded-2xl text-xs transition-all active:scale-98 cursor-pointer shadow-md"
           >
             Go to Bhagabhagi Login
           </button>
         </div>
 
         <!-- VALID INVITE: STEP 1 - WELCOME & SEND OTP -->
-        <div *ngIf="!validating() && !validationError() && step() === 'WELCOME'" class="space-y-6">
-          <div class="text-center space-y-2">
-            <div class="w-12 h-12 rounded-xl bg-indigo-50 border border-indigo-200 text-indigo-600 flex items-center justify-center mx-auto text-xl shadow-xs">
-              👋
+        <div *ngIf="!validating() && !validationError() && step() === 'WELCOME'" class="space-y-5">
+          <div class="text-center space-y-2.5">
+            <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[10px] font-black bg-emerald-50 text-emerald-700 border border-emerald-200">
+              <span>✓</span> PRE-APPROVED INVITE
+            </span>
+
+            <div class="size-14 rounded-2xl bg-gradient-to-tr from-indigo-600 to-violet-600 text-white flex items-center justify-center text-2xl mx-auto shadow-md">
+              🏢
             </div>
-            <h2 class="text-xl font-extrabold text-slate-900 tracking-tight">
-              Join {{ inviteInfo()?.spaceName }}
-            </h2>
-            <p class="text-xs text-slate-500">
-              You've been invited to join this space. Confirm your display name and request a quick verification code.
-            </p>
+
+            <div>
+              <h2 class="text-xl font-black text-slate-900 tracking-tight">
+                Join {{ inviteInfo()?.spaceName }}
+              </h2>
+              <p class="text-xs text-slate-500 mt-0.5">
+                Confirm your display name to receive your one-time entry code.
+              </p>
+            </div>
           </div>
 
-          <div *ngIf="actionError()" class="p-3 bg-rose-50 border border-rose-200 rounded-xl text-rose-700 text-xs font-semibold">
+          <div *ngIf="actionError()" class="p-3 bg-rose-50 border border-rose-200 rounded-2xl text-rose-700 text-xs font-semibold">
             {{ actionError() }}
           </div>
 
-          <form (ngSubmit)="sendOtp()" class="space-y-4">
-            <div class="space-y-1.5">
-              <label class="text-xs font-bold text-slate-700">Your Display Name</label>
+          <form (ngSubmit)="sendOtp()" class="space-y-3.5">
+            <div class="space-y-1">
+              <label class="text-[11px] font-bold text-slate-700 ml-1">Your Display Name</label>
               <input
                 type="text"
                 [(ngModel)]="displayName"
                 name="displayName"
                 required
                 placeholder="e.g. Alex Sharma"
-                class="w-full px-4 py-2.5 rounded-xl bg-white border border-slate-300 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all"
+                class="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-xs sm:text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all font-medium"
               />
             </div>
 
-            <div class="p-3.5 bg-slate-50 border border-slate-200/80 rounded-xl space-y-1">
-              <div class="flex items-center space-x-1.5 text-[11px] font-bold text-slate-700">
+            <div class="p-3 bg-indigo-50/70 border border-indigo-100 rounded-2xl space-y-1">
+              <div class="flex items-center space-x-1.5 text-[11px] font-bold text-indigo-900">
                 <span>🔒</span>
                 <span>Passwordless Verification</span>
               </div>
-              <p class="text-[11px] text-slate-500 leading-relaxed">
-                A 6-digit one-time code will be dispatched to the email registered with this invite link.
+              <p class="text-[11px] text-indigo-700 leading-relaxed">
+                A 6-digit code will be dispatched to the invited email address. No password needed!
               </p>
             </div>
 
             <button
               type="submit"
               [disabled]="loadingAction() || !displayName.trim()"
-              class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 active:scale-98 text-white font-bold rounded-xl shadow-xs transition-all text-xs cursor-pointer disabled:opacity-50"
+              class="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 active:scale-98 text-white font-black rounded-2xl shadow-md transition-all text-xs cursor-pointer disabled:opacity-50"
             >
               {{ loadingAction() ? 'Sending Code...' : 'Send Verification Code to Email' }}
             </button>
@@ -89,24 +96,26 @@ import { ApiService } from '../../core/services/api.service.js';
         </div>
 
         <!-- VALID INVITE: STEP 2 - ENTER OTP & ENTER SPACE -->
-        <div *ngIf="!validating() && !validationError() && step() === 'ENTER_OTP'" class="space-y-6">
+        <div *ngIf="!validating() && !validationError() && step() === 'ENTER_OTP'" class="space-y-5">
           <div class="text-center space-y-2">
-            <div class="w-12 h-12 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-600 flex items-center justify-center mx-auto text-xl shadow-xs">
+            <div class="size-14 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-600 flex items-center justify-center mx-auto text-2xl shadow-xs">
               ✉️
             </div>
-            <h2 class="text-xl font-extrabold text-slate-900 tracking-tight">Check Your Inbox</h2>
-            <p class="text-xs text-slate-500 leading-relaxed max-w-xs mx-auto">
-              We sent a 6-digit verification code to the email address on file for this invite.
-            </p>
+            <div>
+              <h2 class="text-xl font-black text-slate-900 tracking-tight">Check Your Inbox</h2>
+              <p class="text-xs text-slate-500 mt-0.5 max-w-xs mx-auto">
+                We sent a 6-digit verification code to the email address on file.
+              </p>
+            </div>
           </div>
 
-          <div *ngIf="actionError()" class="p-3 bg-rose-50 border border-rose-200 rounded-xl text-rose-700 text-xs font-semibold">
+          <div *ngIf="actionError()" class="p-3 bg-rose-50 border border-rose-200 rounded-2xl text-rose-700 text-xs font-semibold">
             {{ actionError() }}
           </div>
 
           <form (ngSubmit)="verifyAndAccept()" class="space-y-4">
             <div class="space-y-1.5 text-center">
-              <label class="text-xs font-bold text-slate-700">Enter 6-Digit Code</label>
+              <label class="text-[11px] font-bold text-slate-600 uppercase tracking-wider">Enter 6-Digit Code</label>
               <input
                 type="text"
                 [(ngModel)]="otp"
@@ -114,16 +123,17 @@ import { ApiService } from '../../core/services/api.service.js';
                 maxlength="6"
                 required
                 placeholder="000000"
-                class="w-full px-4 py-3 rounded-xl bg-white border border-slate-300 font-mono text-center tracking-[0.4em] text-2xl font-bold text-slate-900 placeholder-slate-300 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all"
+                class="w-full px-4 py-3.5 rounded-2xl bg-slate-50 border border-indigo-300 font-mono text-center tracking-[0.5em] text-2xl font-black text-indigo-900 placeholder-slate-300 focus:outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-500 transition-all shadow-inner"
               />
             </div>
 
             <button
               type="submit"
               [disabled]="loadingAction() || otp.trim().length !== 6"
-              class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 active:scale-98 text-white font-bold rounded-xl shadow-xs transition-all text-xs cursor-pointer disabled:opacity-50"
+              class="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 active:scale-98 text-white font-black rounded-2xl shadow-md transition-all text-xs cursor-pointer disabled:opacity-50 flex items-center justify-center gap-1.5"
             >
-              {{ loadingAction() ? 'Verifying & Joining...' : 'Verify & Enter Space' }}
+              <span>{{ loadingAction() ? 'Verifying & Joining...' : 'Verify & Enter Space' }}</span>
+              <span>🎉</span>
             </button>
           </form>
 
@@ -131,7 +141,7 @@ import { ApiService } from '../../core/services/api.service.js';
             <button
               (click)="step.set('WELCOME')"
               type="button"
-              class="text-slate-500 hover:text-slate-800 font-semibold cursor-pointer"
+              class="text-slate-500 hover:text-slate-800 font-bold cursor-pointer"
             >
               ← Edit Name
             </button>
@@ -140,7 +150,7 @@ import { ApiService } from '../../core/services/api.service.js';
               (click)="sendOtp()"
               [disabled]="cooldownTimer() > 0 || loadingAction()"
               type="button"
-              class="text-indigo-600 hover:text-indigo-800 font-bold disabled:text-slate-400 cursor-pointer"
+              class="text-indigo-600 hover:text-indigo-800 font-black disabled:text-slate-400 cursor-pointer"
             >
               {{ cooldownTimer() > 0 ? 'Resend code in ' + cooldownTimer() + 's' : 'Resend Code' }}
             </button>

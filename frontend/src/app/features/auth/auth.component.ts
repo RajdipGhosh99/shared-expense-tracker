@@ -10,50 +10,46 @@ import { ApiService } from '../../core/services/api.service.js';
   imports: [CommonModule, FormsModule],
   template: `
     <div
-      class="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-indigo-950 via-slate-900 to-slate-950 text-white relative overflow-hidden"
+      class="min-h-screen flex items-center justify-center p-4 bg-gradient-to-b from-slate-900 via-indigo-950 to-slate-950 text-white relative overflow-hidden font-sans"
     >
       <!-- Background Ambient Glow Accents -->
       <div
-        class="absolute -top-32 -left-32 w-96 h-96 bg-indigo-600/20 rounded-full blur-3xl pointer-events-none"
+        class="absolute -top-32 -left-32 w-80 h-80 bg-indigo-600/25 rounded-full blur-3xl pointer-events-none"
       ></div>
       <div
-        class="absolute -bottom-32 -right-32 w-96 h-96 bg-purple-600/20 rounded-full blur-3xl pointer-events-none"
+        class="absolute -bottom-32 -right-32 w-80 h-80 bg-purple-600/25 rounded-full blur-3xl pointer-events-none"
       ></div>
 
       <div
-        class="max-w-md w-full bg-slate-900/80 backdrop-blur-2xl p-7 sm:p-9 rounded-3xl border border-slate-700/70 shadow-[0_25px_60px_rgba(0,0,0,0.5)] space-y-6 relative z-10"
+        class="max-w-sm sm:max-w-md w-full bg-slate-900/90 backdrop-blur-2xl p-6 sm:p-8 rounded-[36px] border border-white/10 shadow-[0_25px_60px_rgba(0,0,0,0.6)] space-y-5 relative z-10"
       >
         <!-- App Header & Logo -->
-        <div class="text-center space-y-2">
+        <div class="text-center space-y-2 pt-1">
           <div
-            class="inline-flex p-3 bg-gradient-to-tr from-indigo-500 to-purple-500 rounded-2xl text-white mb-1 shadow-lg shadow-indigo-500/30"
+            class="inline-flex size-14 bg-gradient-to-tr from-indigo-500 to-purple-600 rounded-2xl text-white items-center justify-center text-2xl shadow-xl shadow-indigo-500/30"
           >
-            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2.5"
-                d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"
-              />
-            </svg>
+            ⚡
           </div>
-          <h1 class="text-2xl sm:text-3xl font-black tracking-tight text-white">
-            Shared Expense Tracker
-          </h1>
-          <p class="text-xs sm:text-sm text-slate-400 font-medium">
-            Frictionless group expense splitting & 1-tap UPI settlements
-          </p>
+          <div>
+            <h1 class="text-2xl font-black tracking-tight text-white">
+              Bhagabhagi
+            </h1>
+            <p class="text-xs text-indigo-200/70 font-medium">
+              Shared apartment expenses & instant settlements
+            </p>
+          </div>
         </div>
 
         <!-- Mode Toggle (Log In / Sign Up) -->
-        <div class="grid grid-cols-2 p-1 bg-slate-950/70 rounded-xl border border-slate-700/50">
+        <div class="grid grid-cols-2 p-1.5 bg-black/40 backdrop-blur-md rounded-2xl border border-white/10">
           <button
             type="button"
             (click)="setMode(false)"
             [class.bg-indigo-600]="!isRegister()"
             [class.text-white]="!isRegister()"
             [class.shadow-md]="!isRegister()"
-            class="py-2 text-xs sm:text-sm font-bold rounded-lg text-slate-400 transition-all cursor-pointer"
+            [class.text-slate-400]="isRegister()"
+            class="py-2.5 text-xs font-black rounded-xl transition-all cursor-pointer active:scale-98"
           >
             Log In
           </button>
@@ -63,7 +59,8 @@ import { ApiService } from '../../core/services/api.service.js';
             [class.bg-indigo-600]="isRegister()"
             [class.text-white]="isRegister()"
             [class.shadow-md]="isRegister()"
-            class="py-2 text-xs sm:text-sm font-bold rounded-lg text-slate-400 transition-all cursor-pointer"
+            [class.text-slate-400]="!isRegister()"
+            class="py-2.5 text-xs font-black rounded-xl transition-all cursor-pointer active:scale-98"
           >
             Sign Up
           </button>
@@ -72,7 +69,7 @@ import { ApiService } from '../../core/services/api.service.js';
         <!-- Error Alert with Dismiss Button -->
         <div
           *ngIf="errorMessage()"
-          class="p-3.5 bg-rose-500/20 border border-rose-500/40 rounded-xl text-rose-300 text-xs font-semibold flex items-center justify-between space-x-2 transition-all animate-fade-in"
+          class="p-3 bg-rose-500/20 border border-rose-500/40 rounded-2xl text-rose-300 text-xs font-semibold flex items-center justify-between space-x-2 transition-all animate-fade-in"
         >
           <div class="flex items-center space-x-2">
             <span>⚠️</span>
@@ -89,45 +86,45 @@ import { ApiService } from '../../core/services/api.service.js';
         </div>
 
         <!-- Form Fields -->
-        <form (ngSubmit)="submit()" class="space-y-4">
+        <form (ngSubmit)="submit()" class="space-y-3.5">
           <div *ngIf="isRegister()" class="space-y-1">
-            <label class="text-xs font-bold text-slate-300">Full Name</label>
+            <label class="text-[11px] font-bold text-slate-300 ml-1">Full Name</label>
             <input
               type="text"
               [(ngModel)]="name"
               name="name"
               required
               placeholder="e.g. Alex Johnson"
-              class="w-full px-4 py-3 rounded-xl bg-slate-950/60 border border-slate-700/80 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+              class="w-full px-4 py-3 rounded-2xl bg-white/5 border border-white/10 text-xs sm:text-sm text-white placeholder-slate-500 focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-400 transition-all"
             />
           </div>
 
           <div class="space-y-1">
-            <label class="text-xs font-bold text-slate-300">Email Address</label>
+            <label class="text-[11px] font-bold text-slate-300 ml-1">Email Address</label>
             <input
               type="email"
               [(ngModel)]="email"
               name="email"
               required
-              placeholder="alex@example.com"
-              class="w-full px-4 py-3 rounded-xl bg-slate-950/60 border border-slate-700/80 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+              placeholder="name@domain.com"
+              class="w-full px-4 py-3 rounded-2xl bg-white/5 border border-white/10 text-xs sm:text-sm text-white placeholder-slate-500 focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-400 transition-all"
             />
           </div>
 
           <div class="space-y-1">
-            <label class="text-xs font-bold text-slate-300">Password</label>
+            <label class="text-[11px] font-bold text-slate-300 ml-1">Password</label>
             <input
               type="password"
               [(ngModel)]="password"
               name="password"
               required
               placeholder="••••••••"
-              class="w-full px-4 py-3 rounded-xl bg-slate-950/60 border border-slate-700/80 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+              class="w-full px-4 py-3 rounded-2xl bg-white/5 border border-white/10 text-xs sm:text-sm text-white placeholder-slate-500 focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-400 transition-all"
             />
           </div>
 
           <div *ngIf="isRegister()" class="space-y-1">
-            <label class="text-xs font-bold text-slate-300 flex items-center justify-between">
+            <label class="text-[11px] font-bold text-slate-300 ml-1 flex items-center justify-between">
               <span>UPI ID</span>
               <span class="text-[10px] text-slate-400 font-normal">Optional (for settlements)</span>
             </label>
@@ -136,24 +133,32 @@ import { ApiService } from '../../core/services/api.service.js';
               [(ngModel)]="upiId"
               name="upiId"
               placeholder="alex@okaxis"
-              class="w-full px-4 py-3 rounded-xl bg-slate-950/60 border border-slate-700/80 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+              class="w-full px-4 py-3 rounded-2xl bg-white/5 border border-white/10 text-xs sm:text-sm text-white placeholder-slate-500 focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-400 transition-all"
             />
           </div>
 
           <button
             type="submit"
             [disabled]="loading()"
-            class="w-full py-3.5 bg-gradient-to-r from-indigo-600 via-indigo-500 to-purple-600 hover:opacity-95 active:scale-[0.98] font-extrabold rounded-xl shadow-lg shadow-indigo-600/30 transition-all flex items-center justify-center space-x-2 cursor-pointer text-sm"
+            class="w-full py-3.5 bg-gradient-to-r from-indigo-600 via-indigo-500 to-purple-600 hover:opacity-95 active:scale-[0.98] font-black rounded-2xl shadow-lg shadow-indigo-600/30 transition-all flex items-center justify-center space-x-2 cursor-pointer text-xs sm:text-sm disabled:opacity-50 mt-1"
           >
             <span *ngIf="!loading()">{{
               isRegister() ? 'Create Free Account' : 'Log In to Tracker'
             }}</span>
             <span
               *ngIf="loading()"
-              class="animate-spin w-5 h-5 border-2 border-white border-t-transparent rounded-full"
+              class="animate-spin size-4 border-2 border-white border-t-transparent rounded-full"
             ></span>
           </button>
         </form>
+
+        <!-- Roommate WhatsApp Invite Prompt -->
+        <div class="pt-2 text-center border-t border-white/5">
+          <p class="text-[11px] text-slate-400">
+            Joining a roommate's space? <br />
+            <span class="text-indigo-400 font-bold">Use the WhatsApp invite link to enter without password</span>
+          </p>
+        </div>
       </div>
     </div>
   `,
