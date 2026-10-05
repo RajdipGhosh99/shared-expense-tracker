@@ -338,6 +338,13 @@ export interface GridRow {
                         {{ m.name }}
                       </option>
                     </ng-container>
+                    <!-- Immediate Fallback Option so selection is never blank/deselected while fetching or if pending -->
+                    <option
+                      *ngIf="row.payerEmail && !hasPayerInOptions(row)"
+                      [value]="row.payerEmail"
+                    >
+                      {{ getPayerDisplayName(row.payerEmail) }}
+                    </option>
                   </select>
                 </td>
 
@@ -476,6 +483,39 @@ export class BulkExpenseGridComponent implements OnInit {
     }
   }
 
+  getDefaultPayerEmail(): string {
+    const user = this.api.currentUser();
+    if (user?.email) return user.email;
+    try {
+      const saved = localStorage.getItem('group_user');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed?.email) return parsed.email;
+      }
+    } catch {}
+    const members = this.activeGroupMembers();
+    return members.length > 0 ? members[0].userEmail : '';
+  }
+
+  getPayerDisplayName(email?: string): string {
+    if (!email) return '';
+    const myEmail = this.currentUserEmail().toLowerCase();
+    if (myEmail && email.toLowerCase() === myEmail) return 'You';
+    const member = this.api.members().find((m) => m.userEmail.toLowerCase() === email.toLowerCase());
+    return member?.name || email;
+  }
+
+  hasPayerInOptions(row: GridRow): boolean {
+    if (!row.payerEmail) return true;
+    const lowerPayer = row.payerEmail.toLowerCase();
+    const myEmail = this.currentUserEmail().toLowerCase();
+    if (myEmail && lowerPayer === myEmail && this.isCurrentUserActiveOnDate(row.date)) {
+      return true;
+    }
+    const payers = this.getPayersForDate(row.date);
+    return payers.some((p) => p.userEmail.toLowerCase() === lowerPayer);
+  }
+
   getPayersForDate(dateStr: string): { userEmail: string; name: string }[] {
     if (!dateStr) return this.activeGroupMembers();
     const cached = this.dateEligibleMap.get(dateStr);
@@ -551,20 +591,25 @@ export class BulkExpenseGridComponent implements OnInit {
     this.fetchEligibleMembersForDate(newDate, (activeMembers) => {
       if (!activeMembers || activeMembers.length === 0) return;
 
-      const myEmail = this.currentUserEmail().toLowerCase();
+      const myEmail = (this.currentUserEmail() || this.getDefaultPayerEmail()).toLowerCase();
       const currentPayer = (row.payerEmail || myEmail).toLowerCase();
 
       // Check if current payer is valid on this new date
-      const isCurrentPayerValid = activeMembers.some(
+      const matchedMember = activeMembers.find(
         (m) => m.userEmail.toLowerCase() === currentPayer,
       );
 
-      if (!isCurrentPayerValid) {
+      if (matchedMember) {
+        // Keep the exact case from active members or currentUserEmail
+        row.payerEmail = (currentPayer === myEmail && this.currentUserEmail())
+          ? this.currentUserEmail()
+          : matchedMember.userEmail;
+      } else {
         // Current payer is not active on this date (e.g. moved out or not yet moved in)
         // Default to current user (ME) if active on this date, or the first active member
-        const amIActive = activeMembers.some((m) => m.userEmail.toLowerCase() === myEmail);
+        const amIActive = activeMembers.find((m) => m.userEmail.toLowerCase() === myEmail);
         if (amIActive) {
-          row.payerEmail = this.currentUserEmail();
+          row.payerEmail = this.currentUserEmail() || amIActive.userEmail;
         } else {
           row.payerEmail = activeMembers[0].userEmail;
         }
@@ -575,7 +620,7 @@ export class BulkExpenseGridComponent implements OnInit {
   ngOnInit() {
     // Initialize with 4 blank rows ready to type
     const today = new Date().toISOString().split('T')[0];
-    const defaultPayer = this.currentUserEmail();
+    const defaultPayer = this.getDefaultPayerEmail();
 
     // Pre-cache today's eligible members from BE
     this.fetchEligibleMembersForDate(today);
@@ -633,8 +678,8 @@ export class BulkExpenseGridComponent implements OnInit {
         this.addRow();
       }
 
-      // Pre-fetch payer eligibility for the first row's date
-      this.onRowDateChange(this.rows[0], this.rows[0].date);
+      // Pre-fetch & validate payer eligibility for all OCR rows
+      this.rows.forEach((r) => this.onRowDateChange(r, r.date));
       return;
     }
 
@@ -690,7 +735,7 @@ export class BulkExpenseGridComponent implements OnInit {
       title: '',
       category: 'Food & Dining',
       amount: null,
-      payerEmail: this.currentUserEmail(),
+      payerEmail: this.getDefaultPayerEmail(),
       splitType: 'EXACT',
     };
     this.rows.push(newRow);
@@ -776,7 +821,7 @@ export class BulkExpenseGridComponent implements OnInit {
         title,
         category,
         amount: isNaN(amount as number) ? null : amount,
-        payerEmail: this.currentUserEmail(),
+        payerEmail: this.getDefaultPayerEmail(),
         splitType: 'EXACT',
       });
     }
