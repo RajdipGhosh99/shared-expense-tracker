@@ -406,6 +406,7 @@ export class ApiService {
   addExpense(data: {
     title: string;
     amount: number;
+    payerEmail?: string;
     date?: string;
     category: string;
     subCategory?: string;
@@ -433,6 +434,7 @@ export class ApiService {
     items: Array<{
       title: string;
       amount: number;
+      payerEmail?: string;
       date?: string;
       category?: string;
       subCategory?: string;

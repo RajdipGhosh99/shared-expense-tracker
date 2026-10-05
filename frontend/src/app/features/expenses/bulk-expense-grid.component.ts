@@ -1,4 +1,4 @@
-import { Component, EventEmitter, OnInit, Output, signal } from '@angular/core';
+import { Component, EventEmitter, OnInit, Output, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../core/services/api.service.js';
@@ -11,6 +11,7 @@ export interface GridRow {
   title: string;
   category: ExpenseCategory;
   amount: number | null;
+  payerEmail?: string;
   splitType: SplitType;
 }
 
@@ -206,13 +207,20 @@ export interface GridRow {
                   </div>
                 </th>
                 <!-- Column E: Paid By -->
-                <th class="py-2 px-2.5 min-w-[105px] border-r border-slate-200 bg-slate-100">
+                <th class="py-2 px-2.5 min-w-[130px] border-r border-slate-200 bg-slate-100">
                   <div class="flex items-center justify-between">
                     <span>Paid By</span>
                     <span class="text-[9px] text-slate-400 font-mono font-normal">E</span>
                   </div>
                 </th>
-                <!-- Column F: Actions -->
+                <!-- Column F: Split Method -->
+                <th class="py-2 px-2.5 min-w-[105px] border-r border-slate-200 bg-slate-100">
+                  <div class="flex items-center justify-between">
+                    <span>Split Method</span>
+                    <span class="text-[9px] text-slate-400 font-mono font-normal">F</span>
+                  </div>
+                </th>
+                <!-- Column G: Actions -->
                 <th class="py-2 px-1.5 w-10 text-center bg-slate-100"></th>
               </tr>
             </thead>
@@ -287,6 +295,26 @@ export interface GridRow {
                 </td>
 
                 <!-- Cell E: Paid By -->
+                <td class="p-1 border-r border-slate-200">
+                  <select
+                    [(ngModel)]="row.payerEmail"
+                    class="w-full px-2 py-1.5 border border-transparent focus:border-indigo-500 rounded text-xs bg-transparent focus:bg-white text-slate-800 focus:outline-none font-medium cursor-pointer"
+                  >
+                    <!-- Current User (You) -->
+                    <option [value]="currentUserEmail()">You</option>
+                    <!-- Other Active Group Members -->
+                    <ng-container *ngFor="let m of activeGroupMembers()">
+                      <option
+                        *ngIf="m.userEmail.toLowerCase() !== currentUserEmail().toLowerCase()"
+                        [value]="m.userEmail"
+                      >
+                        {{ m.name }}
+                      </option>
+                    </ng-container>
+                  </select>
+                </td>
+
+                <!-- Cell F: Split Method -->
                 <td class="p-1 border-r border-slate-200">
                   <select
                     [(ngModel)]="row.splitType"
@@ -394,6 +422,12 @@ export class BulkExpenseGridComponent implements OnInit {
   showPasteModal = signal<boolean>(false);
   pasteText = '';
 
+  activeGroupMembers = computed(() => {
+    return this.api.members().filter((m) => (m.status || 'ACTIVE') === 'ACTIVE');
+  });
+
+  currentUserEmail = computed(() => this.api.currentUser()?.email || '');
+
   constructor(
     public api: ApiService,
     private aiService: AiCategoryService,
@@ -410,6 +444,7 @@ export class BulkExpenseGridComponent implements OnInit {
   ngOnInit() {
     // Initialize with 4 blank rows ready to type
     const today = new Date().toISOString().split('T')[0];
+    const defaultPayer = this.currentUserEmail();
     this.rows = [
       {
         id: this.nextId++,
@@ -417,6 +452,7 @@ export class BulkExpenseGridComponent implements OnInit {
         title: '',
         category: 'Food & Dining',
         amount: null,
+        payerEmail: defaultPayer,
         splitType: 'EQUAL',
       },
       {
@@ -425,6 +461,7 @@ export class BulkExpenseGridComponent implements OnInit {
         title: '',
         category: 'Bills & Utilities',
         amount: null,
+        payerEmail: defaultPayer,
         splitType: 'EQUAL',
       },
       {
@@ -433,6 +470,7 @@ export class BulkExpenseGridComponent implements OnInit {
         title: '',
         category: 'Transit & Travel',
         amount: null,
+        payerEmail: defaultPayer,
         splitType: 'EQUAL',
       },
       {
@@ -441,6 +479,7 @@ export class BulkExpenseGridComponent implements OnInit {
         title: '',
         category: 'Shopping & E-Commerce',
         amount: null,
+        payerEmail: defaultPayer,
         splitType: 'EQUAL',
       },
     ];
@@ -454,6 +493,7 @@ export class BulkExpenseGridComponent implements OnInit {
       title: '',
       category: 'Food & Dining',
       amount: null,
+      payerEmail: this.currentUserEmail(),
       splitType: 'EQUAL',
     });
   }
@@ -531,6 +571,7 @@ export class BulkExpenseGridComponent implements OnInit {
         title,
         category,
         amount: isNaN(amount as number) ? null : amount,
+        payerEmail: this.currentUserEmail(),
         splitType: 'EQUAL',
       });
     }
@@ -562,6 +603,7 @@ export class BulkExpenseGridComponent implements OnInit {
     const items = validRows.map((r) => ({
       title: r.title.trim(),
       amount: r.amount!,
+      payerEmail: r.payerEmail || this.currentUserEmail() || undefined,
       date: r.date,
       category: r.category,
       isExpense:

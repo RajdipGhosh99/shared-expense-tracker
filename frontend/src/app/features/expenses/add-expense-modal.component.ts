@@ -269,12 +269,41 @@ import {
             </div>
           </div>
 
-          <!-- Paid By & Optional Notes -->
+          <!-- Paid By & Split Method Row -->
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-            <!-- Paid By -->
-            <div *ngIf="controls().splitType !== 'hidden'" class="space-y-1.5">
+            <!-- Paid By: Can be ME or other active user on that day -->
+            <div class="space-y-1.5">
               <label class="text-xs font-bold text-slate-700 flex items-center justify-between">
                 <span>Paid By</span>
+                <span class="text-[10px] text-indigo-600 font-medium">
+                  {{ isCurrentUserPayer() ? 'Paid by You' : 'Paid on behalf' }}
+                </span>
+              </label>
+              <select
+                [(ngModel)]="payerEmail"
+                name="payerEmail"
+                class="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs font-semibold focus:outline-none focus:border-indigo-500 bg-white text-slate-800 transition-all cursor-pointer"
+              >
+                <!-- Current User Option -->
+                <option [value]="currentUserEmail()">
+                  👤 You ({{ currentUserDisplayName() }})
+                </option>
+                <!-- Other Active Flatmates On That Day -->
+                <ng-container *ngFor="let m of activeEligibleMembers()">
+                  <option
+                    *ngIf="m.userEmail.toLowerCase() !== currentUserEmail().toLowerCase()"
+                    [value]="m.userEmail"
+                  >
+                    👤 {{ m.name }} ({{ m.userEmail }})
+                  </option>
+                </ng-container>
+              </select>
+            </div>
+
+            <!-- Split Method -->
+            <div *ngIf="controls().splitType !== 'hidden'" class="space-y-1.5">
+              <label class="text-xs font-bold text-slate-700 flex items-center justify-between">
+                <span>Split Method</span>
                 <span
                   *ngIf="controls().splitType === 'view_only'"
                   class="text-[9px] text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-200 font-bold"
@@ -300,31 +329,31 @@ import {
                 <option value="PERCENTAGE">Percentages</option>
               </select>
             </div>
+          </div>
 
-            <!-- Notes / Description -->
-            <div *ngIf="controls().notes !== 'hidden'" class="space-y-1.5">
-              <label class="text-xs font-bold text-slate-700 flex items-center justify-between">
-                <span>Notes / Memo</span>
-                <span
-                  *ngIf="controls().notes === 'mandatory'"
-                  class="text-[10px] text-rose-600 font-extrabold"
-                  >* Mandatory</span
-                >
-                <span
-                  *ngIf="controls().notes === 'editable'"
-                  class="text-[10px] text-slate-400 font-medium"
-                  >Optional</span
-                >
-              </label>
-              <input
-                type="text"
-                [(ngModel)]="notes"
-                name="notes"
-                [required]="controls().notes === 'mandatory'"
-                placeholder="e.g. Sunday flat lunch"
-                class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs focus:outline-none focus:border-indigo-500 bg-white text-slate-800 placeholder-slate-400 transition-all"
-              />
-            </div>
+          <!-- Notes / Description -->
+          <div *ngIf="controls().notes !== 'hidden'" class="space-y-1.5">
+            <label class="text-xs font-bold text-slate-700 flex items-center justify-between">
+              <span>Notes / Memo</span>
+              <span
+                *ngIf="controls().notes === 'mandatory'"
+                class="text-[10px] text-rose-600 font-extrabold"
+                >* Mandatory</span
+              >
+              <span
+                *ngIf="controls().notes === 'editable'"
+                class="text-[10px] text-slate-400 font-medium"
+                >Optional</span
+              >
+            </label>
+            <input
+              type="text"
+              [(ngModel)]="notes"
+              name="notes"
+              [required]="controls().notes === 'mandatory'"
+              placeholder="e.g. Sunday flat lunch"
+              class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs focus:outline-none focus:border-indigo-500 bg-white text-slate-800 placeholder-slate-400 transition-all"
+            />
           </div>
 
           <!-- Roommate Split for Expense Date (Tenancy & Move-in Aware) -->
@@ -477,6 +506,7 @@ export class AddExpenseModalComponent implements OnInit {
   subCategory = 'Groceries & Dark Stores';
   notes = '';
   splitType: SplitType = 'EQUAL';
+  payerEmail = '';
 
   loading = signal<boolean>(false);
   errorMessage = signal<string | null>(null);
@@ -493,6 +523,16 @@ export class AddExpenseModalComponent implements OnInit {
       (m) => m.eligibilityStatus === 'ACTIVE' || m.eligibilityStatus === 'PENDING_INVITE',
     ),
   );
+
+  currentUserEmail = computed(() => this.api.currentUser()?.email || '');
+  currentUserDisplayName = computed(() => this.api.currentUser()?.name || this.currentUserEmail());
+
+  isCurrentUserPayer(): boolean {
+    return (
+      !this.payerEmail ||
+      this.payerEmail.toLowerCase() === this.currentUserEmail().toLowerCase()
+    );
+  }
 
   effectiveParticipants = computed(() =>
     this.activeEligibleMembers().filter(
@@ -521,6 +561,7 @@ export class AddExpenseModalComponent implements OnInit {
   ) {}
 
   ngOnInit() {
+    this.payerEmail = this.currentUserEmail();
     this.loadEligibleMembers(this.date);
   }
 
@@ -538,8 +579,27 @@ export class AddExpenseModalComponent implements OnInit {
     this.loadingEligibility.set(true);
     this.api.getEligibleMembers(group.id, dateStr).subscribe({
       next: (res) => {
-        this.eligibleMembers.set(res.eligibleMembers || []);
+        const members = res.eligibleMembers || [];
+        this.eligibleMembers.set(members);
         this.loadingEligibility.set(false);
+
+        // Ensure selected payer is still valid for this date
+        const active = members.filter(
+          (m) => m.eligibilityStatus === 'ACTIVE' || m.eligibilityStatus === 'PENDING_INVITE',
+        );
+        const myEmail = this.currentUserEmail().toLowerCase();
+        const currentPayerValid = active.some(
+          (m) => m.userEmail.toLowerCase() === (this.payerEmail || myEmail).toLowerCase(),
+        );
+        if (!currentPayerValid) {
+          // If previous selection isn't active on this date, default back to ME if active, or first active member
+          const amIActive = active.some((m) => m.userEmail.toLowerCase() === myEmail);
+          if (amIActive) {
+            this.payerEmail = this.currentUserEmail();
+          } else if (active.length > 0) {
+            this.payerEmail = active[0].userEmail;
+          }
+        }
       },
       error: () => {
         this.loadingEligibility.set(false);
@@ -625,6 +685,7 @@ export class AddExpenseModalComponent implements OnInit {
       .addExpense({
         title: this.title,
         amount: this.amount,
+        payerEmail: this.payerEmail || undefined,
         date: this.date,
         category: this.category,
         subCategory: this.controls().subCategory !== 'hidden' ? this.subCategory : undefined,
@@ -673,6 +734,7 @@ export class AddExpenseModalComponent implements OnInit {
       .addExpense({
         title: this.title,
         amount: this.amount!,
+        payerEmail: this.payerEmail || undefined,
         date: this.date,
         category: this.category,
         subCategory: this.controls().subCategory !== 'hidden' ? this.subCategory : undefined,

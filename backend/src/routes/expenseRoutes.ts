@@ -43,6 +43,27 @@ router.post('/', authMiddleware, async (req: AuthRequest, res: Response) => {
       ? date.trim().slice(0, 10)
       : new Date().toISOString().slice(0, 10);
 
+  // Eligible members for expense date (tenancy & move-in aware)
+  const eligibleMembers = await db.getEligibleMembers(groupId, expenseDate);
+  const activeEligible = eligibleMembers.filter(
+    (m) => m.eligibilityStatus === 'ACTIVE' || m.eligibilityStatus === 'PENDING_INVITE',
+  );
+
+  // Resolve payer: defaults to logged-in user, or another active member on that day
+  let payerEmail = user.email.toLowerCase().trim();
+  if (req.body.payerEmail && typeof req.body.payerEmail === 'string' && req.body.payerEmail.trim()) {
+    const requestedPayer = req.body.payerEmail.toLowerCase().trim();
+    const isPayerActiveOnDate = activeEligible.some(
+      (m) => m.userEmail.toLowerCase() === requestedPayer,
+    );
+    if (!isPayerActiveOnDate) {
+      return res.status(400).json({
+        error: `Selected payer (${requestedPayer}) was not an active member on ${expenseDate}.`,
+      });
+    }
+    payerEmail = requestedPayer;
+  }
+
   const amountDisplay = parseFloat(amount);
   const amountMinorUnits = Math.round(amountDisplay * 100);
 
@@ -60,7 +81,7 @@ router.post('/', authMiddleware, async (req: AuthRequest, res: Response) => {
   const validation = await validator.validate({
     groupId,
     flatId: groupId,
-    payerEmail: user.email,
+    payerEmail,
     title: title.trim(),
     amountMinorUnits,
     amountDisplay,
@@ -75,10 +96,6 @@ router.post('/', authMiddleware, async (req: AuthRequest, res: Response) => {
   }
 
   // 2. Calculate Splits (tenancy-aware based on expenseDate)
-  const eligibleMembers = await db.getEligibleMembers(groupId, expenseDate);
-  const activeEligible = eligibleMembers.filter(
-    (m) => m.eligibilityStatus === 'ACTIVE' || m.eligibilityStatus === 'PENDING_INVITE',
-  );
   const memberEmails = activeEligible.map((m) => m.userEmail);
   const absentEmails = activeEligible.filter((m) => m.isAway).map((m) => m.userEmail);
 
@@ -90,7 +107,7 @@ router.post('/', authMiddleware, async (req: AuthRequest, res: Response) => {
     const splitCalc = calculateSplits({
       totalAmountMinorUnits: amountMinorUnits,
       splitType: (splitType as SplitType) || 'EQUAL',
-      payerEmail: user.email,
+      payerEmail,
       memberEmails,
       absentMemberEmails: absentEmails,
     });
@@ -145,7 +162,7 @@ router.post('/', authMiddleware, async (req: AuthRequest, res: Response) => {
     id: expenseId,
     groupId,
     flatId: groupId,
-    payerEmail: user.email,
+    payerEmail,
     title: title.trim(),
     date: expenseDate,
     expenseDate,
@@ -211,13 +228,32 @@ router.post('/batch', authMiddleware, async (req: AuthRequest, res: Response) =>
     const activeEligible = eligibleMembers.filter(
       (m) => m.eligibilityStatus === 'ACTIVE' || m.eligibilityStatus === 'PENDING_INVITE',
     );
+
+    // Resolve payer: defaults to logged-in user, or active member on that day
+    let itemPayerEmail = user.email.toLowerCase().trim();
+    if (item.payerEmail && typeof item.payerEmail === 'string' && item.payerEmail.trim()) {
+      const requestedPayer = item.payerEmail.toLowerCase().trim();
+      const isPayerActiveOnDate = activeEligible.some(
+        (m) => m.userEmail.toLowerCase() === requestedPayer,
+      );
+      if (!isPayerActiveOnDate) {
+        errors.push({
+          index: i,
+          title: item.title,
+          error: `Selected payer (${requestedPayer}) was not active on ${expenseDate}`,
+        });
+        continue;
+      }
+      itemPayerEmail = requestedPayer;
+    }
+
     const itemMemberEmails = activeEligible.map((m) => m.userEmail);
     const itemAbsentEmails = activeEligible.filter((m) => m.isAway).map((m) => m.userEmail);
 
     const splitCalc = calculateSplits({
       totalAmountMinorUnits: amountMinorUnits,
       splitType: (item.splitType as SplitType) || 'EQUAL',
-      payerEmail: user.email,
+      payerEmail: itemPayerEmail,
       memberEmails: itemMemberEmails,
       absentMemberEmails: itemAbsentEmails,
     });
@@ -232,7 +268,7 @@ router.post('/batch', authMiddleware, async (req: AuthRequest, res: Response) =>
       id: expenseId,
       groupId,
       flatId: groupId,
-      payerEmail: user.email,
+      payerEmail: itemPayerEmail,
       title: item.title.trim(),
       date: expenseDate,
       expenseDate,
