@@ -117,7 +117,7 @@ router.post(
         return;
       }
 
-      // 3. AI PROCESSING: Initialize official @google/genai SDK (targeting gemini-2.5-flash)
+      // 3. AI PROCESSING: Initialize official @google/genai SDK with resilient multi-model cascade
       const apiKey = process.env.GEMINI_API_KEY;
       if (!apiKey) {
         res.status(500).json({
@@ -133,34 +133,57 @@ router.post(
       const base64Data = file.buffer.toString('base64');
       const mimeType = file.mimetype || 'image/jpeg';
 
-      const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: [
-          {
-            role: 'user',
-            parts: [
-              { text: RECEIPT_EXTRACTION_SYSTEM_PROMPT },
+      const candidateModels = [
+        'gemini-2.5-flash',
+        'gemini-2.5-flash-lite',
+        'gemini-3.5-flash-lite',
+        'gemini-3.1-flash-lite',
+        'gemini-flash-latest',
+        'gemini-3.5-flash',
+      ];
+
+      let responseText: string | undefined;
+      let lastAiError: any = null;
+
+      for (const modelCandidate of candidateModels) {
+        try {
+          const response = await ai.models.generateContent({
+            model: modelCandidate,
+            contents: [
               {
-                inlineData: {
-                  mimeType,
-                  data: base64Data,
-                },
+                role: 'user',
+                parts: [
+                  { text: RECEIPT_EXTRACTION_SYSTEM_PROMPT },
+                  {
+                    inlineData: {
+                      mimeType,
+                      data: base64Data,
+                    },
+                  },
+                ],
               },
             ],
-          },
-        ],
-        config: {
-          responseMimeType: 'application/json',
-          responseSchema: geminiReceiptResponseSchema,
-          temperature: 0.1, // Near-zero temperature for deterministic extraction
-        },
-      });
+            config: {
+              responseMimeType: 'application/json',
+              responseSchema: geminiReceiptResponseSchema,
+              temperature: 0.1, // Near-zero temperature for deterministic extraction
+            },
+          });
 
-      const responseText = response.text;
+          if (response.text) {
+            responseText = response.text;
+            break;
+          }
+        } catch (err: any) {
+          lastAiError = err;
+          console.warn(`[ReceiptExtractionRoute] Model ${modelCandidate} failed (${err.status || err.message}), trying next candidate...`);
+        }
+      }
+
       if (!responseText) {
         res.status(502).json({
           success: false,
-          error: 'Gemini model returned empty response text.',
+          error: `Gemini vision models unavailable: ${lastAiError?.message || 'Empty response'}`,
         });
         return;
       }
