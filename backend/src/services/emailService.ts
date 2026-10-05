@@ -28,7 +28,7 @@ class EmailService {
   async sendInviteOtp(toEmail: string, otp: string, spaceName: string, recipientName?: string): Promise<boolean> {
     try {
       const transporter = this.getTransporter();
-      const from = process.env.EMAIL_FROM || 'Bhagabhagi <iambetadev@gmail.com>';
+      const from = 'Bhagabhagi <iambetadev@gmail.com>';
       const greeting = recipientName ? `Hi ${recipientName},` : 'Hello,';
 
       const html = `

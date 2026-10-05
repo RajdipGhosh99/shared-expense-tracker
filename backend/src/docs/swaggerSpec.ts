@@ -44,7 +44,6 @@ export const swaggerSpec = {
           name: { type: 'string', example: 'Palm Springs 402' },
           inviteCode: { type: 'string', example: 'PAL4X9' },
           currency: { type: 'string', example: 'INR' },
-          googleSheetSync: { type: 'boolean', example: true },
           createdAt: { type: 'string', format: 'date-time' },
         },
       },
@@ -55,7 +54,6 @@ export const swaggerSpec = {
           name: { type: 'string', example: 'Palm Springs 402' },
           inviteCode: { type: 'string', example: 'PAL4X9' },
           currency: { type: 'string', example: 'INR' },
-          googleSheetSync: { type: 'boolean', example: true },
           createdAt: { type: 'string', format: 'date-time' },
         },
       },
@@ -311,31 +309,6 @@ export const swaggerSpec = {
         },
       },
     },
-    '/groups/{id}/sync-settings': {
-      patch: {
-        summary: 'Toggle Group-Level Google Sheet Sync (bool)',
-        tags: ['Groups'],
-        security: [{ bearerAuth: [] }],
-        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
-        requestBody: {
-          required: true,
-          content: {
-            'application/json': {
-              schema: {
-                type: 'object',
-                required: ['googleSheetSync'],
-                properties: {
-                  googleSheetSync: { type: 'boolean', example: false },
-                },
-              },
-            },
-          },
-        },
-        responses: {
-          200: { description: 'Google Sheet Sync toggled for group' },
-        },
-      },
-    },
     '/flats': {
       post: {
         summary: 'Create a Flat & Generate Invite Code',
@@ -407,31 +380,6 @@ export const swaggerSpec = {
         },
         responses: {
           200: { description: 'Away status updated' },
-        },
-      },
-    },
-    '/flats/{id}/sync-settings': {
-      patch: {
-        summary: 'Toggle Flat-Level Google Sheet Sync (bool)',
-        tags: ['Flats'],
-        security: [{ bearerAuth: [] }],
-        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
-        requestBody: {
-          required: true,
-          content: {
-            'application/json': {
-              schema: {
-                type: 'object',
-                required: ['googleSheetSync'],
-                properties: {
-                  googleSheetSync: { type: 'boolean', example: false },
-                },
-              },
-            },
-          },
-        },
-        responses: {
-          200: { description: 'Google Sheet Sync toggled for flat' },
         },
       },
     },

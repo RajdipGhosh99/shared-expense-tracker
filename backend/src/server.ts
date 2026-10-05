@@ -13,7 +13,6 @@ import settleRoutes from './routes/settleRoutes.js';
 import statementRoutes from './routes/statementRoutes.js';
 import cronRoutes from './routes/cronRoutes.js';
 import inviteRoutes from './routes/inviteRoutes.js';
-import { appConfig } from './config/appConfig.js';
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -61,7 +60,6 @@ app.get(['/api/health', '/health'], (req, res) => {
   res.json({
     status: 'ok',
     storageMode: 'turso',
-    googleSheetSync: false,
     docs: '/api/docs',
     timestamp: new Date().toISOString(),
   });

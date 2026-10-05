@@ -382,27 +382,6 @@ describe('Backend API End-to-End Integration Suite', () => {
     assert.ok((data.groupsProcessed ?? data.flatsProcessed) >= 1);
   });
 
-  test('Group: Toggles googleSheetSync flag (true -> false -> true)', async () => {
-    const res = await fetch(`${baseUrl}/api/groups/${groupId}/sync-settings`, {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${rahulToken}`,
-      },
-      body: JSON.stringify({ googleSheetSync: false }),
-    });
-
-    assert.equal(res.status, 200);
-    const data = await res.json();
-    assert.equal(data.googleSheetSync, false);
-
-    const fRes = await fetch(`${baseUrl}/api/groups/${groupId}`, {
-      headers: { Authorization: `Bearer ${rahulToken}` },
-    });
-    const fData = await fRes.json();
-    assert.equal(fData.group.googleSheetSync, false);
-  });
-
   test('Group: getGroupById returns group details via /api/groups/:id', async () => {
     const res = await fetch(`${baseUrl}/api/groups/${groupId}`, {
       headers: { Authorization: `Bearer ${rahulToken}` },

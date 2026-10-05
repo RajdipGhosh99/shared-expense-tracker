@@ -191,16 +191,6 @@ router.patch('/:id/members/away', authMiddleware, async (req: AuthRequest, res: 
   return res.json({ success: updated, isAway: Boolean(isAway) });
 });
 
-// Toggle Group-Level Google Sheet Sync
-router.patch('/:id/sync-settings', authMiddleware, async (req: AuthRequest, res: Response) => {
-  const { googleSheetSync } = req.body;
-  const db = getStorage();
-  const id = req.params.id as string;
-
-  const updated = await db.updateGroupSync(id, Boolean(googleSheetSync));
-  return res.json({ success: updated, googleSheetSync: Boolean(googleSheetSync) });
-});
-
 // Update Group Expense Entry Form Controls (Admin Only)
 router.patch('/:id/form-controls', authMiddleware, async (req: AuthRequest, res: Response) => {
   const user = req.user!;

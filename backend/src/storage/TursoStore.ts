@@ -403,18 +403,6 @@ export class TursoStore implements IDataStore {
     return this.getAllGroups();
   }
 
-  async updateGroupSync(groupId: string, googleSheetSync: boolean): Promise<boolean> {
-    const res = await this.client.execute({
-      sql: `UPDATE groups SET google_sheet_sync = ? WHERE id = ?`,
-      args: [googleSheetSync ? 1 : 0, groupId],
-    });
-    return res.rowsAffected > 0;
-  }
-
-  async updateFlatSync(flatId: string, googleSheetSync: boolean): Promise<boolean> {
-    return this.updateGroupSync(flatId, googleSheetSync);
-  }
-
   async updateGroupFormControls(
     groupId: string,
     formControls: GroupFormControls,

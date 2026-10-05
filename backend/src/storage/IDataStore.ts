@@ -43,7 +43,6 @@ export interface IDataStore {
   getGroupById(groupId: string): Promise<Group | null>;
   getGroupByInviteCode(code: string): Promise<Group | null>;
   getAllGroups(): Promise<Group[]>;
-  updateGroupSync(groupId: string, googleSheetSync: boolean): Promise<boolean>;
   updateGroupFormControls(groupId: string, formControls: GroupFormControls): Promise<boolean>;
 
   // Flats (Backwards compatibility)
@@ -51,7 +50,6 @@ export interface IDataStore {
   getFlatById(flatId: string): Promise<Flat | null>;
   getFlatByInviteCode(code: string): Promise<Flat | null>;
   getAllFlats(): Promise<Flat[]>;
-  updateFlatSync(flatId: string, googleSheetSync: boolean): Promise<boolean>;
 
   // Members & Roles
   addMember(member: GroupMember): Promise<GroupMember>;

@@ -72,7 +72,6 @@ export interface Group {
   name: string;
   inviteCode: string;
   currency: string; // e.g. 'INR'
-  googleSheetSync?: boolean; // App/Group level toggle to enable or disable Google Sheets sync
   formControls?: GroupFormControls; // Group-level entry form controls managed by Admin
   createdAt: string;
 }

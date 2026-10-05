@@ -47,7 +47,6 @@ export interface Group {
     name: string;
     inviteCode: string;
     currency: string;
-    googleSheetSync?: boolean;
     formControls?: GroupFormControls;
     createdAt: string;
 }
