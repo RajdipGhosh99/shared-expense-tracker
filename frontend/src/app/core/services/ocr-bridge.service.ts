@@ -6,27 +6,39 @@ import { ReceiptExtraction } from '@shared-expense-tracker/shared';
 })
 export class OcrBridgeService {
   /**
-   * Pending extracted receipt waiting to be imported into the spreadsheet bulk entry sheet.
+   * Pending extracted receipts waiting to be imported into the spreadsheet bulk entry sheet.
    */
-  pendingExtraction = signal<ReceiptExtraction | null>(null);
+  pendingExtractions = signal<ReceiptExtraction[]>([]);
 
   /**
-   * Stashes extracted OCR data and emits for consumers (like BulkExpenseGrid).
+   * Stashes extracted OCR data (either a single ReceiptExtraction or an array of items).
    */
-  stageForMultisheet(data: ReceiptExtraction) {
-    this.pendingExtraction.set(data);
+  stageForMultisheet(data: ReceiptExtraction | ReceiptExtraction[]) {
+    if (Array.isArray(data)) {
+      this.pendingExtractions.set(data);
+    } else {
+      this.pendingExtractions.set([data]);
+    }
   }
 
   /**
-   * Retrieves and clears the staged OCR receipt.
+   * Retrieves and clears all staged OCR receipts.
+   */
+  consumePendingExtractions(): ReceiptExtraction[] {
+    const list = this.pendingExtractions();
+    this.pendingExtractions.set([]);
+    return list;
+  }
+
+  /**
+   * Backward compatible helper to retrieve first pending item.
    */
   consumePendingExtraction(): ReceiptExtraction | null {
-    const data = this.pendingExtraction();
-    this.pendingExtraction.set(null);
-    return data;
+    const list = this.consumePendingExtractions();
+    return list.length > 0 ? list[0] : null;
   }
 
   hasPending(): boolean {
-    return this.pendingExtraction() !== null;
+    return this.pendingExtractions().length > 0;
   }
 }

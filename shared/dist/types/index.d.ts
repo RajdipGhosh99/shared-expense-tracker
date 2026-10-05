@@ -228,6 +228,15 @@ export interface MonthlyStatement {
     settlementsCount: number;
     createdAt: string;
 }
+export interface ExtractedReceiptItem {
+    merchant: string;
+    amountDisplay: number;
+    amountMinorUnits: number;
+    category: ExpenseCategory;
+    subCategory?: string;
+    utrNumber?: string;
+    date?: string;
+}
 export interface ExtractedReceiptResult {
     amountDisplay: number;
     amountMinorUnits: number;
@@ -237,5 +246,7 @@ export interface ExtractedReceiptResult {
     utrNumber?: string;
     rawText?: string;
     extractedAt: string;
+    isMultipleBills?: boolean;
+    items?: ExtractedReceiptItem[];
 }
 //# sourceMappingURL=index.d.ts.map

@@ -19,15 +19,27 @@ export async function extractReceiptFromImage(
 
   if (apiKey) {
     const ai = new GoogleGenAI({ apiKey });
-    const prompt = `Analyze this financial receipt, bill, or payment screenshot (Google Pay, PhonePe, Paytm, Blinkit, Zepto, Swiggy, electricity bill, etc.).
+    const prompt = `Analyze this financial receipt, bill, or payment screenshot (Google Pay, PhonePe, Paytm, Blinkit, Zepto, Swiggy, bank statement, electricity bill, etc.).
+Extract all payment transactions. Some screenshots show MULTIPLE distinct bills, UPI transactions, or line items.
+
 Extract the following information in strict JSON format:
 {
   "amount": number (e.g. 840.50),
   "merchant": string (e.g. "Blinkit", "Zepto", "BESCOM Electricity", "Rahul Sharma"),
   "category": "Food & Dining" | "Bills & Utilities" | "Rent & Housing" | "Transit & Travel" | "Household & Groceries" | "Other",
   "utrNumber": string or null (the 12-digit UPI reference number or bank transaction ID like 427819283719),
-  "date": string or null (in YYYY-MM-DD format if visible)
+  "date": string or null (in YYYY-MM-DD format if visible),
+  "items": [
+    {
+      "merchant": string,
+      "amount": number,
+      "category": "Food & Dining" | "Bills & Utilities" | "Rent & Housing" | "Transit & Travel" | "Household & Groceries" | "Other",
+      "utrNumber": string or null,
+      "date": string or null
+    }
+  ]
 }
+If MULTIPLE bills/payments are visible in the image, populate each separate bill inside "items". If only 1 bill is present, include that 1 bill inside "items".
 Return ONLY valid JSON. Zero markdown fences.`;
 
     const base64Data = imageBuffer.toString('base64');
@@ -67,6 +79,20 @@ Return ONLY valid JSON. Zero markdown fences.`;
         const amountDisplay = parseFloat(parsed.amount) || 0;
         const amountMinorUnits = Math.round(amountDisplay * 100);
 
+        const parsedItems: any[] = Array.isArray(parsed.items) ? parsed.items : [];
+        const formattedItems = parsedItems
+          .filter((it: any) => it && (it.amount > 0 || it.merchant))
+          .map((it: any) => ({
+            merchant: String(it.merchant || parsed.merchant || 'Shared Expense').trim(),
+            amountDisplay: parseFloat(it.amount) || amountDisplay,
+            amountMinorUnits: Math.round((parseFloat(it.amount) || amountDisplay) * 100),
+            category: (it.category as ExpenseCategory) || 'Household & Groceries',
+            utrNumber: it.utrNumber ? String(it.utrNumber).trim() : undefined,
+            date: it.date ? String(it.date).trim() : undefined,
+          }));
+
+        const isMultipleBills = formattedItems.length > 1;
+
         return {
           amountDisplay,
           amountMinorUnits,
@@ -75,6 +101,8 @@ Return ONLY valid JSON. Zero markdown fences.`;
           utrNumber: parsed.utrNumber ? String(parsed.utrNumber).trim() : undefined,
           rawText: text,
           extractedAt: new Date().toISOString(),
+          isMultipleBills,
+          items: formattedItems.length > 0 ? formattedItems : undefined,
         };
       } catch (err: any) {
         console.warn(

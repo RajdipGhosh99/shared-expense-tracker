@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ApiService } from '../../core/services/api.service.js';
 import { OcrBridgeService } from '../../core/services/ocr-bridge.service.js';
-import { ExtractedReceiptResult, ExpenseCategory } from '@shared-expense-tracker/shared';
+import { ExtractedReceiptResult, ExpenseCategory, ReceiptExtraction } from '@shared-expense-tracker/shared';
 
 @Component({
   selector: 'app-incoming-screenshot',
@@ -227,6 +227,36 @@ export class IncomingScreenshotComponent implements OnInit {
       next: (res) => {
         this.extracted.set(res);
         this.isAnalyzing.set(false);
+
+        // If screenshot contains multiple bills at a time, automatically open into spreadsheet bulk entry grid!
+        if (res.isMultipleBills || (res.items && res.items.length > 1)) {
+          const itemsToStage: ReceiptExtraction[] = (res.items && res.items.length > 0)
+            ? res.items.map((it) => ({
+                isValidReceipt: true,
+                rejectionReason: null,
+                vendorName: it.merchant,
+                totalAmount: it.amountDisplay,
+                paymentId: it.utrNumber || null,
+                date: it.date || this.expenseDate,
+                isOcrProcessed: true,
+                items: [],
+              }))
+            : [
+                {
+                  isValidReceipt: true,
+                  rejectionReason: null,
+                  vendorName: res.merchant,
+                  totalAmount: res.amountDisplay,
+                  paymentId: res.utrNumber || null,
+                  date: this.expenseDate,
+                  isOcrProcessed: true,
+                  items: [],
+                },
+              ];
+
+          this.ocrBridge.stageForMultisheet(itemsToStage);
+          this.router.navigate(['/dashboard'], { queryParams: { openBulk: '1' } });
+        }
       },
       error: () => {
         // Fallback default
@@ -274,16 +304,30 @@ export class IncomingScreenshotComponent implements OnInit {
     const data = this.extracted();
     if (!data) return;
 
-    // Bridge data to spreadsheet bulk grid
-    this.ocrBridge.stageForMultisheet({
-      isValidReceipt: true,
-      rejectionReason: null,
-      vendorName: data.merchant,
-      totalAmount: data.amountDisplay,
-      date: this.expenseDate,
-      paymentId: data.utrNumber || null,
-      isOcrProcessed: true,
-    });
+    if (data.items && data.items.length > 0) {
+      const itemsToStage: ReceiptExtraction[] = data.items.map((it) => ({
+        isValidReceipt: true,
+        rejectionReason: null,
+        vendorName: it.merchant,
+        totalAmount: it.amountDisplay,
+        paymentId: it.utrNumber || null,
+        date: it.date || this.expenseDate,
+        isOcrProcessed: true,
+        items: [],
+      }));
+      this.ocrBridge.stageForMultisheet(itemsToStage);
+    } else {
+      this.ocrBridge.stageForMultisheet({
+        isValidReceipt: true,
+        rejectionReason: null,
+        vendorName: data.merchant,
+        totalAmount: data.amountDisplay,
+        date: this.expenseDate,
+        paymentId: data.utrNumber || null,
+        isOcrProcessed: true,
+        items: [],
+      });
+    }
 
     // Navigate to dashboard and trigger bulk sheet modal
     this.router.navigate(['/dashboard'], { queryParams: { openBulk: '1' } });

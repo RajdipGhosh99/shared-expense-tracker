@@ -580,50 +580,61 @@ export class BulkExpenseGridComponent implements OnInit {
     // Pre-cache today's eligible members from BE
     this.fetchEligibleMembersForDate(today);
 
-    // Check if an OCR extraction is pending from receipt scanner
-    const stagedOcr = this.ocrBridge.consumePendingExtraction();
-    if (stagedOcr && stagedOcr.isValidReceipt) {
-      const ocrDate = stagedOcr.date && stagedOcr.date.match(/^\d{4}-\d{2}-\d{2}$/) ? stagedOcr.date : today;
-      let ocrCategory: ExpenseCategory = 'Food & Dining';
-      if (stagedOcr.vendorName) {
-        const pred = this.aiService.predict(stagedOcr.vendorName);
-        if (pred?.category) ocrCategory = pred.category;
+    // Check if OCR extractions are pending from receipt scanner
+    const stagedList = this.ocrBridge.consumePendingExtractions();
+    const validOcrItems: ReceiptExtraction[] = [];
+
+    for (const stagedOcr of stagedList) {
+      if (!stagedOcr || !stagedOcr.isValidReceipt) continue;
+
+      // If this extraction contains nested multi-bill items, expand them into distinct rows
+      if (stagedOcr.items && stagedOcr.items.length > 0) {
+        for (const item of stagedOcr.items) {
+          validOcrItems.push({
+            isValidReceipt: true,
+            rejectionReason: null,
+            vendorName: item.vendorName,
+            totalAmount: item.totalAmount,
+            paymentId: item.paymentId || stagedOcr.paymentId,
+            date: item.date || stagedOcr.date || today,
+            isOcrProcessed: true,
+            items: [],
+          });
+        }
+      } else {
+        validOcrItems.push(stagedOcr);
+      }
+    }
+
+    if (validOcrItems.length > 0) {
+      this.rows = validOcrItems.map((item) => {
+        const itemDate = item.date && item.date.match(/^\d{4}-\d{2}-\d{2}$/) ? item.date : today;
+        let itemCategory: ExpenseCategory = 'Food & Dining';
+        if (item.vendorName) {
+          const pred = this.aiService.predict(item.vendorName);
+          if (pred?.category) itemCategory = pred.category;
+        }
+
+        return {
+          id: this.nextId++,
+          date: itemDate,
+          title: item.vendorName || 'Scanned Receipt',
+          category: itemCategory,
+          amount: item.totalAmount > 0 ? item.totalAmount : null,
+          payerEmail: defaultPayer,
+          splitType: 'EXACT',
+          utrNumber: item.paymentId || undefined,
+          isOcrProcessed: true,
+        };
+      });
+
+      // Ensure at least 3 rows displayed in the grid
+      while (this.rows.length < 3) {
+        this.addRow();
       }
 
-      this.rows = [
-        {
-          id: this.nextId++,
-          date: ocrDate,
-          title: stagedOcr.vendorName || 'Scanned Receipt',
-          category: ocrCategory,
-          amount: stagedOcr.totalAmount > 0 ? stagedOcr.totalAmount : null,
-          payerEmail: defaultPayer,
-          splitType: 'EXACT',
-          utrNumber: stagedOcr.paymentId || undefined,
-          isOcrProcessed: true,
-        },
-        {
-          id: this.nextId++,
-          date: ocrDate,
-          title: '',
-          category: 'Bills & Utilities',
-          amount: null,
-          payerEmail: defaultPayer,
-          splitType: 'EXACT',
-        },
-        {
-          id: this.nextId++,
-          date: ocrDate,
-          title: '',
-          category: 'Transit & Travel',
-          amount: null,
-          payerEmail: defaultPayer,
-          splitType: 'EXACT',
-        },
-      ];
-
-      // Refresh payer eligibility for OCR date
-      this.onRowDateChange(this.rows[0], ocrDate);
+      // Pre-fetch payer eligibility for the first row's date
+      this.onRowDateChange(this.rows[0], this.rows[0].date);
       return;
     }
 

@@ -139,6 +139,12 @@ import { OcrBridgeService } from '../../core/services/ocr-bridge.service.js';
           <div class="flex items-center space-x-1.5 font-black text-xs text-emerald-900">
             <span>✓</span>
             <span>Verified Financial Receipt</span>
+            <span
+              *ngIf="extraction()?.items && (extraction()?.items?.length || 0) > 1"
+              class="ml-1.5 px-2 py-0.5 rounded-full bg-indigo-600 text-white text-[10px] font-extrabold animate-pulse"
+            >
+              📊 {{ extraction()?.items?.length }} Bills Detected
+            </span>
           </div>
           <span
             *ngIf="duplicateNotice()"
@@ -303,6 +309,11 @@ export class ReceiptUploadComponent {
 
           this.extraction.set(parsed.data);
           this.duplicateNotice.set(Boolean(res.meta?.isDuplicateFile));
+
+          // If screenshot contains multiple bills at a time, auto-open into spreadsheet bulk entry sheet!
+          if (parsed.data.items && parsed.data.items.length > 1) {
+            this.openInMultisheet();
+          }
         },
         error: (err: HttpErrorResponse) => {
           this.isExtracting.set(false);

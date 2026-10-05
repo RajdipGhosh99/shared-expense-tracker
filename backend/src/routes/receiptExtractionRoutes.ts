@@ -54,7 +54,7 @@ const upload = multer({
  * Multimodal Prompt instructing Gemini on Document Guardrails and Extraction Rules.
  */
 const RECEIPT_EXTRACTION_SYSTEM_PROMPT = `You are a high-precision financial OCR and document verification engine.
-Analyze the provided document (payment receipt, invoice, UPI screenshot, or bill).
+Analyze the provided document (payment receipt, invoice, UPI screenshot, statement, or bill).
 
 STRICT DOCUMENT GUARDRAILS:
 1. Verify if this is an authentic, legible financial receipt or payment proof.
@@ -65,13 +65,14 @@ STRICT DOCUMENT GUARDRAILS:
    - Set totalAmount: 0
    - Set paymentId: null
    - Set date: ""
-3. If this IS a valid receipt:
+   - Set items: []
+3. If this IS a valid receipt or payment screenshot:
    - Set isValidReceipt: true
    - Set rejectionReason: null
-   - Extract the vendor/merchant/biller name accurately (e.g. Swiggy, Blinkit, Zepto, Dmart, BESCOM, Amazon, or payee name on UPI).
-   - Extract the final total paid amount as a positive number without currency symbols.
-   - Extract the 12-digit UPI UTR number, bank reference number, or transaction ID if visible; otherwise null.
-   - Extract the transaction date in YYYY-MM-DD format. If only time or relative day is given, provide empty string.
+   - Extract the primary vendorName, totalAmount, paymentId, and date.
+   - MULTI-BILL DETECTION: Some screenshots contain MULTIPLE separate bills or transactions (e.g., a statement showing 2 or more UPI transactions, a split payment, or multiple receipts combined into one image).
+     * If MULTIPLE bills are present in the image, extract EACH individual transaction separately into the "items" array with its own vendorName, totalAmount, paymentId, date, and category.
+     * If only ONE bill is present, include that single bill as the 1 element in "items".
 
 Output ONLY valid JSON adhering strictly to the responseSchema. Zero Markdown code fences.`;
 
