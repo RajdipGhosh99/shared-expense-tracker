@@ -316,38 +316,40 @@ export interface GridRow {
           </table>
         </div>
 
-        <!-- Footer / Live Calculation & Batch Save -->
+        <!-- Footer / Live Calculation & Batch Save (Sticky Bottom Ribbon) -->
         <div
-          class="px-5 py-3.5 border-t border-slate-200 bg-slate-50 flex flex-col sm:flex-row items-center justify-between gap-3 rounded-b-3xl sm:rounded-b-2xl"
+          class="px-3.5 py-2.5 sm:px-5 sm:py-3 border-t border-slate-300 bg-slate-100/95 flex flex-col sm:flex-row items-center justify-between gap-2.5 rounded-b-3xl sm:rounded-b-2xl shadow-lg"
         >
           <!-- Summary Metrics -->
-          <div class="flex items-center space-x-4 text-xs">
-            <div>
-              <span class="text-slate-500">Valid entries:</span>
-              <span class="font-bold text-slate-900 ml-1">{{ validRowCount() }}</span>
+          <div class="flex items-center justify-between w-full sm:w-auto gap-3 text-xs">
+            <div class="flex items-center gap-2">
+              <span class="text-[11px] text-slate-500 font-mono">COUNT:</span>
+              <span class="font-bold text-slate-900 bg-white px-2 py-0.5 rounded border border-slate-200 text-xs shadow-2xs">
+                {{ validRowCount() }}
+              </span>
             </div>
-            <div class="h-4 w-px bg-slate-300"></div>
-            <div>
-              <span class="text-slate-500">Total:</span>
-              <span class="font-black text-indigo-700 text-sm ml-1"
+            <div class="h-3.5 w-px bg-slate-300"></div>
+            <div class="flex items-center gap-1.5">
+              <span class="text-[11px] text-slate-500 font-mono">SUM:</span>
+              <span class="font-black text-emerald-700 text-sm font-mono"
                 >₹{{ totalAmount().toLocaleString('en-IN', { minimumFractionDigits: 2 }) }}</span
               >
             </div>
-            <div class="h-4 w-px bg-slate-300 hidden sm:block"></div>
-            <div class="hidden sm:block text-slate-500">
-              Each member:
-              <span class="font-bold text-slate-800"
+            <div class="h-3.5 w-px bg-slate-300 hidden sm:block"></div>
+            <div class="hidden sm:flex items-center gap-1.5 text-slate-500">
+              <span class="text-[11px] font-mono">PER HEAD:</span>
+              <span class="font-bold text-slate-800 font-mono"
                 >₹{{ perMemberShare().toLocaleString('en-IN', { minimumFractionDigits: 2 }) }}</span
               >
             </div>
           </div>
 
           <!-- Save Actions -->
-          <div class="flex items-center space-x-2 w-full sm:w-auto justify-end">
+          <div class="flex items-center gap-2 w-full sm:w-auto justify-end">
             <button
               type="button"
               (click)="close.emit()"
-              class="px-4 py-2 border border-slate-300 bg-white hover:bg-slate-100 text-slate-700 text-xs font-semibold rounded-xl shadow-xs transition-colors cursor-pointer"
+              class="flex-1 sm:flex-none px-3.5 py-2 border border-slate-300 bg-white hover:bg-slate-100 text-slate-700 text-xs font-semibold rounded-xl shadow-2xs transition-colors cursor-pointer text-center"
             >
               Cancel
             </button>
@@ -355,7 +357,7 @@ export interface GridRow {
               type="button"
               (click)="saveBatch()"
               [disabled]="loading() || validRowCount() === 0"
-              class="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-bold rounded-xl shadow-sm transition-all flex items-center space-x-2 cursor-pointer"
+              class="flex-2 sm:flex-none px-5 py-2 bg-emerald-600 hover:bg-emerald-700 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-bold rounded-xl shadow-md transition-all flex items-center justify-center space-x-1.5 cursor-pointer"
             >
               <span
                 *ngIf="loading()"
@@ -363,8 +365,8 @@ export interface GridRow {
               ></span>
               <span>{{
                 loading()
-                  ? 'Saving bills...'
-                  : 'Save ' + validRowCount() + ' Bills to Group'
+                  ? 'Saving entries...'
+                  : 'Commit ' + validRowCount() + ' Bills'
               }}</span>
             </button>
           </div>
