@@ -173,7 +173,7 @@ router.post('/send-otp', async (req: Request, res: Response) => {
   // Generate secure 6-digit numeric OTP
   const rawOtp = String(crypto.randomInt(100000, 1000000));
   const otpHash = await bcrypt.hash(rawOtp, 10);
-  const expiresAt = new Date(now + 10 * 60 * 1000).toISOString(); // 10 minutes
+  const expiresAt = new Date(now + 5 * 60 * 1000).toISOString(); // 5 minutes
 
   await db.saveInviteOtp({
     id: `otp_${Date.now()}_${crypto.randomBytes(3).toString('hex')}`,
@@ -203,7 +203,7 @@ router.post('/send-otp', async (req: Request, res: Response) => {
     success: true,
     message: 'Verification code sent to your registered email address.',
     cooldownSeconds: 60,
-    expiresInMinutes: 10,
+    expiresInMinutes: 5,
   });
 });
 

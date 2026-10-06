@@ -57,7 +57,7 @@ router.post('/send-otp', async (req: Request, res: Response) => {
   // Generate 6-digit numeric OTP
   const rawOtp = String(crypto.randomInt(100000, 1000000));
   const otpHash = await bcrypt.hash(rawOtp, 10);
-  const expiresAt = new Date(now + 10 * 60 * 1000).toISOString(); // 10 minutes
+  const expiresAt = new Date(now + 5 * 60 * 1000).toISOString(); // 5 minutes
 
   await storage.saveUserOtp({
     id: `uotp_${Date.now()}_${crypto.randomBytes(3).toString('hex')}`,

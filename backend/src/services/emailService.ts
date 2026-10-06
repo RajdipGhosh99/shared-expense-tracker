@@ -47,7 +47,7 @@ class EmailService {
             <div style="display: inline-block; background: #eef2ff; border: 1.5px dashed #6366f1; border-radius: 10px; padding: 14px 28px; letter-spacing: 8px; font-size: 32px; font-weight: 800; color: #4338ca;">
               ${otp}
             </div>
-            <p style="color: #94a3b8; font-size: 12px; margin-top: 10px;">This code expires in 10 minutes and can only be used once.</p>
+            <p style="color: #94a3b8; font-size: 12px; margin-top: 10px;">This code expires in 5 minutes and can only be used once.</p>
           </div>
           <div style="border-top: 1px solid #f1f5f9; padding-top: 16px; text-align: center; color: #94a3b8; font-size: 11px;">
             <p style="margin: 0;">If you didn't request this code or weren't expecting this invite, you can safely ignore this email.</p>
@@ -59,7 +59,7 @@ class EmailService {
         from,
         to: toEmail,
         subject: `Your verification code for ${spaceName} is ${otp}`,
-        text: `${greeting}\n\nYour one-time verification code to join ${spaceName} is: ${otp}\n\nThis code expires in 10 minutes.\n\n— Bhagabhagi Team`,
+        text: `${greeting}\n\nYour one-time verification code to join ${spaceName} is: ${otp}\n\nThis code expires in 5 minutes.\n\n— Bhagabhagi Team`,
         html,
       });
 
@@ -92,7 +92,7 @@ class EmailService {
             <div style="display: inline-block; background: #eef2ff; border: 1.5px dashed #6366f1; border-radius: 10px; padding: 14px 28px; letter-spacing: 8px; font-size: 32px; font-weight: 800; color: #4338ca;">
               ${otp}
             </div>
-            <p style="color: #94a3b8; font-size: 12px; margin-top: 10px;">This code expires in 10 minutes and can only be used once.</p>
+            <p style="color: #94a3b8; font-size: 12px; margin-top: 10px;">This code expires in 5 minutes and can only be used once.</p>
           </div>
           <div style="border-top: 1px solid #f1f5f9; padding-top: 16px; text-align: center; color: #94a3b8; font-size: 11px;">
             <p style="margin: 0;">If you didn't request this login code, you can safely ignore this email.</p>
@@ -104,7 +104,7 @@ class EmailService {
         from,
         to: toEmail,
         subject: `Your login code for Bhagabhagi is ${otp}`,
-        text: `${greeting}\n\nYour one-time login code is: ${otp}\n\nThis code expires in 10 minutes.\n\n— Bhagabhagi Team`,
+        text: `${greeting}\n\nYour one-time login code is: ${otp}\n\nThis code expires in 5 minutes.\n\n— Bhagabhagi Team`,
         html,
       });
 

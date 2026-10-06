@@ -24,6 +24,16 @@ import { IDataStore, UserRecord } from './IDataStore.js';
 export class TursoStore implements IDataStore {
   private client: Client;
 
+  // In-memory OTP storage (valid for 5 minutes, zero DB writes)
+  private userOtpStore = new Map<
+    string,
+    { id: string; email: string; otpHash: string; attemptsLeft: number; expiresAt: string }
+  >();
+  private inviteOtpStore = new Map<
+    string,
+    { id: string; inviteId: string; otpHash: string; attemptsLeft: number; expiresAt: string; createdAt: string }
+  >();
+
   constructor(url: string, authToken?: string) {
     this.client = createClient({
       url,
@@ -138,24 +148,6 @@ export class TursoStore implements IDataStore {
           accepted_at DATETIME,
           last_otp_sent_at DATETIME
         );`,
-
-        `CREATE TABLE IF NOT EXISTS invite_otps (
-          id TEXT PRIMARY KEY,
-          invite_id TEXT NOT NULL REFERENCES space_invites(id) ON DELETE CASCADE,
-          otp_hash TEXT NOT NULL,
-          attempts_left INTEGER DEFAULT 5,
-          expires_at DATETIME NOT NULL,
-          created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-        );`,
-
-        `CREATE TABLE IF NOT EXISTS user_otps (
-          id TEXT PRIMARY KEY,
-          email TEXT NOT NULL,
-          otp_hash TEXT NOT NULL,
-          attempts_left INTEGER DEFAULT 5,
-          expires_at DATETIME NOT NULL,
-          created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-        );`,
       ],
       'write',
     );
@@ -259,8 +251,6 @@ export class TursoStore implements IDataStore {
           `CREATE INDEX IF NOT EXISTS idx_settlements_flat ON settlements(flat_id);`,
           `CREATE INDEX IF NOT EXISTS idx_space_invites_token ON space_invites(token_hash);`,
           `CREATE INDEX IF NOT EXISTS idx_space_invites_space ON space_invites(space_id, invited_email);`,
-          `CREATE INDEX IF NOT EXISTS idx_invite_otps_inv ON invite_otps(invite_id);`,
-          `CREATE INDEX IF NOT EXISTS idx_user_otps_email ON user_otps(email);`,
         ],
         'write',
       );
@@ -345,51 +335,44 @@ export class TursoStore implements IDataStore {
     createdAt: string;
   }): Promise<void> {
     const cleanEmail = record.email.toLowerCase().trim();
-    // Delete any old OTPs for this email first
-    await this.deleteUserOtps(cleanEmail);
-    await this.client.execute({
-      sql: `INSERT INTO user_otps (id, email, otp_hash, attempts_left, expires_at, created_at)
-            VALUES (?, ?, ?, ?, ?, ?)`,
-      args: [record.id, cleanEmail, record.otpHash, record.attemptsLeft, record.expiresAt, record.createdAt],
+    this.userOtpStore.set(cleanEmail, {
+      id: record.id,
+      email: cleanEmail,
+      otpHash: record.otpHash,
+      attemptsLeft: record.attemptsLeft,
+      expiresAt: record.expiresAt,
     });
   }
 
   async getActiveUserOtp(email: string): Promise<{ id: string; email: string; otpHash: string; attemptsLeft: number; expiresAt: string } | null> {
     const cleanEmail = email.toLowerCase().trim();
-    const res = await this.client.execute({
-      sql: `SELECT * FROM user_otps WHERE LOWER(email) = ? AND expires_at > datetime('now') ORDER BY created_at DESC LIMIT 1`,
-      args: [cleanEmail],
-    });
-    if (res.rows.length === 0) return null;
-    const r = res.rows[0];
-    return {
-      id: String(r.id),
-      email: String(r.email),
-      otpHash: String(r.otp_hash),
-      attemptsLeft: Number(r.attempts_left),
-      expiresAt: String(r.expires_at),
-    };
+    const item = this.userOtpStore.get(cleanEmail);
+    if (!item) return null;
+
+    // Check expiration
+    if (new Date(item.expiresAt).getTime() <= Date.now()) {
+      this.userOtpStore.delete(cleanEmail);
+      return null;
+    }
+    return item;
   }
 
   async decrementUserOtpAttempts(otpId: string): Promise<number> {
-    await this.client.execute({
-      sql: `UPDATE user_otps SET attempts_left = MAX(0, attempts_left - 1) WHERE id = ?`,
-      args: [otpId],
-    });
-    const res = await this.client.execute({
-      sql: `SELECT attempts_left FROM user_otps WHERE id = ? LIMIT 1`,
-      args: [otpId],
-    });
-    return res.rows.length > 0 ? Number(res.rows[0].attempts_left) : 0;
+    for (const [email, item] of this.userOtpStore.entries()) {
+      if (item.id === otpId) {
+        item.attemptsLeft = Math.max(0, item.attemptsLeft - 1);
+        if (item.attemptsLeft === 0) {
+          this.userOtpStore.delete(email);
+        }
+        return item.attemptsLeft;
+      }
+    }
+    return 0;
   }
 
   async deleteUserOtps(email: string): Promise<boolean> {
     const cleanEmail = email.toLowerCase().trim();
-    const res = await this.client.execute({
-      sql: `DELETE FROM user_otps WHERE LOWER(email) = ?`,
-      args: [cleanEmail],
-    });
-    return res.rowsAffected > 0;
+    return this.userOtpStore.delete(cleanEmail);
   }
 
   // --- Groups (Primary) ---
@@ -933,64 +916,46 @@ export class TursoStore implements IDataStore {
     return res.rowsAffected > 0;
   }
 
-  // --- Invite OTP Management ---
+  // --- Invite OTP Management (100% In-Memory, Valid 5 mins) ---
   async saveInviteOtp(otpRecord: InviteOtp): Promise<InviteOtp> {
-    // Invalidate existing OTPs for this invite
-    await this.client.execute({
-      sql: `DELETE FROM invite_otps WHERE invite_id = ?`,
-      args: [otpRecord.inviteId],
-    });
-
-    await this.client.execute({
-      sql: `INSERT INTO invite_otps (id, invite_id, otp_hash, attempts_left, expires_at, created_at)
-            VALUES (?, ?, ?, ?, ?, ?)`,
-      args: [
-        otpRecord.id,
-        otpRecord.inviteId,
-        otpRecord.otpHash,
-        otpRecord.attemptsLeft,
-        otpRecord.expiresAt,
-        otpRecord.createdAt || new Date().toISOString(),
-      ],
+    this.inviteOtpStore.set(otpRecord.inviteId, {
+      id: otpRecord.id,
+      inviteId: otpRecord.inviteId,
+      otpHash: otpRecord.otpHash,
+      attemptsLeft: otpRecord.attemptsLeft,
+      expiresAt: otpRecord.expiresAt,
+      createdAt: otpRecord.createdAt || new Date().toISOString(),
     });
     return otpRecord;
   }
 
   async getActiveInviteOtp(inviteId: string): Promise<InviteOtp | null> {
-    const res = await this.client.execute({
-      sql: `SELECT * FROM invite_otps WHERE invite_id = ? AND expires_at > datetime('now') ORDER BY created_at DESC LIMIT 1`,
-      args: [inviteId],
-    });
-    if (res.rows.length === 0) return null;
-    const r = res.rows[0];
-    return {
-      id: String(r.id),
-      inviteId: String(r.invite_id),
-      otpHash: String(r.otp_hash),
-      attemptsLeft: Number(r.attempts_left),
-      expiresAt: String(r.expires_at),
-      createdAt: String(r.created_at),
-    };
+    const item = this.inviteOtpStore.get(inviteId);
+    if (!item) return null;
+
+    // Check expiration
+    if (new Date(item.expiresAt).getTime() <= Date.now()) {
+      this.inviteOtpStore.delete(inviteId);
+      return null;
+    }
+    return item;
   }
 
   async decrementOtpAttempts(otpId: string): Promise<number> {
-    await this.client.execute({
-      sql: `UPDATE invite_otps SET attempts_left = MAX(0, attempts_left - 1) WHERE id = ?`,
-      args: [otpId],
-    });
-    const res = await this.client.execute({
-      sql: `SELECT attempts_left FROM invite_otps WHERE id = ? LIMIT 1`,
-      args: [otpId],
-    });
-    return res.rows.length > 0 ? Number(res.rows[0].attempts_left) : 0;
+    for (const [inviteId, item] of this.inviteOtpStore.entries()) {
+      if (item.id === otpId) {
+        item.attemptsLeft = Math.max(0, item.attemptsLeft - 1);
+        if (item.attemptsLeft === 0) {
+          this.inviteOtpStore.delete(inviteId);
+        }
+        return item.attemptsLeft;
+      }
+    }
+    return 0;
   }
 
   async deleteInviteOtps(inviteId: string): Promise<boolean> {
-    const res = await this.client.execute({
-      sql: `DELETE FROM invite_otps WHERE invite_id = ?`,
-      args: [inviteId],
-    });
-    return res.rowsAffected > 0;
+    return this.inviteOtpStore.delete(inviteId);
   }
 
   // --- Expenses ---
