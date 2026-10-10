@@ -1,3 +1,5 @@
+@import '@fortawesome/fontawesome-free/css/all.min.css';
+@import '@angular/material/prebuilt-themes/indigo-pink.css';
 @import 'tailwindcss';
 
 html,

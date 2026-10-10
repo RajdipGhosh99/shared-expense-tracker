@@ -1,6 +1,7 @@
 import { Component, EventEmitter, OnInit, Output, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { MatButtonModule } from '@angular/material/button';
 import { ApiService } from '../../core/services/api.service.js';
 import { AiCategoryService } from '../../core/services/ai-category.service.js';
 import { OcrBridgeService } from '../../core/services/ocr-bridge.service.js';
@@ -21,7 +22,7 @@ export interface GridRow {
 @Component({
   selector: 'app-bulk-expense-grid',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, MatButtonModule],
   template: `
     <!-- Backdrop -->
     <div
@@ -44,14 +45,7 @@ export interface GridRow {
                 class="size-7 sm:size-8 rounded-lg bg-emerald-700 text-white flex items-center justify-center font-bold shadow-2xs shrink-0"
               >
                 <!-- Spreadsheet Grid Icon -->
-                <svg class="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M3 10h18M3 14h18m-9-4v8m-7 4h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                  />
-                </svg>
+                <i class="fa-solid fa-table-cells text-sm"></i>
               </div>
               <div class="min-w-0">
                 <div class="flex items-center gap-1.5">
@@ -77,7 +71,7 @@ export interface GridRow {
               class="size-8 rounded-xl hover:bg-slate-200 active:bg-slate-300 text-slate-400 hover:text-slate-800 font-bold flex items-center justify-center transition-colors cursor-pointer shrink-0"
               title="Close modal"
             >
-              ✕
+              <i class="fa-solid fa-xmark"></i>
             </button>
           </div>
 
@@ -87,27 +81,27 @@ export interface GridRow {
               <button
                 type="button"
                 (click)="addRow()"
-                class="px-2.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-xs font-bold text-white flex items-center space-x-1 transition-all cursor-pointer shadow-2xs"
+                class="px-2.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-xs font-bold text-white flex items-center space-x-1.5 transition-all cursor-pointer shadow-2xs"
               >
-                <span>＋</span>
+                <i class="fa-solid fa-plus text-[10px]"></i>
                 <span>Add Row</span>
               </button>
               <button
                 type="button"
                 (click)="showPasteModal.set(!showPasteModal())"
-                class="px-2.5 py-1.5 rounded-xl border border-slate-300/80 bg-white hover:bg-slate-100 active:scale-95 text-xs font-semibold text-slate-700 flex items-center space-x-1 transition-all cursor-pointer shadow-2xs"
+                class="px-2.5 py-1.5 rounded-xl border border-slate-300/80 bg-white hover:bg-slate-100 active:scale-95 text-xs font-semibold text-slate-700 flex items-center space-x-1.5 transition-all cursor-pointer shadow-2xs"
                 title="Paste copied rows directly from spreadsheet or Excel"
               >
-                <span>📋</span>
+                <i class="fa-solid fa-paste text-[10px] text-slate-500"></i>
                 <span>Paste Rows</span>
               </button>
               <button
                 type="button"
                 (click)="openSingle.emit()"
-                class="px-2.5 py-1.5 rounded-xl border border-indigo-200 bg-indigo-50 hover:bg-indigo-100 active:scale-95 text-xs font-semibold text-indigo-700 flex items-center space-x-1 transition-all cursor-pointer shadow-2xs"
+                class="px-2.5 py-1.5 rounded-xl border border-indigo-200 bg-indigo-50 hover:bg-indigo-100 active:scale-95 text-xs font-semibold text-indigo-700 flex items-center space-x-1.5 transition-all cursor-pointer shadow-2xs"
                 title="Switch to single bill entry"
               >
-                <span>💳</span>
+                <i class="fa-solid fa-receipt text-[10px] text-indigo-500"></i>
                 <span>Single Bill</span>
               </button>
             </div>
@@ -128,7 +122,10 @@ export interface GridRow {
           class="p-3 sm:p-4 bg-emerald-50/70 border-b border-emerald-200 space-y-2"
         >
           <div class="flex justify-between items-center text-xs font-bold text-emerald-900">
-            <span>📋 Paste Tab-Separated Rows from Excel / Sheets</span>
+            <span class="flex items-center gap-1.5">
+              <i class="fa-solid fa-clipboard text-emerald-700"></i>
+              <span>Paste Tab-Separated Rows from Excel / Sheets</span>
+            </span>
             <span class="text-[10px] sm:text-[11px] font-normal text-emerald-700 hidden sm:inline"
               >Format: Date [tab] Title [tab] Amount [tab] Category</span
             >
@@ -169,7 +166,7 @@ export interface GridRow {
               *ngIf="hasOcrRows()"
               class="px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-800 border border-indigo-200 text-[10px] font-black uppercase tracking-wide flex items-center space-x-1"
             >
-              <span>⚡</span>
+              <i class="fa-solid fa-bolt text-[10px]"></i>
               <span>1 Row Filled by OCR</span>
             </span>
           </div>
@@ -205,7 +202,7 @@ export interface GridRow {
                 <!-- Column C: Category -->
                 <th class="py-2 px-2.5 min-w-[155px] border-r border-slate-200 bg-slate-100">
                   <div class="flex items-center justify-between">
-                    <span>Category <span class="text-[9px] text-indigo-600 font-bold">✨ AI</span></span>
+                    <span>Category <span class="text-[9px] text-indigo-600 font-bold"><i class="fa-solid fa-wand-magic-sparkles text-[8px] mr-0.5"></i>AI</span></span>
                     <span class="text-[9px] text-slate-400 font-mono font-normal">C</span>
                   </div>
                 </th>
@@ -247,7 +244,7 @@ export interface GridRow {
                   class="py-1 px-1 text-center bg-slate-100 group-hover:bg-slate-200/90 font-mono text-[11px] font-bold text-slate-500 border-r border-slate-300 sticky left-0 z-10 select-none"
                   [class.text-emerald-700]="isRowValid(row)"
                 >
-                  <span *ngIf="isRowValid(row)" class="text-[9px] text-emerald-600 block">✓</span>
+                  <i *ngIf="isRowValid(row)" class="fa-solid fa-check text-[9px] text-emerald-600 block"></i>
                   {{ idx + 1 }}
                 </td>
 
@@ -276,10 +273,10 @@ export interface GridRow {
                     <!-- Subtle OCR badge tag to indicate extraction by AI/OCR -->
                     <span
                       *ngIf="row.isOcrProcessed"
-                      class="absolute right-1 px-1.5 py-0.5 rounded-md bg-indigo-50 text-indigo-700 border border-indigo-200 text-[9px] font-black tracking-tight select-none pointer-events-none"
+                      class="absolute right-1 px-1.5 py-0.5 rounded-md bg-indigo-50 text-indigo-700 border border-indigo-200 text-[9px] font-black tracking-tight select-none pointer-events-none inline-flex items-center gap-1"
                       title="Processed by Multimodal AI/OCR"
                     >
-                      ⚡ OCR
+                      <i class="fa-solid fa-bolt text-[8px]"></i> OCR
                     </span>
                   </div>
                 </td>
@@ -290,15 +287,15 @@ export interface GridRow {
                     [(ngModel)]="row.category"
                     class="w-full px-2 py-1.5 border border-transparent focus:border-indigo-500 rounded text-xs bg-transparent focus:bg-white text-slate-800 focus:outline-none font-medium cursor-pointer"
                   >
-                    <option value="Food & Dining">🍔 Food & Dining</option>
-                    <option value="Bills & Utilities">⚡ Bills & Utilities</option>
-                    <option value="Transit & Travel">🚗 Transit & Travel</option>
-                    <option value="Shopping & Lifestyle">🛍️ Shopping & Lifestyle</option>
-                    <option value="Entertainment & Leisure">🎬 Entertainment & Leisure</option>
-                    <option value="Health & Wellness">💊 Health & Wellness</option>
-                    <option value="Education & Work">📚 Education & Work</option>
-                    <option value="Transfers & Adjustments">🔄 Transfers & Adjustments</option>
-                    <option value="Other">📦 Other</option>
+                    <option value="Food & Dining">Food & Dining</option>
+                    <option value="Bills & Utilities">Bills & Utilities</option>
+                    <option value="Transit & Travel">Transit & Travel</option>
+                    <option value="Shopping & Lifestyle">Shopping & Lifestyle</option>
+                    <option value="Entertainment & Leisure">Entertainment & Leisure</option>
+                    <option value="Health & Wellness">Health & Wellness</option>
+                    <option value="Education & Work">Education & Work</option>
+                    <option value="Transfers & Adjustments">Transfers & Adjustments</option>
+                    <option value="Other">Other</option>
                   </select>
                 </td>
 
@@ -372,7 +369,7 @@ export interface GridRow {
                     class="text-slate-400 hover:text-rose-600 disabled:opacity-20 p-1 rounded-md hover:bg-rose-50 transition-colors cursor-pointer"
                     title="Delete row"
                   >
-                    ✕
+                    <i class="fa-solid fa-trash-can text-xs"></i>
                   </button>
                 </td>
               </tr>
@@ -411,22 +408,22 @@ export interface GridRow {
           <!-- Save Actions -->
           <div class="flex items-center gap-2 w-full sm:w-auto justify-end">
             <button
+              mat-stroked-button
               type="button"
               (click)="close.emit()"
-              class="flex-1 sm:flex-none px-3.5 py-2 border border-slate-300 bg-white hover:bg-slate-100 text-slate-700 text-xs font-semibold rounded-xl shadow-2xs transition-colors cursor-pointer text-center"
+              class="!flex-1 sm:!flex-none !px-3.5 !py-2 !border-slate-300 !bg-white hover:!bg-slate-100 !text-slate-700 !text-xs !font-semibold !rounded-xl !shadow-2xs cursor-pointer text-center"
             >
               Cancel
             </button>
             <button
+              mat-flat-button
               type="button"
               (click)="saveBatch()"
               [disabled]="loading() || validRowCount() === 0"
-              class="flex-2 sm:flex-none px-5 py-2 bg-emerald-600 hover:bg-emerald-700 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-bold rounded-xl shadow-md transition-all flex items-center justify-center space-x-1.5 cursor-pointer"
+              class="!flex-2 sm:!flex-none !px-5 !py-2 !bg-emerald-600 hover:!bg-emerald-700 disabled:!opacity-40 text-white !text-xs !font-bold !rounded-xl !shadow-md flex items-center justify-center gap-2 cursor-pointer"
             >
-              <span
-                *ngIf="loading()"
-                class="animate-spin w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full"
-              ></span>
+              <i *ngIf="loading()" class="fa-solid fa-circle-notch fa-spin"></i>
+              <i *ngIf="!loading()" class="fa-solid fa-check"></i>
               <span>{{
                 loading()
                   ? 'Saving entries...'

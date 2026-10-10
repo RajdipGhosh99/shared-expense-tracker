@@ -12,10 +12,12 @@ import {
   EligibleMember,
 } from '@shared-expense-tracker/shared';
 
+import { MatButtonModule } from '@angular/material/button';
+
 @Component({
   selector: 'app-add-expense-modal',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, MatButtonModule],
   template: `
     <!-- Mobile Bottom Sheet Backdrop -->
     <div
@@ -37,7 +39,7 @@ import {
             <div
               class="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center shadow-xs text-sm font-bold flex-shrink-0"
             >
-              ＋
+              <i class="fa-solid fa-plus"></i>
             </div>
             <div>
               <h3 class="text-base font-bold text-slate-900 leading-tight">Add Group Expense</h3>
@@ -50,10 +52,10 @@ import {
             <button
               type="button"
               (click)="openBulk.emit()"
-              class="inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 text-xs font-bold shadow-2xs active:scale-95 transition-all cursor-pointer"
+              class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 text-xs font-bold shadow-2xs active:scale-95 transition-all cursor-pointer"
               title="Open spreadsheet bulk entry"
             >
-              <span>📊</span>
+              <i class="fa-solid fa-table-cells text-xs"></i>
               <span>Bulk Entry</span>
             </button>
             <button
@@ -61,7 +63,7 @@ import {
               (click)="close.emit()"
               class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500 hover:text-slate-800 font-bold active:scale-90 transition-all cursor-pointer"
             >
-              ✕
+              <i class="fa-solid fa-xmark"></i>
             </button>
           </div>
         </div>
@@ -72,7 +74,8 @@ import {
           class="p-4 bg-amber-50 border border-amber-200 rounded-2xl space-y-3"
         >
           <div class="flex items-center space-x-2 text-amber-800 font-bold text-sm">
-            <span>⚠️ Duplicate Payment Detected</span>
+            <i class="fa-solid fa-triangle-exclamation text-amber-600"></i>
+            <span>Duplicate Payment Detected</span>
           </div>
           <p class="text-xs text-amber-900 leading-relaxed">{{ conflictData()?.message }}</p>
 
@@ -165,7 +168,7 @@ import {
               *ngIf="titleTouched() && (!title || title.trim().length === 0)"
               class="text-[11px] font-semibold text-rose-600 flex items-center space-x-1 animate-fade-in"
             >
-              <span>⚠️</span>
+              <i class="fa-solid fa-triangle-exclamation mr-1 text-rose-500"></i>
               <span>Please enter a title (cannot be empty or spaces only).</span>
             </p>
             <!-- Real-time AI Suggested Category Badge -->
@@ -176,7 +179,7 @@ import {
               <div
                 class="inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-lg bg-indigo-50 border border-indigo-200 text-indigo-700 text-xs font-semibold shadow-2xs animate-fade-in"
               >
-                <span>✨ AI Suggested:</span>
+                <span class="inline-flex items-center gap-1"><i class="fa-solid fa-wand-magic-sparkles text-indigo-500"></i> AI Suggested:</span>
                 <span class="font-bold text-indigo-900">{{ aiSuggestion()?.category }}</span>
                 <span *ngIf="aiSuggestion()?.subCategory" class="text-indigo-600 font-medium"
                   >› {{ aiSuggestion()?.subCategory }}</span
@@ -230,15 +233,15 @@ import {
                 name="category"
                 class="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs font-medium focus:outline-none focus:border-indigo-500 bg-white text-slate-800 transition-all"
               >
-                <option value="Food & Dining">🍔 Food & Dining</option>
-                <option value="Bills & Utilities">⚡ Bills & Utilities</option>
-                <option value="Transit & Travel">🚗 Transit & Travel</option>
-                <option value="Shopping & Lifestyle">🛍️ Shopping & Lifestyle</option>
-                <option value="Entertainment & Leisure">🎬 Entertainment & Leisure</option>
-                <option value="Health & Wellness">💊 Health & Wellness</option>
-                <option value="Education & Work">📚 Education & Work</option>
-                <option value="Transfers & Adjustments">🔄 Transfers & Adjustments</option>
-                <option value="Other">📦 Other</option>
+                <option value="Food & Dining">Food & Dining</option>
+                <option value="Bills & Utilities">Bills & Utilities</option>
+                <option value="Transit & Travel">Transit & Travel</option>
+                <option value="Shopping & Lifestyle">Shopping & Lifestyle</option>
+                <option value="Entertainment & Leisure">Entertainment & Leisure</option>
+                <option value="Health & Wellness">Health & Wellness</option>
+                <option value="Education & Work">Education & Work</option>
+                <option value="Transfers & Adjustments">Transfers & Adjustments</option>
+                <option value="Other">Other</option>
               </select>
             </div>
 
@@ -249,7 +252,7 @@ import {
               "
               class="col-span-full p-2.5 bg-blue-50/80 border border-blue-200 rounded-xl text-[11px] text-blue-900 flex items-center space-x-2"
             >
-              <span>ℹ️</span>
+              <i class="fa-solid fa-circle-info text-blue-600"></i>
               <span class="leading-tight">
                 <strong>Transfers & Adjustments</strong> are debt settlements / repayments (<code
                   >isExpense: false</code
@@ -302,7 +305,7 @@ import {
               >
                 <!-- Current User Option -->
                 <option [value]="currentUserEmail()">
-                  👤 You ({{ currentUserDisplayName() }})
+                  You ({{ currentUserDisplayName() }})
                 </option>
                 <!-- Other Active Flatmates On That Day -->
                 <ng-container *ngFor="let m of activeEligibleMembers()">
@@ -310,7 +313,7 @@ import {
                     *ngIf="m.userEmail.toLowerCase() !== currentUserEmail().toLowerCase()"
                     [value]="m.userEmail"
                   >
-                    👤 {{ m.name }} ({{ m.userEmail }})
+                    {{ m.name }} ({{ m.userEmail }})
                   </option>
                 </ng-container>
               </select>
@@ -331,7 +334,7 @@ import {
                 *ngIf="controls().splitType === 'view_only'"
                 class="w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-xs text-slate-700 font-semibold flex items-center space-x-1.5"
               >
-                <span>🔒 Equal Split (Set by Group Admin)</span>
+                <span class="inline-flex items-center gap-1.5"><i class="fa-solid fa-lock text-[10px]"></i> Equal Split (Set by Group Admin)</span>
               </div>
 
               <select
@@ -379,7 +382,7 @@ import {
           <div class="space-y-2 pt-1 border-t border-slate-100">
             <div class="flex justify-between items-center">
               <span class="text-xs font-bold text-slate-700 flex items-center space-x-1.5">
-                <span>👥</span>
+                <i class="fa-solid fa-users text-slate-700"></i>
                 <span>Roommate Split for {{ date }}</span>
               </span>
               <span class="text-[11px] font-semibold text-slate-500">
@@ -417,7 +420,7 @@ import {
                     *ngIf="m.eligibilityStatus === 'NOT_YET_MOVED_IN' || m.eligibilityStatus === 'MOVED_OUT'"
                     class="w-4 h-4 flex items-center justify-center text-slate-300 select-none text-[10px]"
                   >
-                    ✕
+                    <i class="fa-solid fa-xmark"></i>
                   </span>
 
                   <div>
@@ -431,9 +434,9 @@ import {
                       <!-- Pending Invite Badge -->
                       <span
                         *ngIf="m.isPendingInvite"
-                        class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-100 text-amber-800 border border-amber-200"
+                        class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-100 text-amber-800 border border-amber-200 inline-flex items-center gap-1"
                       >
-                        ⏳ [Pending Invite - Effective {{ m.effectiveMoveInDate }}]
+                        <i class="fa-solid fa-hourglass-half text-[8px]"></i> [Pending Invite - Effective {{ m.effectiveMoveInDate }}]
                       </span>
                       <!-- Ineligible Tags -->
                       <span
@@ -451,9 +454,9 @@ import {
                       <!-- Away Tag -->
                       <span
                         *ngIf="m.isAway && m.eligibilityStatus === 'ACTIVE'"
-                        class="px-1.5 py-0.5 rounded text-[9px] font-medium bg-slate-200 text-slate-600"
+                        class="px-1.5 py-0.5 rounded text-[9px] font-medium bg-slate-200 text-slate-600 inline-flex items-center gap-1"
                       >
-                        🌴 Away
+                        <i class="fa-solid fa-plane-departure text-[8px]"></i> Away
                       </span>
                     </div>
                     <p class="text-[10px] text-slate-400">{{ m.userEmail }}</p>
@@ -540,9 +543,9 @@ import {
               </span>
               <span
                 *ngIf="Math.abs(exactDifference()) <= 0.01"
-                class="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200"
+                class="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 inline-flex items-center gap-1"
               >
-                ✓ Balanced
+                <i class="fa-solid fa-check text-[8px]"></i> Balanced
               </span>
             </div>
 
@@ -566,10 +569,12 @@ import {
 
           <button
             type="submit"
+            mat-flat-button
             [disabled]="loading()"
-            class="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 active:scale-98 transition-all text-white font-bold rounded-xl shadow-xs text-sm cursor-pointer"
+            class="!w-full !py-3.5 !bg-indigo-600 hover:!bg-indigo-700 active:scale-98 transition-all !text-white !font-bold !rounded-xl shadow-xs !text-sm cursor-pointer flex items-center justify-center gap-2"
           >
-            {{ loading() ? 'Saving Expense...' : 'Save & Split Bill' }}
+            <i *ngIf="loading()" class="fa-solid fa-circle-notch fa-spin text-sm"></i>
+            <span>{{ loading() ? 'Saving Expense...' : 'Save & Split Bill' }}</span>
           </button>
         </form>
       </div>

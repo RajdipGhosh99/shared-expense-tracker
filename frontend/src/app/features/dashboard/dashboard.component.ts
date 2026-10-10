@@ -17,6 +17,8 @@ import { LoadingService } from '../../core/services/loading.service.js';
 import { OcrBridgeService } from '../../core/services/ocr-bridge.service.js';
 import { AddExpenseModalComponent } from '../expenses/add-expense-modal.component.js';
 import { BulkExpenseGridComponent } from '../expenses/bulk-expense-grid.component.js';
+import { MatButtonModule } from '@angular/material/button';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import {
   Group,
   GroupMember,
@@ -27,7 +29,14 @@ import {
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, FormsModule, AddExpenseModalComponent, BulkExpenseGridComponent],
+  imports: [
+    CommonModule,
+    FormsModule,
+    AddExpenseModalComponent,
+    BulkExpenseGridComponent,
+    MatButtonModule,
+    MatProgressSpinnerModule,
+  ],
   template: `
     <!-- Mobile & Desktop Responsive App Container (Standard Mature Theme) -->
     <div
@@ -57,13 +66,13 @@ import {
               [class.bg-slate-800]="!isAdmin()"
               [class.text-white]="!isAdmin()"
             >
-              🏢
+              <i class="fa-solid fa-building"></i>
               <span
                 *ngIf="isAdmin()"
                 class="absolute -top-1.5 -right-1.5 size-3.5 bg-amber-400 text-slate-950 text-[8px] font-black rounded-full flex items-center justify-center ring-2 ring-white shadow-2xs"
                 title="Space Admin"
               >
-                👑
+                <i class="fa-solid fa-crown text-[8px]"></i>
               </span>
             </div>
 
@@ -78,34 +87,20 @@ import {
                   {{ api.activeGroup()?.name || 'My Space' }}
                 </span>
 
-                <!-- iOS Native In-Header 8-Spoke Activity Spinner (Concept D) -->
+                <!-- In-Header Activity Spinner -->
                 <span
                   *ngIf="loading.isLoading()"
                   class="inline-flex items-center ml-0.5 text-indigo-600 animate-fade-in"
                   title="Syncing..."
                 >
-                  <svg class="size-3 animate-ios-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
-                    <line x1="12" y1="2" x2="12" y2="6"></line>
-                    <line x1="12" y1="18" x2="12" y2="22" opacity="0.25"></line>
-                    <line x1="4.93" y1="4.93" x2="7.76" y2="7.76" opacity="0.9"></line>
-                    <line x1="16.24" y1="16.24" x2="19.07" y2="19.07" opacity="0.35"></line>
-                    <line x1="2" y1="12" x2="6" y2="12" opacity="0.8"></line>
-                    <line x1="18" y1="12" x2="22" y2="12" opacity="0.45"></line>
-                    <line x1="4.93" y1="19.07" x2="7.76" y2="16.24" opacity="0.7"></line>
-                    <line x1="16.24" y1="7.76" x2="19.07" y2="4.93" opacity="0.6"></line>
-                  </svg>
+                  <i class="fa-solid fa-circle-notch fa-spin text-[10px]"></i>
                 </span>
 
-                <svg
-                  class="size-3 text-slate-400 shrink-0 transition-transform duration-200"
+                <i
+                  class="fa-solid fa-chevron-down text-[10px] text-slate-400 shrink-0 transition-transform duration-200"
                   [class.rotate-180]="showGroupMenu()"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
                   aria-hidden="true"
-                >
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="m6 9 6 6 6-6" />
-                </svg>
+                ></i>
               </div>
 
               <!-- Role Tag / Syncing State -->
@@ -141,7 +136,7 @@ import {
               title="Generate WhatsApp Invite Link"
               aria-label="Generate WhatsApp Invite Link"
             >
-              <span>＋👤</span>
+              <i class="fa-solid fa-user-plus text-xs"></i>
             </button>
 
             <!-- Regular User: Statements Shortcut -->
@@ -153,7 +148,7 @@ import {
               title="Monthly Statements"
               aria-label="Monthly Statements"
             >
-              <span>📄</span>
+              <i class="fa-solid fa-file-invoice text-xs"></i>
             </button>
 
             <!-- Tactile Logout Button -->
@@ -164,9 +159,7 @@ import {
               title="Log out"
               aria-label="Log out"
             >
-              <svg class="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 17l5-5-5-5m5 5H3m9-9h6a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-6" />
-              </svg>
+              <i class="fa-solid fa-arrow-right-from-bracket text-xs" aria-hidden="true"></i>
             </button>
 
             <!-- User Avatar Badge with Status Dot -->
@@ -201,7 +194,7 @@ import {
                 (click)="showGroupMenu.set(false)"
                 class="text-slate-400 hover:text-slate-700 text-xs font-bold p-1 cursor-pointer"
               >
-                ✕
+                <i class="fa-solid fa-xmark"></i>
               </button>
             </div>
 
@@ -222,9 +215,9 @@ import {
                     }}</span>
                     <span
                       *ngIf="ug.role === 'ADMIN'"
-                      class="px-1.5 py-0.2 bg-amber-50 text-amber-700 border border-amber-200 text-[9px] font-extrabold rounded"
+                      class="px-1.5 py-0.2 bg-amber-50 text-amber-700 border border-amber-200 text-[9px] font-extrabold rounded inline-flex items-center gap-1"
                     >
-                      👑 Admin
+                      <i class="fa-solid fa-crown text-[8px]"></i> Admin
                     </span>
                     <span
                       *ngIf="ug.role !== 'ADMIN'"
@@ -240,7 +233,7 @@ import {
                 <span
                   *ngIf="api.activeGroup()?.id === ug.group.id"
                   class="text-indigo-600 font-bold text-sm"
-                  >✓</span
+                  ><i class="fa-solid fa-check"></i></span
                 >
               </div>
             </div>
@@ -251,7 +244,7 @@ import {
                 (click)="showGroupMenu.set(false); showCreateModal.set(true)"
                 class="w-full py-2 px-3 text-left text-xs font-bold text-indigo-600 hover:bg-indigo-50 rounded-xl transition-colors flex items-center space-x-2 cursor-pointer"
               >
-                <span>＋</span>
+                <i class="fa-solid fa-plus text-xs"></i>
                 <span>Create New Space</span>
               </button>
               <button
@@ -259,7 +252,7 @@ import {
                 (click)="showGroupMenu.set(false); openInviteModal()"
                 class="w-full py-2 px-3 text-left text-xs font-bold text-emerald-600 hover:bg-emerald-50 rounded-xl transition-colors flex items-center space-x-2 cursor-pointer"
               >
-                <span>🔗</span>
+                <i class="fa-solid fa-link text-xs"></i>
                 <span>Invite Roommate via Link</span>
               </button>
               <button
@@ -271,7 +264,7 @@ import {
                 [class.text-emerald-700]="api.activeGroup()?.status === 'INACTIVE'"
                 [class.hover:bg-emerald-50]="api.activeGroup()?.status === 'INACTIVE'"
               >
-                <span>{{ api.activeGroup()?.status === 'INACTIVE' ? '▶️' : '⏸️' }}</span>
+                <i class="fa-solid" [class.fa-play]="api.activeGroup()?.status === 'INACTIVE'" [class.fa-pause]="api.activeGroup()?.status !== 'INACTIVE'"></i>
                 <span>{{ api.activeGroup()?.status === 'INACTIVE' ? 'Reactivate This Space' : 'Deactivate This Space (Archive)' }}</span>
               </button>
               <button
@@ -279,14 +272,14 @@ import {
                 (click)="openDeleteSpaceModal()"
                 class="w-full py-2 px-3 text-left text-xs font-bold text-rose-600 hover:bg-rose-50 rounded-xl transition-colors flex items-center space-x-2 cursor-pointer"
               >
-                <span>🗑️</span>
+                <i class="fa-solid fa-trash-can text-xs"></i>
                 <span>Delete This Space...</span>
               </button>
               <button
                 (click)="showGroupMenu.set(false); api.logout(); router.navigate(['/auth'])"
                 class="w-full py-2 px-3 text-left text-xs font-bold text-slate-500 hover:bg-slate-100 rounded-xl transition-colors flex items-center space-x-2 cursor-pointer border-t border-slate-100 mt-1 pt-2"
               >
-                <span>🚪</span>
+                <i class="fa-solid fa-arrow-right-from-bracket text-xs"></i>
                 <span>Log out</span>
               </button>
             </div>
@@ -360,7 +353,7 @@ import {
         >
           <div class="flex items-center justify-between">
             <div class="flex items-center space-x-2 text-amber-900">
-              <span class="text-base">🔔</span>
+              <i class="fa-solid fa-bell text-amber-600 text-sm"></i>
               <span class="text-xs font-extrabold uppercase tracking-wide">
                 Join Requests ({{ pendingMembers().length }} Pending Approval)
               </span>
@@ -384,15 +377,15 @@ import {
               <div class="flex items-center space-x-1.5 flex-shrink-0">
                 <button
                   (click)="approve(pm.userEmail)"
-                  class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white text-xs font-bold rounded-lg shadow-2xs cursor-pointer transition-all"
+                  class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white text-xs font-bold rounded-lg shadow-2xs cursor-pointer transition-all flex items-center"
                 >
-                  ✓ Approve
+                  <i class="fa-solid fa-check mr-1"></i> Approve
                 </button>
                 <button
                   (click)="reject(pm.userEmail)"
-                  class="px-2.5 py-1 bg-rose-50 hover:bg-rose-100 active:scale-95 text-rose-700 border border-rose-200 text-xs font-bold rounded-lg cursor-pointer transition-all"
+                  class="px-2.5 py-1 bg-rose-50 hover:bg-rose-100 active:scale-95 text-rose-700 border border-rose-200 text-xs font-bold rounded-lg cursor-pointer transition-all flex items-center"
                 >
-                  ✕ Reject
+                  <i class="fa-solid fa-xmark mr-1"></i> Reject
                 </button>
               </div>
             </div>
@@ -406,7 +399,7 @@ import {
         >
           <div class="flex items-center justify-between">
             <div class="flex items-center space-x-2">
-              <span class="text-xl">⏸️</span>
+              <i class="fa-solid fa-circle-pause text-amber-700 text-lg"></i>
               <h4 class="text-xs font-black uppercase tracking-wider text-amber-900">
                 Space is Currently Inactive (Archived)
               </h4>
@@ -414,9 +407,9 @@ import {
             <button
               *ngIf="isAdmin()"
               (click)="toggleSpaceStatus()"
-              class="px-2.5 py-1 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs rounded-xl shadow-xs cursor-pointer transition-all active:scale-95"
+              class="px-2.5 py-1 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs rounded-xl shadow-xs cursor-pointer transition-all active:scale-95 flex items-center gap-1"
             >
-              ▶ Reactivate
+              <i class="fa-solid fa-play text-[10px]"></i> Reactivate
             </button>
           </div>
           <p class="text-xs text-amber-800 leading-relaxed font-medium">
@@ -430,7 +423,7 @@ import {
           class="bg-amber-500/10 border border-amber-300 p-4 rounded-2xl shadow-xs space-y-1.5 text-amber-950"
         >
           <div class="flex items-center space-x-2">
-            <span class="text-base">⏳</span>
+            <i class="fa-solid fa-hourglass-half text-amber-700 text-sm"></i>
             <h4 class="text-xs font-bold uppercase tracking-wider text-amber-900">
               Membership Pending Approval
             </h4>
@@ -450,19 +443,7 @@ import {
             <p
               class="text-[10px] font-bold uppercase tracking-wider text-amber-800 flex items-center space-x-1.5"
             >
-              <svg
-                class="w-3.5 h-3.5 text-amber-600"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                />
-              </svg>
+              <i class="fa-solid fa-calendar-check text-amber-600 text-xs"></i>
               <span>Month-End Settlement</span>
             </p>
             <p class="text-xs font-medium text-amber-900">
@@ -471,9 +452,10 @@ import {
           </div>
           <button
             (click)="router.navigate(['/statements'])"
-            class="px-3.5 py-1.5 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs rounded-xl shadow-xs active:scale-95 transition-all cursor-pointer"
+            class="px-3.5 py-1.5 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs rounded-xl shadow-xs active:scale-95 transition-all cursor-pointer flex items-center gap-1"
           >
-            View ↗
+            <span>View</span>
+            <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
           </button>
         </div>
 
@@ -484,7 +466,7 @@ import {
               >Your Net Standing</span
             >
             <span
-              class="px-3 py-1 rounded-full text-[11px] font-extrabold tracking-wide border shadow-xs"
+              class="px-3 py-1 rounded-full text-[11px] font-extrabold tracking-wide border shadow-xs inline-flex items-center gap-1.5"
               [class.bg-emerald-50]="myNetBalance() >= 0"
               [class.text-emerald-700]="myNetBalance() >= 0"
               [class.border-emerald-200]="myNetBalance() >= 0"
@@ -492,7 +474,8 @@ import {
               [class.text-rose-700]="myNetBalance() < 0"
               [class.border-rose-200]="myNetBalance() < 0"
             >
-              {{ myNetBalance() >= 0 ? '🟢 You get back' : '🔴 You owe' }}
+              <i class="fa-solid fa-circle text-[8px]" [class.text-emerald-500]="myNetBalance() >= 0" [class.text-rose-500]="myNetBalance() < 0"></i>
+              {{ myNetBalance() >= 0 ? 'You get back' : 'You owe' }}
             </span>
           </div>
 
@@ -509,7 +492,7 @@ import {
           <!-- Vacation Mode Toggle Bar -->
           <div class="pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
             <div class="flex items-center space-x-2 text-slate-700">
-              <span class="text-base">🏖️</span>
+              <i class="fa-solid fa-umbrella-beach text-amber-500 text-sm"></i>
               <div>
                 <div class="flex items-center space-x-1.5">
                   <span class="font-bold text-xs text-slate-800">Vacation Mode</span>
@@ -550,8 +533,8 @@ import {
                 [class.translate-x-5]="isAway()"
                 [class.translate-x-0]="!isAway()"
               >
-                <span *ngIf="togglingVacation()" class="animate-spin text-[8px] text-slate-400">⟳</span>
-                <span *ngIf="!togglingVacation() && isAway()">🌴</span>
+                <i *ngIf="togglingVacation()" class="fa-solid fa-circle-notch fa-spin text-[8px] text-slate-400"></i>
+                <i *ngIf="!togglingVacation() && isAway()" class="fa-solid fa-plane-departure text-[9px] text-amber-600"></i>
               </span>
             </button>
           </div>
@@ -567,20 +550,7 @@ import {
             <div
               class="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center group-hover:scale-105 transition-transform"
             >
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"
-                />
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"
-                />
-              </svg>
+              <i class="fa-solid fa-camera text-sm"></i>
             </div>
             <span class="text-[10px] font-bold text-slate-700">Scan Bill</span>
           </button>
@@ -593,7 +563,7 @@ import {
             <div
               class="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center group-hover:scale-105 transition-transform shadow-xs"
             >
-              <span class="text-base font-bold">＋</span>
+              <i class="fa-solid fa-plus text-sm font-bold"></i>
             </div>
             <span class="text-[10px] font-bold text-slate-700">Add Bill</span>
           </button>
@@ -607,14 +577,7 @@ import {
             <div
               class="w-8 h-8 rounded-xl bg-emerald-600 text-white flex items-center justify-center group-hover:scale-105 transition-transform shadow-xs"
             >
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M3 10h18M3 14h18m-9-4v8m-7 4h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                />
-              </svg>
+              <i class="fa-solid fa-table-cells text-sm"></i>
             </div>
             <span class="text-[10px] font-bold text-emerald-800">Bulk Entry</span>
           </button>
@@ -627,14 +590,7 @@ import {
             <div
               class="w-8 h-8 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center group-hover:scale-105 transition-transform"
             >
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-                />
-              </svg>
+              <i class="fa-solid fa-chart-pie text-sm"></i>
             </div>
             <span class="text-[10px] font-bold text-slate-700">Reports</span>
           </button>
@@ -648,14 +604,7 @@ import {
             <div
               class="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center group-hover:scale-105 transition-transform"
             >
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"
-                />
-              </svg>
+              <i class="fa-solid fa-user-plus text-sm"></i>
             </div>
             <span class="text-[10px] font-bold text-slate-700">Invite</span>
           </button>
@@ -666,39 +615,42 @@ import {
           <button
             type="button"
             (click)="activeTab.set('bills')"
-            class="flex-1 py-2 rounded-xl font-bold transition-all text-center cursor-pointer"
+            class="flex-1 py-2 rounded-xl font-bold transition-all text-center cursor-pointer flex items-center justify-center gap-1.5"
             [class.bg-white]="activeTab() === 'bills'"
             [class.text-indigo-700]="activeTab() === 'bills'"
             [class.shadow-2xs]="activeTab() === 'bills'"
             [class.text-slate-600]="activeTab() !== 'bills'"
             [class.hover:text-slate-900]="activeTab() !== 'bills'"
           >
-            🧾 Bills ({{ api.expenses().length }})
+            <i class="fa-solid fa-receipt text-xs"></i>
+            <span>Bills ({{ api.expenses().length }})</span>
           </button>
           <button
             type="button"
             (click)="activeTab.set('members')"
-            class="flex-1 py-2 rounded-xl font-bold transition-all text-center cursor-pointer"
+            class="flex-1 py-2 rounded-xl font-bold transition-all text-center cursor-pointer flex items-center justify-center gap-1.5"
             [class.bg-white]="activeTab() === 'members'"
             [class.text-indigo-700]="activeTab() === 'members'"
             [class.shadow-2xs]="activeTab() === 'members'"
             [class.text-slate-600]="activeTab() !== 'members'"
             [class.hover:text-slate-900]="activeTab() !== 'members'"
           >
-            👥 Flatmates ({{ activeMembers().length }})
+            <i class="fa-solid fa-users text-xs"></i>
+            <span>Flatmates ({{ activeMembers().length }})</span>
           </button>
           <button
             *ngIf="isAdmin()"
             type="button"
             (click)="activeTab.set('controls')"
-            class="flex-1 py-2 rounded-xl font-bold transition-all text-center cursor-pointer"
+            class="flex-1 py-2 rounded-xl font-bold transition-all text-center cursor-pointer flex items-center justify-center gap-1.5"
             [class.bg-white]="activeTab() === 'controls'"
             [class.text-indigo-700]="activeTab() === 'controls'"
             [class.shadow-2xs]="activeTab() === 'controls'"
             [class.text-slate-600]="activeTab() !== 'controls'"
             [class.hover:text-slate-900]="activeTab() !== 'controls'"
           >
-            ⚙️ Form Rules
+            <i class="fa-solid fa-sliders text-xs"></i>
+            <span>Form Rules</span>
           </button>
         </div>
 
@@ -711,7 +663,7 @@ import {
             <h3
               class="font-bold text-slate-800 text-xs uppercase tracking-wider flex items-center space-x-1.5"
             >
-              <span class="text-amber-500">⚡</span>
+              <i class="fa-solid fa-bolt text-amber-500"></i>
               <span>Suggested Settlements</span>
             </h3>
             <span
@@ -725,7 +677,7 @@ import {
             *ngIf="simplifiedDebts().length === 0"
             class="py-6 text-center text-xs text-slate-500 font-medium space-y-1"
           >
-            <p class="text-2xl">🎉</p>
+            <p class="text-2xl text-emerald-500"><i class="fa-solid fa-circle-check"></i></p>
             <p>Everyone is settled up! Zero outstanding debts.</p>
           </div>
 
@@ -751,13 +703,15 @@ import {
                 [href]="tx.upiLink"
                 class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 transition-all text-white rounded-lg text-xs font-bold shadow-xs flex items-center space-x-1 cursor-pointer"
               >
-                <span>⚡ Pay UPI</span>
+                <i class="fa-solid fa-bolt text-[10px] mr-1"></i>
+                <span>Pay UPI</span>
               </a>
               <button
                 (click)="markSettled(tx)"
-                class="px-3 py-1.5 bg-white hover:bg-slate-100 border border-slate-300 active:scale-95 transition-all text-slate-700 rounded-lg text-xs font-semibold cursor-pointer shadow-xs"
+                class="px-3 py-1.5 bg-white hover:bg-slate-100 border border-slate-300 active:scale-95 transition-all text-slate-700 rounded-lg text-xs font-semibold cursor-pointer shadow-xs flex items-center gap-1"
               >
-                Settled
+                <i class="fa-solid fa-check text-[10px] text-slate-400"></i>
+                <span>Settled</span>
               </button>
             </div>
           </div>
@@ -772,23 +726,24 @@ import {
             <h3
               class="font-bold text-slate-800 text-xs uppercase tracking-wider flex items-center space-x-1.5"
             >
-              <span>👥</span>
+              <i class="fa-solid fa-users text-slate-700"></i>
               <span>Members ({{ activeMembers().length }})</span>
             </h3>
             <div class="flex items-center space-x-2">
               <button
                 *ngIf="isAdmin()"
                 (click)="openInviteModal()"
-                class="text-[10px] font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 px-2 py-0.5 rounded-full cursor-pointer transition-colors"
+                class="text-[10px] font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 px-2 py-0.5 rounded-full cursor-pointer transition-colors flex items-center gap-1"
                 title="Create personalized invite with move-in date"
               >
-                ＋ Invite Roommate
+                <i class="fa-solid fa-user-plus text-[9px]"></i>
+                <span>Invite Roommate</span>
               </button>
               <span
                 *ngIf="isAdmin()"
-                class="text-[10px] font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded-full"
+                class="text-[10px] font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded-full inline-flex items-center gap-1"
               >
-                Admin
+                <i class="fa-solid fa-crown text-[8px]"></i> Admin
               </span>
             </div>
           </div>
@@ -806,33 +761,33 @@ import {
                     <p class="text-xs font-bold text-slate-900 truncate">{{ m.name }}</p>
                     <span
                       *ngIf="m.role === 'ADMIN'"
-                      class="px-1.5 py-0.2 bg-amber-50 text-amber-700 border border-amber-200 text-[9px] font-extrabold rounded"
+                      class="px-1.5 py-0.2 bg-amber-50 text-amber-700 border border-amber-200 text-[9px] font-extrabold rounded inline-flex items-center gap-1"
                     >
-                      Admin
+                      <i class="fa-solid fa-crown text-[8px]"></i> Admin
                     </span>
                     <span
                       *ngIf="m.status === 'PENDING'"
-                      class="px-1.5 py-0.2 bg-rose-50 text-rose-700 border border-rose-200 text-[9px] font-bold rounded"
+                      class="px-1.5 py-0.2 bg-rose-50 text-rose-700 border border-rose-200 text-[9px] font-bold rounded inline-flex items-center gap-1"
                     >
-                      Pending
+                      <i class="fa-solid fa-hourglass-half text-[8px]"></i> Pending
                     </span>
                     <span
                       *ngIf="m.status === 'LEFT'"
-                      class="px-1.5 py-0.2 bg-rose-50 text-rose-700 border border-rose-200 text-[9px] font-bold rounded"
+                      class="px-1.5 py-0.2 bg-rose-50 text-rose-700 border border-rose-200 text-[9px] font-bold rounded inline-flex items-center gap-1"
                     >
-                      🚪 Vacated {{ m.movedOutAt || '' }}
+                      <i class="fa-solid fa-door-open text-[8px]"></i> Vacated {{ m.movedOutAt || '' }}
                     </span>
                     <span
                       *ngIf="m.movedInAt && m.status !== 'LEFT'"
-                      class="px-1.5 py-0.2 bg-slate-100 text-slate-600 text-[9px] font-medium rounded"
+                      class="px-1.5 py-0.2 bg-slate-100 text-slate-600 text-[9px] font-medium rounded inline-flex items-center gap-1"
                     >
-                      📅 Since {{ m.movedInAt }}
+                      <i class="fa-solid fa-calendar text-[8px]"></i> Since {{ m.movedInAt }}
                     </span>
                     <span
                       *ngIf="m.isAway"
-                      class="px-1.5 py-0.2 bg-slate-100 text-slate-600 text-[9px] font-medium rounded"
+                      class="px-1.5 py-0.2 bg-slate-100 text-slate-600 text-[9px] font-medium rounded inline-flex items-center gap-1"
                     >
-                      Away
+                      <i class="fa-solid fa-plane-departure text-[8px]"></i> Away
                     </span>
                   </div>
                   <p class="text-[10px] text-slate-400 font-mono truncate">{{ m.userEmail }}</p>
@@ -845,15 +800,15 @@ import {
                 <ng-container *ngIf="isAdmin() && m.status === 'PENDING'">
                   <button
                     (click)="approve(m.userEmail)"
-                    class="px-2 py-1 bg-emerald-600 text-white text-[11px] font-bold rounded-lg hover:bg-emerald-700 cursor-pointer shadow-2xs"
+                    class="px-2 py-1 bg-emerald-600 text-white text-[11px] font-bold rounded-lg hover:bg-emerald-700 cursor-pointer shadow-2xs flex items-center gap-1"
                   >
-                    ✓ Approve
+                    <i class="fa-solid fa-check text-[9px]"></i> Approve
                   </button>
                   <button
                     (click)="reject(m.userEmail)"
-                    class="px-2 py-1 bg-rose-50 text-rose-700 border border-rose-200 text-[11px] font-bold rounded-lg hover:bg-rose-100 cursor-pointer"
+                    class="px-2 py-1 bg-rose-50 text-rose-700 border border-rose-200 text-[11px] font-bold rounded-lg hover:bg-rose-100 cursor-pointer flex items-center gap-1"
                   >
-                    ✕ Reject
+                    <i class="fa-solid fa-xmark text-[9px]"></i> Reject
                   </button>
                 </ng-container>
 
@@ -865,7 +820,7 @@ import {
                   <button
                     *ngIf="m.userEmail !== api.currentUser()?.email && m.status !== 'LEFT'"
                     (click)="toggleMemberStatus(m)"
-                    class="px-2 py-1 text-[10px] font-bold rounded-lg cursor-pointer transition-colors border"
+                    class="px-2 py-1 text-[10px] font-bold rounded-lg cursor-pointer transition-colors border inline-flex items-center gap-1"
                     [class.bg-emerald-50]="(m.status || 'ACTIVE') === 'ACTIVE'"
                     [class.text-emerald-700]="(m.status || 'ACTIVE') === 'ACTIVE'"
                     [class.border-emerald-200]="(m.status || 'ACTIVE') === 'ACTIVE'"
@@ -874,31 +829,32 @@ import {
                     [class.border-amber-200]="m.status === 'INACTIVE'"
                     [title]="m.status === 'INACTIVE' ? 'Activate member' : 'Deactivate member'"
                   >
-                    {{ m.status === 'INACTIVE' ? '⏸️ Inactive' : '🟢 Active' }}
+                    <i class="fa-solid text-[8px]" [class.fa-pause]="m.status === 'INACTIVE'" [class.fa-circle-dot]="m.status !== 'INACTIVE'"></i>
+                    {{ m.status === 'INACTIVE' ? 'Inactive' : 'Active' }}
                   </button>
 
                   <button
                     (click)="openTenancyModal(m)"
-                    class="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-[10px] font-bold rounded-lg cursor-pointer transition-colors"
+                    class="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-[10px] font-bold rounded-lg cursor-pointer transition-colors inline-flex items-center gap-1"
                     title="Edit move-in or move-out dates"
                   >
-                    📅 Tenancy
+                    <i class="fa-solid fa-calendar-days text-[9px]"></i> Tenancy
                   </button>
                   <button
                     *ngIf="m.role === 'MEMBER' && m.userEmail !== api.currentUser()?.email"
                     (click)="setRole(m.userEmail, 'ADMIN')"
-                    class="px-2 py-1 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 text-indigo-700 text-[10px] font-bold rounded-lg cursor-pointer transition-colors"
+                    class="px-2 py-1 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 text-indigo-700 text-[10px] font-bold rounded-lg cursor-pointer transition-colors inline-flex items-center gap-1"
                     title="Make this member an Admin"
                   >
-                    👑 Make Admin
+                    <i class="fa-solid fa-crown text-[8px]"></i> Make Admin
                   </button>
                   <button
                     *ngIf="m.userEmail !== api.currentUser()?.email"
                     (click)="removeMemberConfirm(m.userEmail, m.name)"
-                    class="px-2 py-1 bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-700 text-[10px] font-bold rounded-lg cursor-pointer transition-colors"
+                    class="px-2 py-1 bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-700 text-[10px] font-bold rounded-lg cursor-pointer transition-colors inline-flex items-center gap-1"
                     title="Remove member and revoke their access"
                   >
-                    ✕ Remove
+                    <i class="fa-solid fa-user-minus text-[9px]"></i> Remove
                   </button>
                 </ng-container>
               </div>
@@ -917,7 +873,7 @@ import {
               <h3
                 class="font-bold text-slate-800 text-xs uppercase tracking-wider flex items-center space-x-1.5"
               >
-                <span>⚙️</span>
+                <i class="fa-solid fa-sliders text-slate-700"></i>
                 <span>Entry Form Controls (Admin)</span>
               </h3>
               <span
@@ -1006,7 +962,7 @@ import {
             <!-- RIGHT: Live Form Preview -->
             <div class="p-4.5 bg-slate-50/60">
               <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3 flex items-center space-x-1">
-                <span>👁</span>
+                <i class="fa-solid fa-eye text-slate-400 mr-1 text-[10px]"></i>
                 <span>Live Preview — Add Bill Form</span>
               </p>
 
@@ -1038,8 +994,8 @@ import {
                     >* Mandatory</span>
                     <span
                       *ngIf="formControlsConfig.date === 'view_only'"
-                      class="text-[9px] text-indigo-600 bg-indigo-50 px-1.5 rounded border border-indigo-200 font-bold"
-                    >🔒 Today</span>
+                      class="text-[9px] text-indigo-600 bg-indigo-50 px-1.5 rounded border border-indigo-200 font-bold inline-flex items-center gap-1"
+                    ><i class="fa-solid fa-lock text-[8px]"></i>Today</span>
                     <span
                       *ngIf="formControlsConfig.date === 'editable'"
                       class="text-[9px] text-slate-400"
@@ -1060,7 +1016,7 @@ import {
                       <span class="text-[9px] text-rose-500 font-bold">* Mandatory</span>
                     </div>
                     <div class="w-full h-7 rounded-lg border border-slate-200 bg-slate-50 flex items-center px-2">
-                      <span class="text-slate-400 text-[10px]">🍔 Food &amp; Dining</span>
+                      <span class="text-slate-400 text-[10px] inline-flex items-center gap-1.5"><i class="fa-solid fa-utensils text-[9px]"></i>Food &amp; Dining</span>
                     </div>
                   </div>
 
@@ -1094,14 +1050,14 @@ import {
                     <span class="font-semibold text-slate-600 text-[10px]">Split Method</span>
                     <span
                       *ngIf="formControlsConfig.splitType === 'view_only'"
-                      class="text-[9px] text-indigo-600 bg-indigo-50 px-1.5 rounded border border-indigo-200 font-bold"
-                    >🔒 Locked: Equal</span>
+                      class="text-[9px] text-indigo-600 bg-indigo-50 px-1.5 rounded border border-indigo-200 font-bold inline-flex items-center gap-1"
+                    ><i class="fa-solid fa-lock text-[8px]"></i>Locked: Equal</span>
                   </div>
                   <div
                     *ngIf="formControlsConfig.splitType === 'view_only'"
                     class="w-full h-7 rounded-lg border border-slate-200 bg-slate-100 flex items-center px-2"
                   >
-                    <span class="text-slate-500 text-[10px]">🔒 Equal Split (Set by Group Admin)</span>
+                    <span class="text-slate-500 text-[10px] inline-flex items-center gap-1"><i class="fa-solid fa-lock text-[8px]"></i>Equal Split (Set by Group Admin)</span>
                   </div>
                   <div
                     *ngIf="formControlsConfig.splitType === 'editable'"
@@ -1159,15 +1115,16 @@ import {
               *ngIf="controlsSavedMsg()"
               class="text-[11px] font-bold text-emerald-600 flex items-center space-x-1"
             >
-              <span>✓</span><span>{{ controlsSavedMsg() }}</span>
+              <i class="fa-solid fa-check text-xs"></i><span>{{ controlsSavedMsg() }}</span>
             </span>
             <span *ngIf="!controlsSavedMsg()"></span>
             <button
               (click)="saveFormControls()"
               [disabled]="savingControls()"
-              class="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white font-bold text-xs rounded-xl shadow-xs cursor-pointer transition-all"
+              class="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white font-bold text-xs rounded-xl shadow-xs cursor-pointer transition-all flex items-center gap-1.5"
             >
-              {{ savingControls() ? 'Saving...' : 'Save Form Controls' }}
+              <i *ngIf="savingControls()" class="fa-solid fa-circle-notch fa-spin text-xs"></i>
+              <span>{{ savingControls() ? 'Saving...' : 'Save Form Controls' }}</span>
             </button>
           </div>
         </div>
@@ -1181,7 +1138,7 @@ import {
             <h3
               class="font-bold text-slate-800 text-xs uppercase tracking-wider flex items-center space-x-1.5"
             >
-              <span>🧾</span>
+              <i class="fa-solid fa-receipt text-slate-700"></i>
               <span>Recent Bills</span>
             </h3>
             <span
@@ -1195,7 +1152,7 @@ import {
             *ngIf="api.expenses().length === 0"
             class="py-8 text-center text-xs text-slate-400 space-y-1"
           >
-            <p class="text-2xl">📋</p>
+            <p class="text-2xl text-slate-300"><i class="fa-solid fa-clipboard-list"></i></p>
             <p>No bills logged yet. Tap ＋ Add Bill or Bulk Entry above!</p>
           </div>
 
@@ -1203,14 +1160,16 @@ import {
             <div *ngFor="let exp of api.expenses()" class="py-3 flex items-center justify-between">
               <div class="space-y-1">
                 <div class="flex items-center space-x-2">
-                  <span class="text-sm">{{ getCategoryIcon(exp.category) }}</span>
+                  <div class="size-7 rounded-lg bg-slate-100 flex items-center justify-center shrink-0">
+                    <i class="fa-solid text-xs" [ngClass]="getCategoryIcon(exp.category)"></i>
+                  </div>
                   <p class="font-bold text-slate-900 text-xs">{{ exp.title }}</p>
                   <!-- Overwritten Flag Badge -->
                   <span
                     *ngIf="exp.overwrittenFlag === 'YES'"
-                    class="px-1.5 py-0.5 bg-amber-50 text-amber-700 border border-amber-200 font-mono text-[9px] font-bold rounded"
+                    class="px-1.5 py-0.5 bg-amber-50 text-amber-700 border border-amber-200 font-mono text-[9px] font-bold rounded inline-flex items-center gap-1"
                   >
-                    🔄 Overwritten
+                    <i class="fa-solid fa-rotate text-[8px]"></i> Overwritten
                   </span>
                 </div>
                 <p class="text-[11px] text-slate-500">
@@ -1232,9 +1191,10 @@ import {
                 <p class="font-bold text-slate-900 text-sm">₹{{ exp.totalAmountDisplay }}</p>
                 <button
                   (click)="deleteExpense(exp.id)"
-                  class="text-slate-400 hover:text-rose-600 text-[10px] font-semibold active:scale-90 cursor-pointer transition-colors"
+                  class="text-slate-400 hover:text-rose-600 text-[10px] font-semibold active:scale-90 cursor-pointer transition-colors inline-flex items-center gap-1"
                 >
-                  Delete
+                  <i class="fa-solid fa-trash-can text-[9px]"></i>
+                  <span>Delete</span>
                 </button>
               </div>
             </div>
@@ -1249,44 +1209,44 @@ import {
         <!-- Home Tab -->
         <button
           (click)="router.navigate(['/dashboard'])"
-          class="flex flex-col items-center justify-center text-indigo-600 active:scale-90 transition-transform cursor-pointer"
+          class="flex flex-col items-center justify-center text-indigo-600 active:scale-90 transition-transform cursor-pointer gap-0.5"
         >
-          <span class="text-lg">🏠</span>
+          <i class="fa-solid fa-house text-base"></i>
           <span class="text-[10px] font-bold text-indigo-600">Home</span>
         </button>
 
         <!-- Scan Receipt Tab -->
         <button
           (click)="router.navigate(['/screenshot-review'])"
-          class="flex flex-col items-center justify-center text-slate-500 hover:text-slate-800 active:scale-90 transition-transform cursor-pointer"
+          class="flex flex-col items-center justify-center text-slate-500 hover:text-slate-800 active:scale-90 transition-transform cursor-pointer gap-0.5"
         >
-          <span class="text-lg">📷</span>
+          <i class="fa-solid fa-camera text-base"></i>
           <span class="text-[10px] font-medium">Scan Bill</span>
         </button>
 
         <!-- Center Prominent ADD EXPENSE Floating Button -->
         <button
           (click)="openAddBill()"
-          class="-mt-5 w-12 h-12 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white flex items-center justify-center text-2xl font-bold shadow-md active:scale-95 transition-transform cursor-pointer"
+          class="-mt-5 w-12 h-12 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white flex items-center justify-center text-lg font-bold shadow-md active:scale-95 transition-transform cursor-pointer"
         >
-          ＋
+          <i class="fa-solid fa-plus text-base"></i>
         </button>
 
         <!-- Multiple Entry (Bulk View) Tab -->
         <button
           (click)="openSheetEntry()"
-          class="flex flex-col items-center justify-center text-emerald-700 hover:text-emerald-800 active:scale-90 transition-transform cursor-pointer"
+          class="flex flex-col items-center justify-center text-emerald-700 hover:text-emerald-800 active:scale-90 transition-transform cursor-pointer gap-0.5"
         >
-          <span class="text-lg">📊</span>
+          <i class="fa-solid fa-table-cells text-base"></i>
           <span class="text-[10px] font-bold">Bulk</span>
         </button>
 
         <!-- Statements Tab -->
         <button
           (click)="router.navigate(['/statements'])"
-          class="flex flex-col items-center justify-center text-slate-500 hover:text-slate-800 active:scale-90 transition-transform cursor-pointer"
+          class="flex flex-col items-center justify-center text-slate-500 hover:text-slate-800 active:scale-90 transition-transform cursor-pointer gap-0.5"
         >
-          <span class="text-lg">📈</span>
+          <i class="fa-solid fa-file-invoice text-base"></i>
           <span class="text-[10px] font-medium">Reports</span>
         </button>
       </nav>
@@ -1319,7 +1279,7 @@ import {
               (click)="showCreateModal.set(false)"
               class="text-slate-400 hover:text-slate-700 text-base font-bold cursor-pointer"
             >
-              ✕
+              <i class="fa-solid fa-xmark"></i>
             </button>
           </div>
 
@@ -1358,8 +1318,9 @@ import {
 
             <button
               type="submit"
+              mat-flat-button
               [disabled]="modalLoading() || !newGroupName.trim()"
-              class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-bold rounded-xl text-xs transition-all cursor-pointer shadow-xs"
+              class="!w-full !py-2.5 !bg-indigo-600 hover:!bg-indigo-700 disabled:!opacity-50 !text-white !font-bold !rounded-xl !text-xs transition-all cursor-pointer shadow-xs"
             >
               {{ modalLoading() ? 'Creating...' : 'Create Group (You will be Admin)' }}
             </button>
@@ -1381,7 +1342,7 @@ import {
               (click)="showJoinModal.set(false)"
               class="text-slate-400 hover:text-slate-700 text-base font-bold cursor-pointer"
             >
-              ✕
+              <i class="fa-solid fa-xmark"></i>
             </button>
           </div>
 
@@ -1417,8 +1378,9 @@ import {
 
             <button
               type="submit"
+              mat-flat-button
               [disabled]="modalLoading() || !joinInviteCode.trim()"
-              class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-bold rounded-xl text-xs transition-all cursor-pointer shadow-xs"
+              class="!w-full !py-2.5 !bg-emerald-600 hover:!bg-emerald-700 disabled:!opacity-50 !text-white !font-bold !rounded-xl !text-xs transition-all cursor-pointer shadow-xs"
             >
               {{ modalLoading() ? 'Joining...' : 'Send Join Request' }}
             </button>
@@ -1436,14 +1398,14 @@ import {
         >
           <div class="flex items-center justify-between border-b border-slate-100 pb-3">
             <div class="flex items-center space-x-2">
-              <span class="text-lg">💌</span>
+              <i class="fa-solid fa-envelope-open-text text-base text-indigo-600"></i>
               <h3 class="font-bold text-sm text-slate-900">Invite Roommate</h3>
             </div>
             <button
               (click)="showInviteModal.set(false)"
               class="text-slate-400 hover:text-slate-700 text-base font-bold cursor-pointer"
             >
-              ✕
+              <i class="fa-solid fa-xmark"></i>
             </button>
           </div>
 
@@ -1460,7 +1422,7 @@ import {
             class="p-4 bg-emerald-50/80 border border-emerald-200 text-emerald-950 text-xs rounded-2xl space-y-3"
           >
             <div class="flex items-center space-x-2">
-              <span class="text-lg">🎉</span>
+              <i class="fa-solid fa-circle-check text-base text-emerald-600"></i>
               <p class="font-bold text-emerald-900">Invite Link Ready!</p>
             </div>
             <p class="text-[11px] text-emerald-800 leading-relaxed">
@@ -1473,7 +1435,7 @@ import {
                 (click)="shareInviteOnWhatsApp()"
                 class="w-full py-2.5 bg-[#25D366] hover:bg-[#20ba5a] active:scale-98 text-white font-bold rounded-xl text-xs transition-all flex items-center justify-center space-x-2 shadow-xs cursor-pointer"
               >
-                <span>💬</span>
+                <i class="fa-brands fa-whatsapp text-sm"></i>
                 <span>Share via WhatsApp</span>
               </button>
 
@@ -1482,7 +1444,7 @@ import {
                 (click)="copyGeneratedInviteLink()"
                 class="w-full py-2.5 bg-white hover:bg-slate-50 border border-emerald-300 text-emerald-800 font-bold rounded-xl text-xs transition-all flex items-center justify-center space-x-1.5 cursor-pointer"
               >
-                <span>📋</span>
+                <i class="fa-solid fa-clipboard text-xs"></i>
                 <span>{{ copiedInvite() ? 'Copied to Clipboard!' : 'Copy Invite Link' }}</span>
               </button>
             </div>
@@ -1523,8 +1485,9 @@ import {
 
             <button
               type="submit"
+              mat-flat-button
               [disabled]="inviteLoading() || !inviteEmail.trim()"
-              class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-bold rounded-xl text-xs transition-all cursor-pointer shadow-xs"
+              class="!w-full !py-2.5 !bg-indigo-600 hover:!bg-indigo-700 disabled:!opacity-50 !text-white !font-bold !rounded-xl !text-xs transition-all cursor-pointer shadow-xs"
             >
               {{ inviteLoading() ? 'Generating Link...' : 'Generate WhatsApp Invite Link' }}
             </button>
@@ -1542,14 +1505,14 @@ import {
         >
           <div class="flex items-center justify-between border-b border-slate-100 pb-3">
             <div class="flex items-center space-x-2">
-              <span class="text-lg">📅</span>
+              <i class="fa-solid fa-calendar-days text-base text-indigo-600"></i>
               <h3 class="font-bold text-sm text-slate-900">Manage Member Tenancy</h3>
             </div>
             <button
               (click)="showTenancyModal.set(false)"
               class="text-slate-400 hover:text-slate-700 text-base font-bold cursor-pointer"
             >
-              ✕
+              <i class="fa-solid fa-xmark"></i>
             </button>
           </div>
 
@@ -1583,10 +1546,10 @@ import {
                 <button
                   type="button"
                   (click)="clearMoveOutDate()"
-                  class="text-[10px] font-bold text-rose-600 hover:text-rose-800 underline cursor-pointer"
+                  class="text-[10px] font-bold text-rose-600 hover:text-rose-800 underline cursor-pointer inline-flex items-center gap-1"
                   title="Remove move-out date and keep roommate active"
                 >
-                  ✕ Clear Date (Residing)
+                  <i class="fa-solid fa-xmark text-[9px]"></i> Clear Date (Residing)
                 </button>
               </div>
               <input
@@ -1602,8 +1565,9 @@ import {
 
             <button
               type="submit"
+              mat-flat-button
               [disabled]="tenancyLoading() || !tenancyMoveInDate"
-              class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-bold rounded-xl text-xs transition-all cursor-pointer shadow-xs"
+              class="!w-full !py-2.5 !bg-indigo-600 hover:!bg-indigo-700 disabled:!opacity-50 !text-white !font-bold !rounded-xl !text-xs transition-all cursor-pointer shadow-xs"
             >
               {{ tenancyLoading() ? 'Saving...' : 'Update Tenancy Dates' }}
             </button>
@@ -1621,14 +1585,14 @@ import {
         >
           <div class="flex items-center justify-between border-b border-rose-100 pb-3">
             <div class="flex items-center space-x-2 text-rose-600">
-              <span class="text-lg">⚠️</span>
+              <i class="fa-solid fa-triangle-exclamation text-base text-rose-600"></i>
               <h3 class="font-extrabold text-sm text-slate-900">Delete Space Permanently</h3>
             </div>
             <button
               (click)="showDeleteSpaceModal.set(false)"
               class="text-slate-400 hover:text-slate-700 text-base font-bold cursor-pointer"
             >
-              ✕
+              <i class="fa-solid fa-xmark"></i>
             </button>
           </div>
 
@@ -1659,16 +1623,18 @@ import {
           <div class="flex gap-2 pt-1">
             <button
               type="button"
+              mat-stroked-button
               (click)="showDeleteSpaceModal.set(false)"
-              class="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition-all cursor-pointer"
+              class="!flex-1 !py-2.5 !bg-slate-100 hover:!bg-slate-200 !text-slate-700 !text-xs !font-bold !rounded-xl transition-all cursor-pointer"
             >
               Cancel
             </button>
             <button
               type="button"
+              mat-flat-button
               [disabled]="deleteSpaceLoading() || deleteConfirmInput.trim().toLowerCase() !== (api.activeGroup()?.name || '').trim().toLowerCase()"
               (click)="confirmDeleteSpaceSubmit()"
-              class="flex-1 py-2.5 bg-rose-600 hover:bg-rose-700 disabled:opacity-40 text-white text-xs font-bold rounded-xl transition-all shadow-xs cursor-pointer disabled:cursor-not-allowed"
+              class="!flex-1 !py-2.5 !bg-rose-600 hover:!bg-rose-700 disabled:!opacity-40 !text-white !text-xs !font-bold !rounded-xl transition-all shadow-xs cursor-pointer disabled:cursor-not-allowed"
             >
               {{ deleteSpaceLoading() ? 'Deleting...' : 'Delete Space' }}
             </button>
@@ -2138,7 +2104,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
       cat.includes('swiggy') ||
       cat.includes('zomato')
     )
-      return '🍽️';
+      return 'fa-utensils text-orange-500';
     if (
       cat.includes('bill') ||
       cat.includes('util') ||
@@ -2149,7 +2115,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
       cat.includes('internet') ||
       cat.includes('rent')
     )
-      return '⚡';
+      return 'fa-bolt text-amber-500';
     if (
       cat.includes('transit') ||
       cat.includes('travel') ||
@@ -2158,7 +2124,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
       cat.includes('uber') ||
       cat.includes('flight')
     )
-      return '🚗';
+      return 'fa-car text-blue-500';
     if (
       cat.includes('shop') ||
       cat.includes('lifestyle') ||
@@ -2166,7 +2132,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
       cat.includes('fashion') ||
       cat.includes('electronic')
     )
-      return '🛍️';
+      return 'fa-bag-shopping text-pink-500';
     if (
       cat.includes('entertain') ||
       cat.includes('leisure') ||
@@ -2174,7 +2140,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
       cat.includes('subscription') ||
       cat.includes('sport')
     )
-      return '🎬';
+      return 'fa-clapperboard text-purple-500';
     if (
       cat.includes('health') ||
       cat.includes('well') ||
@@ -2182,7 +2148,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
       cat.includes('doctor') ||
       cat.includes('gym')
     )
-      return '💊';
+      return 'fa-heart-pulse text-rose-500';
     if (
       cat.includes('educat') ||
       cat.includes('work') ||
@@ -2190,7 +2156,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
       cat.includes('book') ||
       cat.includes('tool')
     )
-      return '📚';
+      return 'fa-book text-emerald-500';
     if (
       cat.includes('transfer') ||
       cat.includes('adjust') ||
@@ -2198,8 +2164,8 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
       cat.includes('repay') ||
       cat.includes('invest')
     )
-      return '🔄';
-    return '📦';
+      return 'fa-arrows-rotate text-indigo-500';
+    return 'fa-box text-slate-400';
   }
 
   // --- Persistent Space Invites & WhatsApp Actions ---

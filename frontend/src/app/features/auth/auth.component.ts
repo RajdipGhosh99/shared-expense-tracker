@@ -2,12 +2,14 @@ import { Component, signal, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { MatButtonModule } from '@angular/material/button';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { ApiService } from '../../core/services/api.service.js';
 
 @Component({
   selector: 'app-auth',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, MatButtonModule, MatProgressSpinnerModule],
   template: `
     <div
       class="min-h-screen flex items-center justify-center p-4 bg-gradient-to-b from-slate-900 via-indigo-950 to-slate-950 text-white relative overflow-hidden font-sans"
@@ -28,7 +30,7 @@ import { ApiService } from '../../core/services/api.service.js';
           <div
             class="inline-flex size-14 bg-gradient-to-tr from-indigo-500 to-purple-600 rounded-2xl text-white items-center justify-center text-2xl shadow-xl shadow-indigo-500/30"
           >
-            ⚡
+            <i class="fa-solid fa-bolt text-amber-300"></i>
           </div>
           <div>
             <h1 class="text-2xl font-black tracking-tight text-white">
@@ -52,9 +54,10 @@ import { ApiService } from '../../core/services/api.service.js';
             [class.text-white]="!isRegister()"
             [class.shadow-md]="!isRegister()"
             [class.text-slate-400]="isRegister()"
-            class="py-2.5 text-xs font-black rounded-xl transition-all cursor-pointer active:scale-98"
+            class="py-2.5 text-xs font-black rounded-xl transition-all cursor-pointer active:scale-98 flex items-center justify-center gap-1.5"
           >
-            Log In
+            <i class="fa-solid fa-arrow-right-to-bracket text-xs"></i>
+            <span>Log In</span>
           </button>
           <button
             type="button"
@@ -63,9 +66,10 @@ import { ApiService } from '../../core/services/api.service.js';
             [class.text-white]="isRegister()"
             [class.shadow-md]="isRegister()"
             [class.text-slate-400]="!isRegister()"
-            class="py-2.5 text-xs font-black rounded-xl transition-all cursor-pointer active:scale-98"
+            class="py-2.5 text-xs font-black rounded-xl transition-all cursor-pointer active:scale-98 flex items-center justify-center gap-1.5"
           >
-            Sign Up
+            <i class="fa-solid fa-user-plus text-xs"></i>
+            <span>Sign Up</span>
           </button>
         </div>
 
@@ -75,7 +79,7 @@ import { ApiService } from '../../core/services/api.service.js';
           class="p-3 bg-rose-500/20 border border-rose-500/40 rounded-2xl text-rose-300 text-xs font-semibold flex items-center justify-between space-x-2 transition-all animate-fade-in"
         >
           <div class="flex items-center space-x-2">
-            <span>⚠️</span>
+            <i class="fa-solid fa-triangle-exclamation text-rose-400"></i>
             <span>{{ errorMessage() }}</span>
           </div>
           <button
@@ -84,7 +88,7 @@ import { ApiService } from '../../core/services/api.service.js';
             class="text-rose-400 hover:text-white font-bold px-1.5 py-0.5 text-xs rounded hover:bg-rose-500/20 transition-colors cursor-pointer"
             title="Dismiss error"
           >
-            ✕
+            <i class="fa-solid fa-xmark"></i>
           </button>
         </div>
 
@@ -94,7 +98,7 @@ import { ApiService } from '../../core/services/api.service.js';
           class="p-3 bg-emerald-500/20 border border-emerald-500/40 rounded-2xl text-emerald-300 text-xs font-semibold flex items-center justify-between space-x-2 transition-all animate-fade-in"
         >
           <div class="flex items-center space-x-2">
-            <span>✉️</span>
+            <i class="fa-solid fa-envelope text-emerald-400"></i>
             <span>{{ infoMessage() }}</span>
           </div>
           <button
@@ -103,7 +107,7 @@ import { ApiService } from '../../core/services/api.service.js';
             class="text-emerald-400 hover:text-white font-bold px-1.5 py-0.5 text-xs rounded hover:bg-emerald-500/20 transition-colors cursor-pointer"
             title="Dismiss notice"
           >
-            ✕
+            <i class="fa-solid fa-xmark"></i>
           </button>
         </div>
 
@@ -157,17 +161,20 @@ import { ApiService } from '../../core/services/api.service.js';
           </div>
 
           <button
+            mat-flat-button
             type="submit"
             [disabled]="loading() || !email.trim() || (isRegister() && !name.trim())"
-            class="w-full py-3.5 bg-gradient-to-r from-indigo-600 via-indigo-500 to-purple-600 hover:opacity-95 active:scale-[0.98] font-black rounded-2xl shadow-lg shadow-indigo-600/30 transition-all flex items-center justify-center space-x-2 cursor-pointer text-xs sm:text-sm disabled:opacity-50 mt-1"
+            class="!w-full !py-3.5 !rounded-2xl !bg-indigo-600 hover:!bg-indigo-500 !text-white !font-black !shadow-lg !shadow-indigo-600/30 flex items-center justify-center gap-2 text-xs sm:text-sm !mt-1"
           >
-            <span *ngIf="!loading()">{{
-              isRegister() ? 'Verify Email with OTP →' : 'Send 6-Digit Code'
+            <i *ngIf="!loading()" class="fa-solid" [class.fa-paper-plane]="!isRegister()" [class.fa-arrow-right]="isRegister()"></i>
+            <i *ngIf="loading()" class="fa-solid fa-circle-notch fa-spin"></i>
+            <span>{{
+              loading()
+                ? 'Processing...'
+                : isRegister()
+                  ? 'Verify Email with OTP'
+                  : 'Send 6-Digit Code'
             }}</span>
-            <span
-              *ngIf="loading()"
-              class="animate-spin size-4 border-2 border-white border-t-transparent rounded-full"
-            ></span>
           </button>
         </form>
 
@@ -179,7 +186,9 @@ import { ApiService } from '../../core/services/api.service.js';
               <span class="size-4 bg-indigo-600 rounded-full flex items-center justify-center text-[9px] font-bold text-white">2</span>
               <span>Step 2 of 2: Verify & Finish Sign Up</span>
             </span>
-            <span class="text-[10px] text-emerald-400 font-bold">Almost done</span>
+            <span class="text-[10px] text-emerald-400 font-bold flex items-center gap-1">
+              <i class="fa-solid fa-check text-[9px]"></i> Almost done
+            </span>
           </div>
 
           <div class="p-3 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-between">
@@ -190,15 +199,16 @@ import { ApiService } from '../../core/services/api.service.js';
             <button
               type="button"
               (click)="backToEmail()"
-              class="text-xs text-indigo-400 hover:text-indigo-300 font-bold px-2 py-1 rounded-lg bg-indigo-500/10 hover:bg-indigo-500/20 transition-all cursor-pointer flex-shrink-0"
+              class="text-xs text-indigo-400 hover:text-indigo-300 font-bold px-2 py-1 rounded-lg bg-indigo-500/10 hover:bg-indigo-500/20 transition-all cursor-pointer flex-shrink-0 flex items-center gap-1"
             >
-              Change
+              <i class="fa-solid fa-pen-to-square text-[10px]"></i>
+              <span>Change</span>
             </button>
           </div>
 
           <div class="space-y-2">
             <label class="text-[11px] font-bold text-slate-300 ml-1 block text-center">
-              {{ isRegister() ? 'Enter 6-Digit Verification Code to Complete Sign Up' : 'Enter 6-Digit Verification Code' }}
+              {{ isRegister() ? 'Enter 6-Digit Verification Code to Complete Sign Up' : 'Enter 6-Digit Verification Code (Valid for 5 mins)' }}
             </label>
             <input
               type="text"
@@ -215,17 +225,20 @@ import { ApiService } from '../../core/services/api.service.js';
           </div>
 
           <button
+            mat-flat-button
             type="submit"
             [disabled]="loading() || otp.trim().length !== 6"
-            class="w-full py-3.5 bg-gradient-to-r from-indigo-600 via-indigo-500 to-purple-600 hover:opacity-95 active:scale-[0.98] font-black rounded-2xl shadow-lg shadow-indigo-600/30 transition-all flex items-center justify-center space-x-2 cursor-pointer text-xs sm:text-sm disabled:opacity-50"
+            class="!w-full !py-3.5 !rounded-2xl !bg-emerald-600 hover:!bg-emerald-500 !text-white !font-black !shadow-lg !shadow-emerald-600/30 flex items-center justify-center gap-2 text-xs sm:text-sm"
           >
-            <span *ngIf="!loading()">{{
-              isRegister() ? 'Verify & Create Account' : 'Verify & Log In'
+            <i *ngIf="!loading()" class="fa-solid fa-circle-check"></i>
+            <i *ngIf="loading()" class="fa-solid fa-circle-notch fa-spin"></i>
+            <span>{{
+              loading()
+                ? 'Verifying...'
+                : isRegister()
+                  ? 'Verify & Create Account'
+                  : 'Verify & Log In'
             }}</span>
-            <span
-              *ngIf="loading()"
-              class="animate-spin size-4 border-2 border-white border-t-transparent rounded-full"
-            ></span>
           </button>
 
           <!-- Resend Code Cooldown -->

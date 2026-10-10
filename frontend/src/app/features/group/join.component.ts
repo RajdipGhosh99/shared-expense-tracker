@@ -2,26 +2,37 @@ import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
+import { MatButtonModule } from '@angular/material/button';
+import { MatInputModule } from '@angular/material/input';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { ApiService } from '../../core/services/api.service.js';
 
 @Component({
   selector: 'app-join',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [
+    CommonModule,
+    FormsModule,
+    MatButtonModule,
+    MatInputModule,
+    MatFormFieldModule,
+    MatProgressSpinnerModule,
+  ],
   template: `
     <div class="min-h-screen flex items-center justify-center p-4 bg-slate-100 text-slate-900 font-sans">
       <div class="max-w-sm sm:max-w-md w-full bg-white p-6 sm:p-8 rounded-[36px] border border-slate-200/80 shadow-xl space-y-5">
         
         <!-- SKELETON / LOADING VALIDATION -->
         <div *ngIf="validating()" class="py-12 text-center space-y-4">
-          <div class="size-10 border-3 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
+          <mat-spinner diameter="40" class="mx-auto"></mat-spinner>
           <p class="text-xs font-semibold text-slate-500">Validating invite link...</p>
         </div>
 
         <!-- INVALID / REVOKED ERROR STATE -->
         <div *ngIf="!validating() && validationError()" class="text-center space-y-4 py-2">
           <div class="size-16 rounded-2xl bg-rose-50 border border-rose-200 text-rose-600 flex items-center justify-center mx-auto text-2xl">
-            ⚠️
+            <i class="fa-solid fa-triangle-exclamation"></i>
           </div>
           <div class="space-y-1">
             <h2 class="text-lg font-black text-slate-900 tracking-tight">Invite Link Unavailable</h2>
@@ -30,9 +41,11 @@ import { ApiService } from '../../core/services/api.service.js';
             </p>
           </div>
           <button
+            mat-flat-button
             (click)="goToAuth()"
-            class="px-5 py-3 bg-slate-900 hover:bg-slate-800 text-white font-black rounded-2xl text-xs transition-all active:scale-98 cursor-pointer shadow-md"
+            class="!px-5 !py-3 !rounded-2xl !bg-slate-900 hover:!bg-slate-800 !text-white !font-bold !text-xs !shadow-md"
           >
+            <i class="fa-solid fa-arrow-right-to-bracket mr-1.5"></i>
             Go to Bhagabhagi Login
           </button>
         </div>
@@ -40,12 +53,12 @@ import { ApiService } from '../../core/services/api.service.js';
         <!-- VALID INVITE: STEP 1 - WELCOME & SEND OTP -->
         <div *ngIf="!validating() && !validationError() && step() === 'WELCOME'" class="space-y-5">
           <div class="text-center space-y-2.5">
-            <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[10px] font-black bg-emerald-50 text-emerald-700 border border-emerald-200">
-              <span>✓</span> PRE-APPROVED INVITE
+            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black bg-emerald-50 text-emerald-700 border border-emerald-200">
+              <i class="fa-solid fa-circle-check text-emerald-600"></i> PRE-APPROVED INVITE
             </span>
 
             <div class="size-14 rounded-2xl bg-gradient-to-tr from-indigo-600 to-violet-600 text-white flex items-center justify-center text-2xl mx-auto shadow-md">
-              🏢
+              <i class="fa-solid fa-building-user text-xl"></i>
             </div>
 
             <div>
@@ -58,8 +71,9 @@ import { ApiService } from '../../core/services/api.service.js';
             </div>
           </div>
 
-          <div *ngIf="actionError()" class="p-3 bg-rose-50 border border-rose-200 rounded-2xl text-rose-700 text-xs font-semibold">
-            {{ actionError() }}
+          <div *ngIf="actionError()" class="p-3 bg-rose-50 border border-rose-200 rounded-2xl text-rose-700 text-xs font-semibold flex items-center gap-2">
+            <i class="fa-solid fa-circle-exclamation text-rose-500"></i>
+            <span>{{ actionError() }}</span>
           </div>
 
           <form (ngSubmit)="sendOtp()" class="space-y-3.5">
@@ -77,20 +91,23 @@ import { ApiService } from '../../core/services/api.service.js';
 
             <div class="p-3 bg-indigo-50/70 border border-indigo-100 rounded-2xl space-y-1">
               <div class="flex items-center space-x-1.5 text-[11px] font-bold text-indigo-900">
-                <span>🔒</span>
+                <i class="fa-solid fa-shield-halved text-indigo-600"></i>
                 <span>Passwordless Verification</span>
               </div>
               <p class="text-[11px] text-indigo-700 leading-relaxed">
-                A 6-digit code will be dispatched to the invited email address. No password needed!
+                A 6-digit code will be dispatched to the invited email address. Valid for 5 minutes.
               </p>
             </div>
 
             <button
+              mat-flat-button
               type="submit"
               [disabled]="loadingAction() || !displayName.trim()"
-              class="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 active:scale-98 text-white font-black rounded-2xl shadow-md transition-all text-xs cursor-pointer disabled:opacity-50"
+              class="!w-full !py-3.5 !rounded-2xl !bg-indigo-600 hover:!bg-indigo-700 !text-white !font-black !text-xs !shadow-md flex items-center justify-center gap-2"
             >
-              {{ loadingAction() ? 'Sending Code...' : 'Send Verification Code to Email' }}
+              <i *ngIf="!loadingAction()" class="fa-solid fa-paper-plane mr-1.5"></i>
+              <i *ngIf="loadingAction()" class="fa-solid fa-circle-notch fa-spin mr-1.5"></i>
+              <span>{{ loadingAction() ? 'Sending Code...' : 'Send Verification Code to Email' }}</span>
             </button>
           </form>
         </div>
@@ -99,18 +116,19 @@ import { ApiService } from '../../core/services/api.service.js';
         <div *ngIf="!validating() && !validationError() && step() === 'ENTER_OTP'" class="space-y-5">
           <div class="text-center space-y-2">
             <div class="size-14 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-600 flex items-center justify-center mx-auto text-2xl shadow-xs">
-              ✉️
+              <i class="fa-solid fa-envelope-open-text text-xl"></i>
             </div>
             <div>
               <h2 class="text-xl font-black text-slate-900 tracking-tight">Check Your Inbox</h2>
               <p class="text-xs text-slate-500 mt-0.5 max-w-xs mx-auto">
-                We sent a 6-digit verification code to the email address on file.
+                We sent a 6-digit verification code to the email address on file. Valid for 5 minutes.
               </p>
             </div>
           </div>
 
-          <div *ngIf="actionError()" class="p-3 bg-rose-50 border border-rose-200 rounded-2xl text-rose-700 text-xs font-semibold">
-            {{ actionError() }}
+          <div *ngIf="actionError()" class="p-3 bg-rose-50 border border-rose-200 rounded-2xl text-rose-700 text-xs font-semibold flex items-center gap-2">
+            <i class="fa-solid fa-circle-exclamation text-rose-500"></i>
+            <span>{{ actionError() }}</span>
           </div>
 
           <form (ngSubmit)="verifyAndAccept()" class="space-y-4">
@@ -128,12 +146,14 @@ import { ApiService } from '../../core/services/api.service.js';
             </div>
 
             <button
+              mat-flat-button
               type="submit"
               [disabled]="loadingAction() || otp.trim().length !== 6"
-              class="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 active:scale-98 text-white font-black rounded-2xl shadow-md transition-all text-xs cursor-pointer disabled:opacity-50 flex items-center justify-center gap-1.5"
+              class="!w-full !py-3.5 !rounded-2xl !bg-emerald-600 hover:!bg-emerald-700 !text-white !font-black !text-xs !shadow-md flex items-center justify-center gap-2"
             >
+              <i *ngIf="!loadingAction()" class="fa-solid fa-check mr-1.5"></i>
+              <i *ngIf="loadingAction()" class="fa-solid fa-circle-notch fa-spin mr-1.5"></i>
               <span>{{ loadingAction() ? 'Verifying & Joining...' : 'Verify & Enter Space' }}</span>
-              <span>🎉</span>
             </button>
           </form>
 
@@ -141,18 +161,20 @@ import { ApiService } from '../../core/services/api.service.js';
             <button
               (click)="step.set('WELCOME')"
               type="button"
-              class="text-slate-500 hover:text-slate-800 font-bold cursor-pointer"
+              class="text-slate-500 hover:text-slate-800 font-bold cursor-pointer flex items-center gap-1"
             >
-              ← Edit Name
+              <i class="fa-solid fa-arrow-left text-[10px]"></i>
+              <span>Edit Name</span>
             </button>
 
             <button
               (click)="sendOtp()"
               [disabled]="cooldownTimer() > 0 || loadingAction()"
               type="button"
-              class="text-indigo-600 hover:text-indigo-800 font-black disabled:text-slate-400 cursor-pointer"
+              class="text-indigo-600 hover:text-indigo-800 font-black disabled:text-slate-400 cursor-pointer flex items-center gap-1"
             >
-              {{ cooldownTimer() > 0 ? 'Resend code in ' + cooldownTimer() + 's' : 'Resend Code' }}
+              <i class="fa-solid fa-rotate-right text-[10px]" [class.fa-spin]="loadingAction()"></i>
+              <span>{{ cooldownTimer() > 0 ? 'Resend code in ' + cooldownTimer() + 's' : 'Resend Code' }}</span>
             </button>
           </div>
         </div>

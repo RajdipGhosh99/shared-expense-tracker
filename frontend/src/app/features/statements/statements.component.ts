@@ -2,6 +2,8 @@ import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { MatButtonModule } from '@angular/material/button';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { ApiService } from '../../core/services/api.service.js';
 import { LoadingService } from '../../core/services/loading.service.js';
 import { MonthlyStatement } from '@shared-expense-tracker/shared';
@@ -9,7 +11,7 @@ import { MonthlyStatement } from '@shared-expense-tracker/shared';
 @Component({
   selector: 'app-statements',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, MatButtonModule, MatProgressSpinnerModule],
   template: `
     <div class="min-h-screen max-w-md sm:max-w-lg md:max-w-2xl mx-auto bg-slate-50 text-slate-900 pb-28 border-x border-slate-200/80 font-sans flex flex-col shadow-xs">
       <!-- Navbar -->
@@ -20,26 +22,17 @@ import { MonthlyStatement } from '@shared-expense-tracker/shared';
               (click)="router.navigate(['/dashboard'])"
               class="size-9 rounded-2xl bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-700 flex items-center justify-center font-black text-sm border border-slate-200/80 shadow-2xs transition-all active:scale-95 cursor-pointer"
             >
-              <span>←</span>
+              <i class="fa-solid fa-arrow-left text-xs"></i>
             </button>
             <div class="flex items-center gap-1.5">
               <h1 class="text-sm font-black text-slate-900 tracking-tight">Monthly Statements</h1>
-              <!-- iOS In-Header Spinner -->
+              <!-- In-Header Spinner -->
               <span
                 *ngIf="loadingService.isLoading()"
                 class="inline-flex items-center text-indigo-600 animate-fade-in"
                 title="Loading statements..."
               >
-                <svg class="size-3.5 animate-ios-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
-                  <line x1="12" y1="2" x2="12" y2="6"></line>
-                  <line x1="12" y1="18" x2="12" y2="22" opacity="0.25"></line>
-                  <line x1="4.93" y1="4.93" x2="7.76" y2="7.76" opacity="0.9"></line>
-                  <line x1="16.24" y1="16.24" x2="19.07" y2="19.07" opacity="0.35"></line>
-                  <line x1="2" y1="12" x2="6" y2="12" opacity="0.8"></line>
-                  <line x1="18" y1="12" x2="22" y2="12" opacity="0.45"></line>
-                  <line x1="4.93" y1="19.07" x2="7.76" y2="16.24" opacity="0.7"></line>
-                  <line x1="16.24" y1="7.76" x2="19.07" y2="4.93" opacity="0.6"></line>
-                </svg>
+                <i class="fa-solid fa-circle-notch fa-spin text-xs"></i>
               </span>
             </div>
           </div>
@@ -50,7 +43,7 @@ import { MonthlyStatement } from '@shared-expense-tracker/shared';
             class="size-9 rounded-2xl bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 flex items-center justify-center text-sm shadow-2xs transition-all active:scale-95 cursor-pointer"
             title="Share on WhatsApp"
           >
-            <span>💬</span>
+            <i class="fa-brands fa-whatsapp text-base"></i>
           </a>
         </div>
 
@@ -129,9 +122,7 @@ import { MonthlyStatement } from '@shared-expense-tracker/shared';
 
         <!-- Loading State -->
         <div *ngIf="loading()" class="py-12 flex justify-center text-indigo-600">
-          <div
-            class="animate-spin w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full"
-          ></div>
+          <mat-spinner diameter="36"></mat-spinner>
         </div>
 
         <!-- Statement Content -->
@@ -244,12 +235,13 @@ import { MonthlyStatement } from '@shared-expense-tracker/shared';
         class="fixed bottom-0 left-0 right-0 max-w-md sm:max-w-lg md:max-w-2xl mx-auto p-3 bg-white/90 backdrop-blur-md border-t border-slate-200/80 z-20"
       >
         <a
+          mat-flat-button
           [href]="whatsappLink()"
           target="_blank"
-          class="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 active:scale-98 text-white font-black text-xs rounded-2xl shadow-md flex items-center justify-center gap-2 transition-all cursor-pointer"
+          class="!w-full !py-3.5 !bg-emerald-600 hover:!bg-emerald-700 !text-white !font-black !text-xs !rounded-2xl !shadow-md flex items-center justify-center gap-2 cursor-pointer"
         >
+          <i class="fa-brands fa-whatsapp text-lg"></i>
           <span>Share Monthly Summary to WhatsApp</span>
-          <span>💬</span>
         </a>
       </div>
     </div>

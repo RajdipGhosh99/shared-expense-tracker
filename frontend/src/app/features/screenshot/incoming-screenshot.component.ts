@@ -6,10 +6,12 @@ import { ApiService } from '../../core/services/api.service.js';
 import { OcrBridgeService } from '../../core/services/ocr-bridge.service.js';
 import { ExtractedReceiptResult, ExpenseCategory, ReceiptExtraction } from '@shared-expense-tracker/shared';
 
+import { MatButtonModule } from '@angular/material/button';
+
 @Component({
   selector: 'app-incoming-screenshot',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, MatButtonModule],
   template: `
     <div
       class="min-h-screen bg-slate-50 text-slate-900 p-4 flex flex-col items-center justify-center font-sans"
@@ -22,7 +24,7 @@ import { ExtractedReceiptResult, ExpenseCategory, ReceiptExtraction } from '@sha
             <div
               class="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center text-sm font-bold"
             >
-              📷
+              <i class="fa-solid fa-camera"></i>
             </div>
             <h2 class="text-base font-bold text-slate-900">Receipt Scanner</h2>
           </div>
@@ -30,7 +32,7 @@ import { ExtractedReceiptResult, ExpenseCategory, ReceiptExtraction } from '@sha
             (click)="cancel()"
             class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500 hover:text-slate-800 font-bold transition-all cursor-pointer"
           >
-            ✕
+            <i class="fa-solid fa-xmark"></i>
           </button>
         </div>
 
@@ -47,9 +49,9 @@ import { ExtractedReceiptResult, ExpenseCategory, ReceiptExtraction } from '@sha
 
           <div *ngIf="!previewUrl()" class="space-y-2">
             <div
-              class="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center mx-auto text-2xl border border-indigo-100"
+              class="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center mx-auto text-xl border border-indigo-100"
             >
-              📷
+              <i class="fa-solid fa-camera"></i>
             </div>
             <p class="text-sm font-bold text-slate-800">Drop or Paste Screenshot Here</p>
             <p class="text-xs text-slate-500">Press Cmd+V / Ctrl+V or upload from photos</p>
@@ -72,9 +74,7 @@ import { ExtractedReceiptResult, ExpenseCategory, ReceiptExtraction } from '@sha
           *ngIf="isAnalyzing()"
           class="flex items-center justify-center space-x-3 p-4 bg-indigo-50 border border-indigo-200 rounded-xl text-indigo-700 text-sm font-medium"
         >
-          <span
-            class="animate-spin w-5 h-5 border-2 border-indigo-600 border-t-transparent rounded-full"
-          ></span>
+          <i class="fa-solid fa-circle-notch fa-spin text-indigo-600 text-base"></i>
           <span>Reading GPay / PhonePe receipt details...</span>
         </div>
 
@@ -84,7 +84,7 @@ import { ExtractedReceiptResult, ExpenseCategory, ReceiptExtraction } from '@sha
           class="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-medium space-y-1.5 animate-fade-in"
         >
           <div class="flex items-center space-x-2 font-black text-rose-900">
-            <span class="text-base">⚠️</span>
+            <i class="fa-solid fa-triangle-exclamation text-rose-600 text-sm"></i>
             <span>Receipt Extraction Failed</span>
           </div>
           <p class="text-[11px] leading-relaxed text-rose-700">{{ errorMessage() }}</p>
@@ -105,7 +105,7 @@ import { ExtractedReceiptResult, ExpenseCategory, ReceiptExtraction } from '@sha
           class="p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs space-y-2 animate-fade-in"
         >
           <div class="flex items-center space-x-2 font-black text-amber-900">
-            <span class="text-base">🚫</span>
+            <i class="fa-solid fa-ban text-amber-700 text-sm"></i>
             <span>Document Not Recognized as Financial Receipt</span>
           </div>
           <p class="text-[11px] text-amber-800 leading-relaxed">
@@ -198,24 +198,30 @@ import { ExtractedReceiptResult, ExpenseCategory, ReceiptExtraction } from '@sha
 
           <div class="flex space-x-2 pt-1">
             <button
+              mat-stroked-button
+              type="button"
               (click)="cancel()"
-              class="px-3 py-2.5 rounded-lg border border-slate-300 bg-white text-slate-700 font-semibold text-xs hover:bg-slate-100 transition-all cursor-pointer shadow-xs"
+              class="!px-3 !py-2.5 !rounded-lg !border-slate-300 !bg-white !text-slate-700 !font-semibold !text-xs hover:!bg-slate-100 transition-all cursor-pointer shadow-xs"
             >
               Discard
             </button>
             <button
+              type="button"
               (click)="reviewInBulkSheet()"
-              class="flex-1 py-2.5 rounded-lg border border-emerald-300 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-bold text-xs transition-all cursor-pointer shadow-xs flex items-center justify-center space-x-1"
+              class="flex-1 py-2.5 rounded-lg border border-emerald-300 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-bold text-xs transition-all cursor-pointer shadow-xs flex items-center justify-center gap-1.5"
             >
-              <span>📊</span>
+              <i class="fa-solid fa-table-cells text-xs"></i>
               <span>Review in Bulk Sheet</span>
             </button>
             <button
+              mat-flat-button
+              type="button"
               (click)="confirmAndSave()"
               [disabled]="isSaving()"
-              class="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg shadow-xs text-xs transition-all cursor-pointer"
+              class="!flex-1 !py-2.5 !bg-emerald-600 hover:!bg-emerald-700 !text-white !font-bold !rounded-lg shadow-xs !text-xs transition-all cursor-pointer flex items-center justify-center gap-1.5"
             >
-              {{ isSaving() ? 'Saving...' : '1-Tap Save' }}
+              <i *ngIf="isSaving()" class="fa-solid fa-circle-notch fa-spin text-xs"></i>
+              <span>{{ isSaving() ? 'Saving...' : '1-Tap Save' }}</span>
             </button>
           </div>
         </div>

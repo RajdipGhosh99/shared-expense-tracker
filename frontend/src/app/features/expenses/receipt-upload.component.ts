@@ -1,6 +1,8 @@
 import { Component, EventEmitter, Output, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { MatButtonModule } from '@angular/material/button';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import imageCompression from 'browser-image-compression';
 import { ReceiptExtraction, ReceiptExtractionApiResponse, receiptSchema } from '@shared-expense-tracker/shared';
 import { OcrBridgeService } from '../../core/services/ocr-bridge.service.js';
@@ -8,14 +10,14 @@ import { OcrBridgeService } from '../../core/services/ocr-bridge.service.js';
 @Component({
   selector: 'app-receipt-upload',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, MatButtonModule, MatProgressSpinnerModule],
   template: `
     <div class="receipt-extractor-card bg-white rounded-2xl border border-slate-200 p-5 shadow-xs max-w-lg mx-auto font-sans">
       <!-- Header -->
       <div class="flex items-center justify-between pb-3 border-b border-slate-100">
         <div class="flex items-center space-x-2">
           <div class="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-black text-sm">
-            🧾
+            <i class="fa-solid fa-receipt"></i>
           </div>
           <div>
             <h3 class="text-sm font-extrabold text-slate-900 leading-tight">Multimodal AI Receipt Scanner</h3>
@@ -25,15 +27,17 @@ import { OcrBridgeService } from '../../core/services/ocr-bridge.service.js';
 
         <span
           *ngIf="isCompressing()"
-          class="px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200 text-[10px] font-bold animate-pulse"
+          class="px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200 text-[10px] font-bold animate-pulse flex items-center gap-1"
         >
-          Compressing...
+          <i class="fa-solid fa-circle-notch fa-spin text-[9px]"></i>
+          <span>Compressing...</span>
         </span>
         <span
           *ngIf="isExtracting()"
-          class="px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200 text-[10px] font-bold animate-pulse"
+          class="px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200 text-[10px] font-bold animate-pulse flex items-center gap-1"
         >
-          Analyzing Receipt...
+          <i class="fa-solid fa-wand-magic-sparkles text-[9px]"></i>
+          <span>Analyzing Receipt...</span>
         </span>
       </div>
 
@@ -71,13 +75,15 @@ import { OcrBridgeService } from '../../core/services/ocr-bridge.service.js';
             class="absolute -top-2 -right-2 bg-slate-900 text-white w-6 h-6 rounded-full text-xs font-bold flex items-center justify-center shadow-md hover:bg-rose-600 transition-colors"
             title="Remove image"
           >
-            ✕
+            <i class="fa-solid fa-xmark"></i>
           </button>
         </div>
 
         <!-- Placeholder Icon & Text -->
         <div *ngIf="!previewUrl()" class="space-y-1.5 select-none">
-          <div class="text-3xl">📸</div>
+          <div class="text-3xl text-indigo-500">
+            <i class="fa-solid fa-camera"></i>
+          </div>
           <p class="text-xs font-bold text-slate-800">
             Upload or drop payment screenshot / bill
           </p>
@@ -94,10 +100,7 @@ import { OcrBridgeService } from '../../core/services/ocr-bridge.service.js';
 
       <!-- Spinner Progress Bar -->
       <div *ngIf="isProcessing()" class="mt-4 flex items-center justify-center space-x-2 text-indigo-600 text-xs font-bold">
-        <svg class="animate-spin h-4 w-4 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
-        </svg>
+        <i class="fa-solid fa-circle-notch fa-spin text-sm"></i>
         <span>{{ statusMessage() }}</span>
       </div>
 
@@ -106,7 +109,7 @@ import { OcrBridgeService } from '../../core/services/ocr-bridge.service.js';
         *ngIf="errorMessage()"
         class="mt-3.5 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium flex items-start space-x-2"
       >
-        <span>⚠️</span>
+        <i class="fa-solid fa-triangle-exclamation text-rose-500 mt-0.5"></i>
         <div class="flex-1">
           <p class="font-bold">Extraction Failed</p>
           <p class="text-[11px] mt-0.5">{{ errorMessage() }}</p>
@@ -119,7 +122,7 @@ import { OcrBridgeService } from '../../core/services/ocr-bridge.service.js';
         class="mt-3.5 p-3.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs space-y-1 animate-fade-in"
       >
         <div class="flex items-center space-x-1.5 font-extrabold text-amber-800">
-          <span>🚫</span>
+          <i class="fa-solid fa-ban text-amber-700"></i>
           <span>Document Guardrail Triggered</span>
         </div>
         <p class="text-[11px] text-amber-700">
@@ -137,13 +140,14 @@ import { OcrBridgeService } from '../../core/services/ocr-bridge.service.js';
       >
         <div class="flex items-center justify-between border-b border-emerald-200/80 pb-2">
           <div class="flex items-center space-x-1.5 font-black text-xs text-emerald-900">
-            <span>✓</span>
+            <i class="fa-solid fa-circle-check text-emerald-600"></i>
             <span>Verified Financial Receipt</span>
             <span
               *ngIf="extraction()?.items && (extraction()?.items?.length || 0) > 1"
-              class="ml-1.5 px-2 py-0.5 rounded-full bg-indigo-600 text-white text-[10px] font-extrabold animate-pulse"
+              class="ml-1.5 px-2 py-0.5 rounded-full bg-indigo-600 text-white text-[10px] font-extrabold flex items-center gap-1"
             >
-              📊 {{ extraction()?.items?.length }} Bills Detected
+              <i class="fa-solid fa-table-list text-[9px]"></i>
+              <span>{{ extraction()?.items?.length }} Bills Detected</span>
             </span>
           </div>
           <span
@@ -185,17 +189,19 @@ import { OcrBridgeService } from '../../core/services/ocr-bridge.service.js';
         <!-- Action Buttons -->
         <div class="flex items-center gap-2 pt-1">
           <button
+            mat-flat-button
             type="button"
             (click)="openInMultisheet()"
-            class="flex-1 py-2 px-3 bg-emerald-600 hover:bg-emerald-700 active:scale-98 text-white font-bold rounded-lg text-xs shadow-xs transition-all cursor-pointer flex items-center justify-center space-x-1.5"
+            class="!flex-1 !py-2 !px-3 !bg-emerald-600 hover:!bg-emerald-700 !text-white !font-bold !rounded-lg !text-xs !shadow-xs flex items-center justify-center gap-1.5 cursor-pointer"
           >
-            <span>📊</span>
+            <i class="fa-solid fa-table"></i>
             <span>Review in Multisheet</span>
           </button>
           <button
+            mat-stroked-button
             type="button"
             (click)="applyExtraction()"
-            class="py-2 px-3 bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold rounded-lg text-xs transition-all cursor-pointer shrink-0"
+            class="!py-2 !px-3 !bg-slate-100 hover:!bg-slate-200 !text-slate-800 !font-semibold !rounded-lg !text-xs shrink-0 cursor-pointer"
             title="Use directly in single bill form"
           >
             Use in Single Form

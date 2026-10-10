@@ -4,10 +4,12 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ApiService } from '../../core/services/api.service.js';
 
+import { MatButtonModule } from '@angular/material/button';
+
 @Component({
   selector: 'app-group-onboarding',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, MatButtonModule],
   template: `
     <div
       class="min-h-screen flex items-center justify-center p-4 bg-slate-50 text-slate-900 font-sans"
@@ -22,7 +24,7 @@ import { ApiService } from '../../core/services/api.service.js';
             class="px-3 py-1.5 rounded-xl text-slate-500 hover:text-rose-600 hover:bg-rose-50 text-xs font-semibold flex items-center space-x-1.5 transition-colors cursor-pointer"
           >
             <span>Log out</span>
-            <span>🚪</span>
+            <i class="fa-solid fa-arrow-right-from-bracket text-xs"></i>
           </button>
         </div>
 
@@ -30,10 +32,10 @@ import { ApiService } from '../../core/services/api.service.js';
           <div
             class="w-12 h-12 rounded-xl bg-slate-900 text-white flex items-center justify-center mx-auto text-xl shadow-xs"
           >
-            🏢
+            <i class="fa-solid fa-building"></i>
           </div>
           <h2 class="text-2xl font-bold text-slate-900 tracking-tight">
-            Welcome, {{ api.currentUser()?.name }}! 👋
+            Welcome, {{ api.currentUser()?.name }}!
           </h2>
           <p class="text-xs text-slate-500 max-w-sm mx-auto">
             To start tracking shared expenses, create a space for your apartment or group below.
@@ -76,17 +78,19 @@ import { ApiService } from '../../core/services/api.service.js';
 
           <button
             type="submit"
+            mat-flat-button
             [disabled]="loading() || !groupName.trim()"
-            class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 active:scale-98 text-white font-bold rounded-xl shadow-xs transition-all text-xs cursor-pointer disabled:opacity-50"
+            class="!w-full !py-3 !bg-indigo-600 hover:!bg-indigo-700 active:scale-98 !text-white !font-bold !rounded-xl shadow-xs transition-all !text-xs cursor-pointer disabled:!opacity-50 flex items-center justify-center gap-2"
           >
-            {{ loading() ? 'Creating Space...' : 'Create Space & Enter' }}
+            <i *ngIf="loading()" class="fa-solid fa-circle-notch fa-spin text-xs"></i>
+            <span>{{ loading() ? 'Creating Space...' : 'Create Space & Enter' }}</span>
           </button>
         </form>
 
         <!-- INVITE LINK NOTICE -->
         <div class="p-4 bg-indigo-50/70 border border-indigo-100 rounded-xl space-y-2">
           <div class="flex items-center space-x-2 text-indigo-900 font-bold text-xs">
-            <span>🔗</span>
+            <i class="fa-solid fa-link text-xs"></i>
             <span>Joining an existing space?</span>
           </div>
           <p class="text-[11px] text-indigo-700 leading-relaxed">
